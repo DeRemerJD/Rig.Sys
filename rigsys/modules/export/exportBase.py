@@ -11,3 +11,7 @@ class ExportModuleBase(moduleBase.ModuleBase):
         """Initialize the module."""
         super().__init__()
         self.buildOrder = 5000
+
+        self.exportPath: str = ""
+        self.fileName: str = ""
+        self.extension: str = ""

@@ -11,3 +11,6 @@ class MotionModuleBase(moduleBase.ModuleBase):
         """Initialize the module."""
         super().__init__()
         self.buildOrder = 2000
+
+        self.plug: str = ""
+        self.socket: dict = {}

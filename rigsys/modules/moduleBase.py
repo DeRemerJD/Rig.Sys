@@ -6,8 +6,11 @@ class ModuleBase:
 
     def __init__(self) -> None:
         """Initialize the module."""
-        self.buildOrder = 0
-        self.dependencies = {}
+        self.name: str = ""
+        self.buildOrder: int = 0
+        self.dependencies: dict = {}
+        self.ctrls: dict = {}
+        self.isMuted: bool = False
 
     def run(self) -> None:
         """Run the module.

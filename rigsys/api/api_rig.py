@@ -1,15 +1,6 @@
 """Rig API module."""
 
 
-BUILD_PROXIES = "build_proxies"
-BUILD_MODULES = "build_modules"
-BUILD_DEFORMERS = "build_deformers"
-BUILD_UTILITY = "build_utility"
-BUILD_RIG = "build_rig"
-BUILD_EXPORT = "build_export"
-BUILD_FULL = "build_full"
-
-
 class Rig:
     """Rig class."""
 
@@ -20,7 +11,19 @@ class Rig:
         self.utilityModules = {}
         self.exportModules = {}
 
-    def build(self, buildType: str = BUILD_FULL):
-        """Build the rig."""
-        # TODO: We need to figure out how build order and build type will work together.
-        pass
+    def build(self, buildLevel: int = -1) -> bool:
+        """Build the rig up to the specified level.
+
+        Args:
+            buildLevel (int, optional): The level to which the rig should be built. Defaults to -1, which means all
+                modules will be built.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        success = True
+
+        # TODO: Implement. Figure out how to get the build order of the modules.
+        # TODO: Logging
+
+        return success

@@ -2,7 +2,10 @@
 
 import maya.cmds as cmds
 
-import rigsys.modules.motion.motionBase as motionBase
+import rigsys.modules.motion as motion
+import rigsys.modules.deformer as deformer
+import rigsys.modules.utility as utility
+import rigsys.modules.export as export
 
 
 class Rig:
@@ -12,7 +15,7 @@ class Rig:
         """Initialize the rig."""
         self.name: str = name
 
-        self.motionModules: dict[str: motionBase.MotionModuleBase] = {}
+        self.motionModules = {}
         self.deformerModules = {}
         self.utilityModules = {}
         self.exportModules = {}
@@ -60,3 +63,22 @@ class Rig:
         childModule._parentObject = parentModule
 
         # TODO: Mirroring
+
+    def addMotionModule(self, moduleType, moduleName=""):
+        """Add a motion module to the rig."""
+        if moduleType not in motion.moduleTypes:
+            raise Exception(f"Motion module type {moduleType} does not exist.")
+
+        if moduleName == "":
+            moduleName = moduleType
+
+        if moduleName in self.motionModules:
+            raise Exception(f"Motion module {moduleName} already exists.")
+
+        moduleClass = motion.moduleTypes[moduleType]
+        module = moduleClass(self, moduleName)
+        self.motionModules[moduleName] = module
+
+        # TODO: Sides, mirroring
+
+        return module

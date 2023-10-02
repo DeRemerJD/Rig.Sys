@@ -32,3 +32,5 @@ for cls in classes.values():
     exec(importStatement)
 
 __all__ = list(classes.keys())
+
+moduleTypes = classes.copy()

@@ -1,12 +1,18 @@
 """Rig API module."""
 
+import maya.cmds as cmds
+
+import rigsys.modules.motion.motionBase as motionBase
+
 
 class Rig:
     """Rig class."""
 
-    def __init__(self) -> None:
+    def __init__(self, name: str = "Rig") -> None:
         """Initialize the rig."""
-        self.motionModules = {}
+        self.name: str = name
+
+        self.motionModules: dict[str: motionBase.MotionModuleBase] = {}
         self.deformerModules = {}
         self.utilityModules = {}
         self.exportModules = {}
@@ -23,7 +29,34 @@ class Rig:
         """
         success = True
 
-        # TODO: Implement. Figure out how to get the build order of the modules.
-        # TODO: Logging
+        allModules: list = []
+        allModules.extend(self.motionModules.values())
+        allModules.extend(self.deformerModules.values())
+        allModules.extend(self.utilityModules.values())
+        allModules.extend(self.exportModules.values())
+
+        allModules.sort(key=lambda x: x.buildOrder)
+
+        for module in allModules:
+            if buildLevel != -1 and module.buildOrder > buildLevel:
+                break
+
+            if not module.isMuted:
+                module.run()
 
         return success
+
+    def setParent(self, childModule: str, parentModule: str):
+        """Set the parent of childModule to parentModule."""
+        if childModule not in self.motionModules:
+            raise Exception(f"Child module {childModule} does not exist.")
+
+        if parentModule not in self.motionModules:
+            raise Exception(f"Parent module {parentModule} does not exist.")
+
+        childModule = self.motionModules[childModule]
+        parentModule = self.motionModules[parentModule]
+        childModule.parent = parentModule.name
+        childModule._parentObject = parentModule
+
+        # TODO: Mirroring

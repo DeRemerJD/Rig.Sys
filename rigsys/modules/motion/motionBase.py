@@ -7,11 +7,10 @@ import rigsys.modules.moduleBase as moduleBase
 class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules."""
 
-    def __init__(self, rig, name: str = "", buildOrder: int = 0, isMuted: bool = False,
+    def __init__(self, rig, name: str = "", buildOrder: int = 2000, isMuted: bool = False,
                  parent: str = None) -> None:
         """Initialize the module."""
         super().__init__(rig=rig, name=name, buildOrder=buildOrder, isMuted=isMuted)
-        self.buildOrder = 2000
 
         self.plug: str = ""
         self.socket: dict = {}

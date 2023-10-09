@@ -52,9 +52,12 @@ class Rig:
             if buildLevel != -1 and module.buildOrder > buildLevel:
                 break
 
-            if not module.isMuted:
-                module.run()
+            if module.isMuted:
+                continue
 
+            module.run()
+
+        # TODO: Do something with the success variable
         return success
 
     def setParent(self, childModuleName: str, parentModuleName: str):

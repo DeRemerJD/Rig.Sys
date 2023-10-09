@@ -1,5 +1,8 @@
 """FBX Export Module."""
 
+import os
+
+import maya.cmds as cmds
 
 import rigsys.modules.export.exportBase as exportBase
 
@@ -7,11 +10,46 @@ import rigsys.modules.export.exportBase as exportBase
 class FBXExport(exportBase.ExportModuleBase):
     """FBX Export Module."""
 
-    def __init__(self) -> None:
-        """Initialize the module."""
-        super().__init__()
+    def __init__(self, rig, exportPath: str, name: str = "", buildOrder: int = 5000, isMuted: bool = False,
+                 exportAll: bool = True, exportSelected: bool = False, nodesToExport: list = None) -> None:
+        """Initialize the module.
+
+        Arguments:
+            rig {rigsys.Rig} -- Rig object
+            exportPath {str} -- Path to export the file to
+            name {str} -- Name of the module
+            buildOrder {int} -- Build order of the module
+            isMuted {bool} -- Is the module muted?
+            exportAll {bool} -- Export everything?
+            exportSelected {bool} -- Export only selected?
+            nodesToExport {list} -- List of nodes to export (if exportSelected is True)
+        """
+        super().__init__(rig, exportPath, name, buildOrder, isMuted)
+
+        self.extension = ".fbx"
+
+        self.exportAll = exportAll
+        self.exportSelected = exportSelected
+
+        if nodesToExport is None:
+            self.nodesToExport = []
 
     def run(self) -> None:
         """Run the module."""
-        # TODO: Implement
-        pass
+        # Make folders, if necessary
+        exportDir = os.path.dirname(self.fullExportPath)
+        if not os.path.exists(exportDir):
+            os.makedirs(exportDir)
+
+        if self.exportSelected:
+            cmds.select(self.nodesToExport, r=True)
+
+        cmds.file(
+            self.fullExportPath,
+            force=True,
+            options="v=0;",
+            typ="FBX export",
+            preserveReferences=True,
+            exportAll=self.exportAll,
+            exportSelected=self.exportSelected,
+        )

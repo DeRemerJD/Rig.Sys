@@ -20,6 +20,8 @@ class Rig:
         self.utilityModules = {}
         self.exportModules = {}
 
+        self.rigNode = None
+
     def build(self, buildLevel: int = -1) -> bool:
         """Build the rig up to the specified level.
 
@@ -31,6 +33,12 @@ class Rig:
             bool: True if successful, False otherwise.
         """
         success = True
+
+        # Create a group node for the rig
+        if not cmds.objExists(self.name):
+            self.rigNode = cmds.group(n=self.name, em=True)
+        else:
+            self.rigNode = self.name
 
         allModules: list = []
         allModules.extend(self.motionModules.values())
@@ -49,16 +57,16 @@ class Rig:
 
         return success
 
-    def setParent(self, childModule: str, parentModule: str):
+    def setParent(self, childModuleName: str, parentModuleName: str):
         """Set the parent of childModule to parentModule."""
-        if childModule not in self.motionModules:
-            raise Exception(f"Child module {childModule} does not exist.")
+        if childModuleName not in self.motionModules:
+            raise Exception(f"Child module {childModuleName} does not exist.")
 
-        if parentModule not in self.motionModules:
-            raise Exception(f"Parent module {parentModule} does not exist.")
+        if parentModuleName not in self.motionModules:
+            raise Exception(f"Parent module {parentModuleName} does not exist.")
 
-        childModule = self.motionModules[childModule]
-        parentModule = self.motionModules[parentModule]
+        childModule = self.motionModules[childModuleName]
+        parentModule = self.motionModules[parentModuleName]
         childModule.parent = parentModule.name
         childModule._parentObject = parentModule
 

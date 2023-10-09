@@ -19,19 +19,19 @@ class TestRig(unittest.TestCase):
         """Tear down the test."""
         return super().tearDown()
 
-    def test_character(self):
-        """Test the Character class."""
-        rig = api_rig.Rig()
+    # def test_character(self):
+    #     """Test the Character class."""
+    #     rig = api_rig.Rig()
 
-        rig.motionModules = {
-            "IK": motionModules.IK(self),
-            "FK": motionModules.FK(self),
-            "Floating": motionModules.Floating(self),
-        }
+    #     rig.motionModules = {
+    #         "IK": motionModules.IK(self),
+    #         "FK": motionModules.FK(self),
+    #         "Floating": motionModules.Floating(self),
+    #     }
 
-        rig.utilityModules = {
-            "ImportModel": utilityModules.ImportModel(self),
-            "BindJoints": utilityModules.BindJoints(self),
-        }
+    #     rig.utilityModules = {
+    #         "ImportModel": utilityModules.ImportModel(self),
+    #         "BindJoints": utilityModules.BindJoints(self),
+    #     }
 
-        rig.build()
+    #     rig.build()

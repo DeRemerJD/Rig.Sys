@@ -50,3 +50,5 @@ class TestImportModel(unittest.TestCase):
         self.rig.build()
 
         self.assertTrue(cmds.objExists("pCube1"))
+        nodeParent = cmds.listRelatives("pCube1", parent=True)
+        self.assertEqual(nodeParent, ["Rig"])

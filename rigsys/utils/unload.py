@@ -1,6 +1,8 @@
 """Utility function to unload modules for use in Maya."""
 
 
+import os
+import shutil
 import sys
 
 # if you have some packages that you often reload, you can put them here,
@@ -38,3 +40,26 @@ def unloadPackages(silent=True, packages=None):
                 pass
             else:
                 print(f"Could not unload: {moduleToReload}")
+
+
+def nukePycFiles(folderPath=None, verbose=True):
+    """Remove all .pyc files in a folder.
+
+    Args:
+        folderPath: The path to the folder to remove the .pyc files from.
+        verbose: If True, print the names of the files removed.
+    """
+    if folderPath is None:
+        folderPath = os.path.join(os.path.dirname(__file__), os.pardir)
+
+    for root, dirs, files in os.walk(folderPath):
+        for file in files:
+            if file.endswith(".pyc") or file.endswith(".bak"):
+                os.remove(os.path.join(root, file))
+                if verbose:
+                    print(f"Removed {os.path.abspath(os.path.join(root, file))}")
+        for dirName in dirs:
+            if dirName.startswith("__pycache__") or dirName.startswith(".pytest_cache"):
+                shutil.rmtree(os.path.join(root, dirName))
+                if verbose:
+                    print(f"Removed {os.path.abspath(os.path.join(root, dirName))}")

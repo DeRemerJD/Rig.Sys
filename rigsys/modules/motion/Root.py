@@ -3,6 +3,8 @@
 
 import rigsys.modules.motion.motionBase as motionBase
 import rigsys.lib.ctrl as ctrlCrv
+import rigsys.lib.proxy as proxy
+
 import maya.cmds as cmds
 
 
@@ -18,15 +20,16 @@ class Root(motionBase.MotionModuleBase):
 
         # Proxy?
         self.proxies = {
-            "Root": rsProxy(blahblahblah, position=[0, 0, 0], rotation=[0, 0, 0]),
+            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="", label=""),
         }
 
         super().__init__(args, kwargs)
 
-    def run(self) -> None:
-        """Run the module."""
-        # TODO: Implement
+    def buildProxies(self):
+        return super().buildProxies()
 
+    def buildModule(self) -> None:
+        """Run the module."""
         # Build overall structure
         proxyPosition = self.proxies["Root"].position
 

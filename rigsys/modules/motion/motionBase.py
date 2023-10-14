@@ -7,13 +7,16 @@ import rigsys.modules.moduleBase as moduleBase
 class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules."""
 
-    def __init__(self, rig, name: str = "", buildOrder: int = 2000, isMuted: bool = False,
-                 parent: str = None) -> None:
+    def __init__(self, rig, name: str = "", label: str = "", buildOrder: int = 2000, isMuted: bool = False,
+                 parent: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig=rig, name=name, buildOrder=buildOrder, isMuted=isMuted)
+        super().__init__(rig=rig, name=name, label=label, buildOrder=buildOrder, isMuted=isMuted, mirror=mirror)
 
         self.plug: str = ""
+        # Key: label, Value: Node
         self.socket: dict = {}
+
+        self.proxies: dict = {}
 
         self.parent = parent
         self._parentObject = None
@@ -34,8 +37,14 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def buildProxies(self):
         """Build the proxies for the module."""
-        pass
+        for proxy in self.proxies.values():
+            proxy.build()
 
     def buildModule(self):
         """Build the rest of the module."""
         pass
+
+    def doMirror(self):
+        """Mirror the module."""
+        # TODO: Implement mirror
+        return super().doMirror()

@@ -34,17 +34,17 @@ class Root(motionBase.MotionModuleBase):
         proxyPosition = self.proxies["Root"].position
 
         # Structure
-        rootPar = cmds.createNode("transform", n=side + label + self.name + "_grp")
-        rootCtrl = cmds.createNode("transform", n=side + label + self.name + "_CTRL")
+        rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
+        rootCtrl = cmds.createNode("transform", n=self.getFullName() + "_CTRL")
         cmds.parent(rootCtrl, rootPar)
         rootCtrlObj = ctrlCrv.Ctrl(node=rootCtrl, shape="circle")
         rootCtrlObj.giveCtrlShape()
         if self.addOffset:
             offsetPar = cmds.createNode(
-                "transform", n=side + label + self.name + "_grp"
+                "transform", n=self.getFullName() + "_grp"
             )
             offsetCtrl = cmds.createNode(
-                "transform", n=side + label + self.name + "_CTRL"
+                "transform", n=self.getFullName() + "_CTRL"
             )
             cmds.parent(offsetCtrl, offsetPar)
             cmds.parent(offsetPar, rootCtrl)

@@ -11,7 +11,8 @@ class FK(motionBase.MotionModuleBase):
         """Initialize the module."""
         super().__init__(args, kwargs)
 
-    def run(self) -> None:
-        """Run the module."""
-        # TODO: Implement
-        pass
+    def buildProxies(self):
+        return super().buildProxies()
+
+    def buildModule(self):
+        return super().buildModule()

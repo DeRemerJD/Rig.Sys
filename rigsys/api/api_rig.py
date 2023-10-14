@@ -47,6 +47,10 @@ class Rig:
         allModules.extend(self.utilityModules.values())
         allModules.extend(self.exportModules.values())
 
+        for module in allModules:
+            if module.mirror:
+                allModules.append(module.doMirror())
+
         allModules.sort(key=lambda x: x.buildOrder)
 
         for module in allModules:

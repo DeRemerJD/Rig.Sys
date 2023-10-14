@@ -22,12 +22,13 @@ class Rig:
 
         self.rigNode = None
 
-    def build(self, buildLevel: int = -1) -> bool:
+    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False) -> bool:
         """Build the rig up to the specified level.
 
         Args:
             buildLevel (int, optional): The level to which the rig should be built. Defaults to -1, which means all
                 modules will be built.
+            buildProxiesOnly (bool, optional): If True, only the proxies will be built. Defaults to False.
 
         Returns:
             bool: True if successful, False otherwise.
@@ -55,7 +56,10 @@ class Rig:
             if module.isMuted:
                 continue
 
-            module.run()
+            if isinstance(module, motion.MotionModuleBase):
+                module.run(buildProxiesOnly=buildProxiesOnly)
+            else:
+                module.run()
 
         # TODO: Do something with the success variable
         return success

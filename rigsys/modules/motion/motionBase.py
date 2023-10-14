@@ -20,3 +20,22 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
         if self.parent is not None:
             self._rig.setParent(self, self.parent)
+
+    def run(self, buildProxiesOnly: bool = False):
+        """Run the module."""
+        # Build proxy step
+        self.buildProxies()
+
+        if buildProxiesOnly:
+            return
+
+        # Build module step
+        self.buildModule()
+
+    def buildProxies(self):
+        """Build the proxies for the module."""
+        pass
+
+    def buildModule(self):
+        """Build the rest of the module."""
+        pass

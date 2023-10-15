@@ -13,9 +13,7 @@ class Root(motionBase.MotionModuleBase):
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the module."""
-
-        # Public editables
-        
+        # Public editables        
         self.addOffset = True
         self.ctrlShapes = "circle"
         self.ctrlScale = [1.0, 1.0, 1.0]
@@ -34,6 +32,8 @@ class Root(motionBase.MotionModuleBase):
         """Run the module."""
         # Build overall structure
         proxyPosition = self.proxies["Root"].position
+        # Checking if the vars are carrying over.
+        cmds.createNode('transform', n=self.side+"_"+self.label)
 
         # Structure
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
@@ -52,8 +52,11 @@ class Root(motionBase.MotionModuleBase):
             )
             cmds.parent(offsetCtrl, offsetPar)
             cmds.parent(offsetPar, rootCtrl)
+            offsetScale = []
+            for x in self.ctrlScale:
+                offsetScale.append(x*.75)
             offsetCtrlObj = ctrlCrv.Ctrl(
-                node=offsetCtrl, shape=self.ctrlShapes, scale=self.ctrlScale
+                node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale
                 )
             offsetCtrlObj.giveCtrlShape()
         cmds.xform(rootPar, ws=True, t=proxyPosition)

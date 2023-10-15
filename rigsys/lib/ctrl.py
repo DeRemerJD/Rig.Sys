@@ -5,7 +5,9 @@ import maya.cmds as cmds
 class Ctrl:
     """Class to hold information on a control."""
 
-    def __init__(self) -> None:
+    def __init__(self, node: str = "", shape: str = "circle", 
+                scale: list = [1.0, 1.0, 1.0], orient: list = [0.0, 0.0, 0.0], 
+                offset: list = [0.0, 0.0, 0.0]) -> None:
         """Initialize the control."""
 
         # Allowed shapes are
@@ -13,10 +15,12 @@ class Ctrl:
         # square
         # box
         # sphere
-        self.shape = "circle"
-        self.node = ""
-        self.scale = [1.0, 1.0, 1.0]
-        pass
+        self.shape = shape
+        self.node = node
+        self.scale = scale
+        self.orient = orient
+        self.offset = offset
+
 
     def giveCtrlShape(self):
         """Give the control a shape."""

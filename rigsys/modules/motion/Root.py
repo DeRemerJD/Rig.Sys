@@ -15,12 +15,14 @@ class Root(motionBase.MotionModuleBase):
         """Initialize the module."""
 
         # Public editables
-        self.name = "Root"
+        
         self.addOffset = True
+        self.ctrlShapes = "circle"
+        self.ctrlScale = [1.0, 1.0, 1.0]
 
         # Proxy?
         self.proxies = {
-            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="", label=""),
+            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="M", label="Root")
         }
 
         super().__init__(args, kwargs)
@@ -37,7 +39,9 @@ class Root(motionBase.MotionModuleBase):
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
         rootCtrl = cmds.createNode("transform", n=self.getFullName() + "_CTRL")
         cmds.parent(rootCtrl, rootPar)
-        rootCtrlObj = ctrlCrv.Ctrl(node=rootCtrl, shape="circle")
+        rootCtrlObj = ctrlCrv.Ctrl(
+            node=rootCtrl, shape=self.ctrlShapes, scale=self.ctrlScale
+            )
         rootCtrlObj.giveCtrlShape()
         if self.addOffset:
             offsetPar = cmds.createNode(
@@ -48,6 +52,8 @@ class Root(motionBase.MotionModuleBase):
             )
             cmds.parent(offsetCtrl, offsetPar)
             cmds.parent(offsetPar, rootCtrl)
-            offsetCtrlObj = ctrlCrv.Ctrl(node=offsetCtrl, shape="circle")
+            offsetCtrlObj = ctrlCrv.Ctrl(
+                node=offsetCtrl, shape=self.ctrlShapes, scale=self.ctrlScale
+                )
             offsetCtrlObj.giveCtrlShape()
         cmds.xform(rootPar, ws=True, t=proxyPosition)

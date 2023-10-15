@@ -4,12 +4,13 @@
 class ModuleBase:
     """Base class for all modules."""
 
-    def __init__(self, rig, name: str = "", label: str = "", buildOrder: int = 0, isMuted: bool = False, mirror: bool = False) -> None:
+    def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 0, isMuted: bool = False, mirror: bool = False) -> None:
         """Initialize the module."""
         self.name: str = name
         if self.name == "":
             self.name = type(self).__name__
-
+        
+        self.side = side
         self.label = label
         self.buildOrder: int = buildOrder
         self.dependencies: dict = {}

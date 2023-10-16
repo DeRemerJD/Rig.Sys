@@ -13,19 +13,17 @@ class Root(motionBase.MotionModuleBase):
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the module."""
-        # Public editables        
+        super().__init__(args, kwargs)
         self.addOffset = True
         self.ctrlShapes = "circle"
         self.ctrlScale = [1.0, 1.0, 1.0]
 
-        # Proxy?
         self.proxies = {
             "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="M", label="Root")
         }
 
-        super().__init__(args, kwargs)
-
     def buildProxies(self):
+        """Build the proxies for the module."""
         return super().buildProxies()
 
     def buildModule(self) -> None:
@@ -33,7 +31,7 @@ class Root(motionBase.MotionModuleBase):
         # Build overall structure
         proxyPosition = self.proxies["Root"].position
         # Checking if the vars are carrying over.
-        cmds.createNode('transform', n=self.side+"_"+self.label)
+        cmds.createNode('transform', n=self.side + "_" + self.label)
 
         # Structure
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")

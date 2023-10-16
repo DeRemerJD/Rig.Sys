@@ -16,11 +16,7 @@ class MotionModuleBase(moduleBase.ModuleBase):
         # Key: label, Value: Node
         self.socket: dict = {}
 
-        print("Before self.proxies declaration")
-        print(self.proxies)
-        # self.proxies: dict = {}
-        print("After self.proxies declaration")
-        print(self.proxies)
+        self.proxies: dict = {}
         self.parent = parent
         self._parentObject = None
 

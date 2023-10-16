@@ -28,24 +28,29 @@ class ExampleCharacter(api_rig.Rig):
         print(os.path.exists(self.exampleCharacterFolder))
 
         self.motionModules = {
-            "M_Root": motion.Root("M_Root"),
+            "L_Root": motion.Root(
+                self,
+                name="Root",
+                side="L",
+                mirror=True,
+            ),
         }
         self.deformerModules = {}
         self.utilityModules = {
-            "ImportModel": utility.ImportModel(
-                self,
-                filePath=os.path.join(self.exampleCharacterFolder, "cube.mb"),
-                underGroup=""
-            ),
+            # "ImportModel": utility.ImportModel(
+            #     self,
+            #     filePath=os.path.join(self.exampleCharacterFolder, "cube.mb"),
+            #     underGroup=""
+            # ),
         }
         self.exportModules = {
-            "FBXExport": export.FBXExport(
-                self,
-                exportPath=os.path.join(self.exampleCharacterFolder, "ExampleRig_export.fbx"),
-                exportAll=True,
-                exportSelected=False,
-                nodesToExport=None,
-            ),
+            # "FBXExport": export.FBXExport(
+            #     self,
+            #     exportPath=os.path.join(self.exampleCharacterFolder, "ExampleRig_export.fbx"),
+            #     exportAll=True,
+            #     exportSelected=False,
+            #     nodesToExport=None,
+            # ),
         }
 
 

@@ -11,9 +11,12 @@ import maya.cmds as cmds
 class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, rig, name: str = "", side: str = "M", label: str = "", buildOrder: int = 2000,
+                 isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(args, kwargs)
+        super().__init__(rig=rig, name=name, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
+                         parent=parent, mirror=mirror)
+
         self.addOffset = True
         self.ctrlShapes = "circle"
         self.ctrlScale = [1.0, 1.0, 1.0]
@@ -39,7 +42,7 @@ class Root(motionBase.MotionModuleBase):
         cmds.parent(rootCtrl, rootPar)
         rootCtrlObj = ctrlCrv.Ctrl(
             node=rootCtrl, shape=self.ctrlShapes, scale=self.ctrlScale
-            )
+        )
         rootCtrlObj.giveCtrlShape()
         if self.addOffset:
             offsetPar = cmds.createNode(

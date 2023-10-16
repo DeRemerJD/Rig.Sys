@@ -3,9 +3,6 @@
 import maya.cmds as cmds
 
 import rigsys.modules.motion as motion
-import rigsys.modules.deformer as deformer
-import rigsys.modules.utility as utility
-import rigsys.modules.export as export
 
 
 class Rig:
@@ -60,10 +57,15 @@ class Rig:
             if module.isMuted:
                 continue
 
+            print(f"Building module {module.getFullName()}...")
+
             if isinstance(module, motion.MotionModuleBase):
                 module.run(buildProxiesOnly=buildProxiesOnly)
+
             else:
                 module.run()
+
+            print(f"Module {module.getFullName()} built.")
 
         # TODO: Do something with the success variable
         return success
@@ -82,22 +84,3 @@ class Rig:
         childModule._parentObject = parentModule
 
         # TODO: Mirroring
-
-    def addMotionModule(self, moduleType, moduleName=""):
-        """Add a motion module to the rig."""
-        if moduleType not in motion.moduleTypes:
-            raise Exception(f"Motion module type {moduleType} does not exist.")
-
-        if moduleName == "":
-            moduleName = moduleType
-
-        if moduleName in self.motionModules:
-            raise Exception(f"Motion module {moduleName} already exists.")
-
-        moduleClass = motion.moduleTypes[moduleType]
-        module = moduleClass(self, moduleName)
-        self.motionModules[moduleName] = module
-
-        # TODO: Sides, mirroring
-
-        return module

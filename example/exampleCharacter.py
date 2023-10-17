@@ -28,11 +28,10 @@ class ExampleCharacter(api_rig.Rig):
         print(os.path.exists(self.exampleCharacterFolder))
 
         self.motionModules = {
-            "L_Root": motion.Root(
+            "M_Root": motion.Root(
                 self,
+                side="M",
                 name="Root",
-                side="L",
-                mirror=True,
             ),
         }
         self.deformerModules = {}

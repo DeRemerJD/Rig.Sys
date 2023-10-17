@@ -46,7 +46,9 @@ class Rig:
 
         for module in allModules:
             if module.mirror:
-                allModules.append(module.doMirror())
+                mirroredModule = module.doMirror()
+                if mirroredModule is not None:
+                    allModules.append(mirroredModule)
 
         allModules.sort(key=lambda x: x.buildOrder)
 

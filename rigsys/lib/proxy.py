@@ -8,12 +8,16 @@ import copy
 class Proxy:
     """Proxy class for rigsys modules."""
 
-    def __init__(self, position, rotation, side, label) -> None:
+    def __init__(self, side: str, label: str, position: list = None, rotation: list = None) -> None:
         """Initialize the proxy."""
-        self.position = position
-        self.rotation = rotation
         self.side = side
         self.label = label
+        if position is None:
+            position = [0, 0, 0]
+        if rotation is None:
+            rotation = [0, 0, 0]
+        self.position = position
+        self.rotation = rotation
 
     def build(self):
         """Build the proxy."""

@@ -23,6 +23,7 @@ class ModuleBase:
         self.isMuted: bool = isMuted
         self.isRun: bool = False
         self.mirror = mirror
+        self._mirrorObject = None  # FIXME: We may not need this
 
         self._rig = rig
 
@@ -80,6 +81,8 @@ class ModuleBase:
 
         # So we don't get stuck in an infinite loop
         newModule.mirror = False
+        self._mirrorObject = newModule
+        newModule._mirrorObject = self
 
         if self.side == "L":
             newModule.side = "R"

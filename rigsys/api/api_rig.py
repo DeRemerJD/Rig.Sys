@@ -19,6 +19,52 @@ class Rig:
 
         self.rigNode = None
 
+    def preBuild(self) -> list:
+        """Run any pre-build steps.
+
+        Returns:
+            list: A list of all modules that need to be built.
+        """
+        allModules: list = []
+        allModules.extend(self.motionModules.values())
+        allModules.extend(self.deformerModules.values())
+        allModules.extend(self.utilityModules.values())
+        allModules.extend(self.exportModules.values())
+
+        # Mirroring - motion modules
+        newMotionModules = []
+        for module in self.motionModules.values():
+            if module.mirror:
+                mirroredModule = module.doMirror()
+                if mirroredModule is not None:
+                    newMotionModules.append(mirroredModule)
+
+        for module in newMotionModules:
+            self.motionModules[module.getFullName()] = module
+            allModules.append(module)
+
+        # Mirroring - utility modules
+        newUtilityModules = []
+        for module in self.utilityModules.values():
+            if module.mirror:
+                mirroredModule = module.doMirror()
+                if mirroredModule is not None:
+                    newUtilityModules.append(mirroredModule)
+
+        for module in newUtilityModules:
+            self.utilityModules[module.getFullName()] = module
+            allModules.append(module)
+
+        # Parenting
+        for module in allModules:
+            if module.parent is not None:
+                self.setParent(module.getFullName(), module.parent)
+
+        # Sort by build order
+        allModules.sort(key=lambda x: x.buildOrder)
+
+        return allModules
+
     def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False) -> bool:
         """Build the rig up to the specified level.
 
@@ -38,19 +84,7 @@ class Rig:
         else:
             self.rigNode = self.name
 
-        allModules: list = []
-        allModules.extend(self.motionModules.values())
-        allModules.extend(self.deformerModules.values())
-        allModules.extend(self.utilityModules.values())
-        allModules.extend(self.exportModules.values())
-
-        for module in allModules:
-            if module.mirror:
-                mirroredModule = module.doMirror()
-                if mirroredModule is not None:
-                    allModules.append(mirroredModule)
-
-        allModules.sort(key=lambda x: x.buildOrder)
+        allModules = self.preBuild()
 
         for module in allModules:
             if buildLevel != -1 and module.buildOrder > buildLevel:
@@ -82,7 +116,5 @@ class Rig:
 
         childModule = self.motionModules[childModuleName]
         parentModule = self.motionModules[parentModuleName]
-        childModule.parent = parentModule.name
+        childModule.parent = parentModule.getFullName()
         childModule._parentObject = parentModule
-
-        # TODO: Mirroring

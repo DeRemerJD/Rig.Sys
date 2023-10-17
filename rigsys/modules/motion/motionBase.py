@@ -5,7 +5,12 @@ import rigsys.modules.moduleBase as moduleBase
 
 
 class MotionModuleBase(moduleBase.ModuleBase):
-    """Base class for motion modules."""
+    """Base class for motion modules.
+
+    Attributes:
+        - parent: (str) The name of the parent module.
+        - _parentObject: (module) The parent module object.
+    """
 
     def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
@@ -20,9 +25,6 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.proxies: dict = {}
         self.parent = parent
         self._parentObject = None
-
-        if self.parent is not None:
-            self._rig.setParent(self, self.parent)
 
     def run(self, buildProxiesOnly: bool = False):
         """Run the module."""

@@ -26,12 +26,32 @@ class ExampleCharacter(api_rig.Rig):
         self.exampleCharacterFolder = os.path.abspath(os.path.join(rigsys.__file__, os.pardir, os.pardir, "example"))
 
         self.motionModules = {
-            "M_Root": motion.Root(
+            "M_Root": motion.TestMotionModule(
                 self,
                 side="M",
                 name="Root",
             ),
+            "M_Spine": motion.TestMotionModule(
+                self,
+                side="M",
+                name="Spine",
+                parent="M_Root",
+            ),
+            "L_Arm": motion.TestMotionModule(
+                self,
+                side="L",
+                name="Arm",
+                mirror=True,
+                parent="M_Spine",
+            ),
+            "L_Watch": motion.TestMotionModule(
+                self,
+                side="L",
+                name="Watch",
+                parent="M_Spine",
+            ),
         }
+
         self.deformerModules = {}
         self.utilityModules = {
             # "ImportModel": utility.ImportModel(

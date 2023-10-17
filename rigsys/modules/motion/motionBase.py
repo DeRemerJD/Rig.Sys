@@ -3,6 +3,8 @@
 
 import rigsys.modules.moduleBase as moduleBase
 
+import maya.cmds as cmds
+
 
 class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules.
@@ -50,3 +52,7 @@ class MotionModuleBase(moduleBase.ModuleBase):
         """Mirror the module."""
         # TODO: Implement mirror
         return super().doMirror()
+
+    def parentToRootNode(self, node):
+        """Parent the given node under the rig node."""
+        cmds.parent(node, self._rig.rigNode)

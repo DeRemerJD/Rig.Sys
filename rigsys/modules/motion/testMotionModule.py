@@ -30,3 +30,4 @@ class TestMotionModule(motionBase.MotionModuleBase):
         cmds.parent(rootCtrl, rootPar)
 
         cmds.xform(rootPar, ws=True, t=self.proxies["Proxy1"].position)
+        self.parentToRootNode(rootPar)

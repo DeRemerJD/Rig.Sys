@@ -8,7 +8,8 @@ import rigsys.utils.stringUtils as stringUtils
 class ModuleBase:
     """Base class for all modules."""
 
-    def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 0, isMuted: bool = False, mirror: bool = False) -> None:
+    def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 0,
+                 isMuted: bool = False, mirror: bool = False) -> None:
         """Initialize the module."""
         self.name: str = name
         if self.name == "":
@@ -99,4 +100,9 @@ class ModuleBase:
 
     def getFullName(self):
         """Return the full name of the module."""
-        return f"{self.side}_{self.label}_{self.name}"
+        # TODO: @Jacob, is this the behavior we want?
+        # I feel like part of the problem is that I'm still not 100% sure what self.label is for
+        if self.label == "":
+            return f"{self.side}_{self.name}"
+        else:
+            return f"{self.side}_{self.label}_{self.name}"

@@ -24,8 +24,6 @@ class ExampleCharacter(api_rig.Rig):
         super().__init__(name)
 
         self.exampleCharacterFolder = os.path.abspath(os.path.join(rigsys.__file__, os.pardir, os.pardir, "example"))
-        print(f"self.exampleCharacterFolder: {self.exampleCharacterFolder}")
-        print(os.path.exists(self.exampleCharacterFolder))
 
         self.motionModules = {
             "M_Root": motion.Root(

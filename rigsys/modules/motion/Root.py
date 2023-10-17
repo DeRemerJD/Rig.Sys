@@ -52,12 +52,12 @@ class Root(motionBase.MotionModuleBase):
                 "transform", n=self.getFullName() + "_CTRL"
             )
             cmds.parent(offsetCtrl, offsetPar)
-            cmds.parent(offsetPar, rootCtrl)
+            cmds.parent(offsetPar, rootCtrl)  # FIXME: This errors out - more than one object matches name
             offsetScale = []
             for x in self.ctrlScale:
-                offsetScale.append(x*.75)
+                offsetScale.append(x * .75)
             offsetCtrlObj = ctrlCrv.Ctrl(
                 node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale
-                )
+            )
             offsetCtrlObj.giveCtrlShape()
         cmds.xform(rootPar, ws=True, t=proxyPosition)

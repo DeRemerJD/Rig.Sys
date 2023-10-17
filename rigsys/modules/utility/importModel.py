@@ -1,10 +1,14 @@
 """Import model utility module."""
 
+import logging
 import os
 
 import rigsys.modules.utility.utilityBase as utilityBase
 
 import maya.cmds as cmds
+
+
+logger = logging.getLogger(__name__)
 
 
 class ImportModel(utilityBase.UtilityModuleBase):
@@ -40,7 +44,7 @@ class ImportModel(utilityBase.UtilityModuleBase):
         rootNodes = []
         for node in newNodes:
             if not cmds.objExists(node):
-                print(f"node does not exist: {node}")
+                logger.warning(f"node does not exist: {node}")
                 continue
 
             parent = cmds.listRelatives(node, p=True)
@@ -59,5 +63,5 @@ class ImportModel(utilityBase.UtilityModuleBase):
                 cmds.parent(underGroup, self._rig.rigNode)
 
         for node in rootNodes:
-            print(f"Parenting {node} under {underGroup}")
+            logger.info(f"Parenting {node} under {underGroup}")
             cmds.parent(node, underGroup)

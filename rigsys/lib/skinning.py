@@ -27,12 +27,16 @@ skinClusterTransfer.writeWeights("path/to/weights/obj.scw")
 skinClusterTransfer.readWeights("path/to/weights/obj.scw")
 """
 
+import logging
+
 import maya.OpenMaya as OpenMaya
 import maya.OpenMayaAnim as OpenMayaAnim
 import maya.cmds as cmds
 import maya.mel as mel
 
-import zubio.lib.proxies as zProxies
+import zubio.lib.proxies as zProxies  # FIXME
+
+logger = logging.getLogger(__name__)
 
 
 def writeWeights(fileName):
@@ -153,9 +157,9 @@ def readWeights(fileName, reverseOrder=False, specifics=None):
         missingItems.append(shape)
 
     if len(missingItems) > 0:
-        print(f"{skinClusterName} is missing the following skinCluster affectors:\n")
+        logger.warning(f"{skinClusterName} is missing the following skinCluster affectors:\n")
         for item in missingItems:
-            print(f"\t{item}")
+            logger.warning(f"\t{item}")
         return -1
 
     try:
@@ -170,7 +174,7 @@ def readWeights(fileName, reverseOrder=False, specifics=None):
         isHistoryFound = False
         for h in history:
             if cmds.nodeType(h) == "skinCluster":
-                print(f"{shape} is already bound to a skinCluster.")
+                logger.warning(f"{shape} is already bound to a skinCluster.")
                 isHistoryFound = True
         if isHistoryFound:
             return -1
@@ -407,7 +411,7 @@ def readWeightsOld(fileName, reverseOrder=False, specifics=None):
         OpenMaya.MGlobal.displayError('[' + skinClusterName + '] is missing the following skinCluster affectors:\n')
 
     for item in missingItems:
-        print(item)
+        logger.warning(item)
 
     if missingItems:
         return -1
@@ -477,7 +481,6 @@ def readWeightsOld(fileName, reverseOrder=False, specifics=None):
         compIndex = weights[0]
 
         if specifics:
-            # print "SPECIFICS!!"
             specificsList = specifics.split("_")
             specificsList = [int(item) for item in specificsList]
             if compIndex not in specificsList:

@@ -1,8 +1,11 @@
 """Base class for all modules."""
 
 import copy
+import logging
 
 import rigsys.utils.stringUtils as stringUtils
+
+logger = logging.getLogger(__name__)
 
 
 class ModuleBase:
@@ -37,7 +40,7 @@ class ModuleBase:
     def doMirror(self):
         """Mirror the module."""
         if self.side == "M":
-            print(f"Cannot mirror middle module {self.getFullName()}")
+            logger.warning(f"Cannot mirror middle module {self.getFullName()}")
             return None
 
         # Don't want to copy the rig object each time

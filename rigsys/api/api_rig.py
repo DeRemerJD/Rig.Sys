@@ -1,8 +1,12 @@
 """Rig API module."""
 
+import logging
+
 import maya.cmds as cmds
 
 import rigsys.modules.motion as motion
+
+logger = logging.getLogger(__name__)
 
 
 class Rig:
@@ -93,7 +97,7 @@ class Rig:
             if module.isMuted:
                 continue
 
-            print(f"Building module {module.getFullName()}...")
+            logger.info(f"Building module {module.getFullName()}...")
 
             if isinstance(module, motion.MotionModuleBase):
                 module.run(buildProxiesOnly=buildProxiesOnly)
@@ -101,7 +105,7 @@ class Rig:
             else:
                 module.run()
 
-            print(f"Module {module.getFullName()} built.")
+            logger.info(f"Module {module.getFullName()} built.")
 
         # TODO: Do something with the success variable
         return success

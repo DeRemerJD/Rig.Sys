@@ -3,6 +3,9 @@
 # TODO: @Jacob - at Zubio we had proxies for nurbs, curves, etc. Do we want any of those here?
 
 import copy
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Proxy:
@@ -30,7 +33,7 @@ class Proxy:
     def doMirror(self):
         """Mirror the proxy, returning a new proxy object."""
         if self.side == "M":
-            print(f"Cannot mirror middle proxy {self.getFullName()}")
+            logger.error(f"Cannot mirror middle proxy {self.getFullName()}")
             return None
 
         newProxy = copy.deepcopy(self)

@@ -2,11 +2,11 @@
 
 
 def flattenList(targetList):
-    """Flatten a list of lists into a single list."""
-    newList = []
+    """Flatten a list of lists into a single list recursively."""
+    flattenedList = []
     for item in targetList:
         if isinstance(item, list):
-            newList.extend(item)
+            flattenedList.extend(flattenList(item))
         else:
-            newList.append(item)
-    return newList
+            flattenedList.append(item)
+    return flattenedList

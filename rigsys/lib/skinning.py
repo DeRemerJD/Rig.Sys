@@ -34,7 +34,7 @@ import maya.OpenMayaAnim as OpenMayaAnim
 import maya.cmds as cmds
 import maya.mel as mel
 
-import zubio.lib.proxies as zProxies  # FIXME
+import rigsys.lib.nurbs as nurbs
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def writeWeights(fileName):
             numVerts = cmds.polyEvaluate(obj, v=True)
             numVerts = range(numVerts)
         elif objType == "nurbsSurface":
-            numVerts = zProxies.returnNurbsCVs(obj)
+            numVerts = nurbs.returnNurbsCVs(obj)
         else:
             # Unsupported object type
             weightFile.close()

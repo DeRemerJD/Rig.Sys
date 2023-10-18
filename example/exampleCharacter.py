@@ -8,6 +8,7 @@ import os
 
 import rigsys as rigsys
 import rigsys.api.api_rig as api_rig
+import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
 import rigsys.modules.export as export
 
@@ -26,7 +27,9 @@ class ExampleCharacter(api_rig.Rig):
         print(f"self.exampleCharacterFolder: {self.exampleCharacterFolder}")
         print(os.path.exists(self.exampleCharacterFolder))
 
-        self.motionModules = {}
+        self.motionModules = {
+            "M_Root": motion.Root("M_Root"),
+        }
         self.deformerModules = {}
         self.utilityModules = {
             "ImportModel": utility.ImportModel(

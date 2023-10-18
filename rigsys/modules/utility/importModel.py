@@ -10,10 +10,10 @@ import maya.cmds as cmds
 class ImportModel(utilityBase.UtilityModuleBase):
     """Import model utility module."""
 
-    def __init__(self, rig, name: str = "", buildOrder: int = 3000, isMuted: bool = False, filePath: str = "",
-                 underGroup: str = None) -> None:
+    def __init__(self, rig, name: str = "", label: str = "", buildOrder: int = 3000, isMuted: bool = False,
+                 filePath: str = "", underGroup: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig, name, buildOrder, isMuted)
+        super().__init__(rig, name, label, buildOrder, isMuted, mirror)
 
         self.filePath = filePath
         self.underGroup = underGroup

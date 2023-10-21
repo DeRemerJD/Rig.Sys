@@ -11,15 +11,15 @@ import maya.cmds as cmds
 class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, side="", label="", ctrlShapes="circle", ctrlScale=[1.0, 1.0, 1.0], addOffset=True, **kwargs) -> None:
         """Initialize the module."""
-        super().__init__(args, kwargs)
-        self.addOffset = True
-        self.ctrlShapes = "circle"
-        self.ctrlScale = [1.0, 1.0, 1.0]
+        super().__init__(args, kwargs, side=side, label=label)
+        self.addOffset = addOffset
+        self.ctrlShapes = ctrlShapes
+        self.ctrlScale = ctrlScale
 
         self.proxies = {
-            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="M", label="Root")
+            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="M", label="Root", name="Base")
         }
 
     def buildProxies(self):
@@ -28,25 +28,41 @@ class Root(motionBase.MotionModuleBase):
 
     def buildModule(self) -> None:
         """Run the module."""
-        # Build overall structure
+        print("DEBUGGING. . .")
+        print(self.side)
+        print(self.label)
+        print(self.ctrlShapes)
+        print(self.ctrlScale)
+        print(self.addOffset)
+
+        # Get Proxy pos / rot values
         proxyPosition = self.proxies["Root"].position
-        # Checking if the vars are carrying over.
-        cmds.createNode('transform', n=self.side + "_" + self.label)
+        proxyRotation = self.proxies["Root"].rotation
+
+        # MAKE MODULE NODES
+        self.moduleHierarchy()
+
+        # Make Plug Transforms
+        self.plugParent = self.createPlugParent(position=proxyPosition, rotation=proxyRotation)
+        self.worldParent = self.createWorldParent()
+
+        
+        
 
         # Structure
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
         rootCtrl = cmds.createNode("transform", n=self.getFullName() + "_CTRL")
         cmds.parent(rootCtrl, rootPar)
         rootCtrlObj = ctrlCrv.Ctrl(
-            node=rootCtrl, shape=self.ctrlShapes, scale=self.ctrlScale
+            node=rootCtrl, shape=self.ctrlShapes, scale=self.ctrlScale, orient=[90,0,0]
             )
         rootCtrlObj.giveCtrlShape()
         if self.addOffset:
             offsetPar = cmds.createNode(
-                "transform", n=self.getFullName() + "_grp"
+                "transform", n=self.getFullName() + "Offset_grp"
             )
             offsetCtrl = cmds.createNode(
-                "transform", n=self.getFullName() + "_CTRL"
+                "transform", n=self.getFullName() + "Offset_CTRL"
             )
             cmds.parent(offsetCtrl, offsetPar)
             cmds.parent(offsetPar, rootCtrl)
@@ -54,7 +70,10 @@ class Root(motionBase.MotionModuleBase):
             for x in self.ctrlScale:
                 offsetScale.append(x*.75)
             offsetCtrlObj = ctrlCrv.Ctrl(
-                node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale
+                node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale, orient=[90,0,0]
                 )
             offsetCtrlObj.giveCtrlShape()
+
         cmds.xform(rootPar, ws=True, t=proxyPosition)
+        cmds.xform(rootPar, ws=True, ro=proxyRotation)
+        cmds.parent(rootPar, self.worldParent)

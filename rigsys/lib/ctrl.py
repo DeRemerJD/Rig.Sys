@@ -103,6 +103,9 @@ class Ctrl:
 
         for crvNode in originalCurveNodes:
             cmds.xform(crvNode, a=True, s=self.scale)
+            cmds.xform(crvNode, r=True, ro=self.orient)
+            cmds.xform(crvNode, r=True, t=self.offset)
             cmds.makeIdentity(crvNode, a=True)
+            
 
         return shapes, originalCurveNodes

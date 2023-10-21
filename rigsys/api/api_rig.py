@@ -21,6 +21,12 @@ class Rig:
         self.exportModules = {}
 
         self.rigNode = None
+        self.motionNodes = None
+        self.geometryNodes = None
+        self.skeletonNodes = None
+        self.deformerNodes = None
+        self.utilityNodes = None
+        self.proxyNodes = None
 
     def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False) -> bool:
         """Build the rig up to the specified level.
@@ -37,7 +43,8 @@ class Rig:
 
         # Create a group node for the rig
         if not cmds.objExists(self.name):
-            self.rigNode = cmds.group(n=self.name, em=True)
+            self.rigNode = cmds.createNode("transform", n=self.name, em=True)
+            self.buildRigHierarchy()
         else:
             self.rigNode = self.name
 
@@ -101,3 +108,19 @@ class Rig:
         # TODO: Sides, mirroring
 
         return module
+    
+    def buildRigHierarchy(self):
+
+        self.motionNodes = cmds.createNode("transform", n="modules")
+        self.geometryNodes = cmds.createNode("transform", n="geometry")
+        self.skeletonNodes = cmds.createNode("transform", n="skeleton")
+        self.deformerNodes = cmds.createNode("transform", n="deformers")
+        self.utilityNodes = cmds.createNode("transform", n="utilities")
+        self.proxyNodes = cmds.createNode("transform", n="proxies")
+
+        coreNodes = [self.motionNodes, self.geometryNodes,
+                     self.skeletonNodes,self.deformerNodes,
+                     self.utilityNodes,self.proxyNodes]
+        
+        cmds.parent(coreNodes, self.rigNode)
+

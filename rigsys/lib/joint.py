@@ -3,6 +3,10 @@ import maya.cmds as cmds
 import pymel.core as pm
 import maya.OpenMaya as om
 
+def createJoint(jointName):
+    cmds.createNode("joint", n=jointName)
+    
+
 def aim(nodes=[], target=[], aimAxis="+x", upAxis="-z", upObj=None, 
         vector="-z", upType="object", objRot=None, match=False,
         rotateOrder="xyz"):

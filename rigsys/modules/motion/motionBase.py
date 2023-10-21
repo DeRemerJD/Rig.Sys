@@ -60,8 +60,9 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.moduleNode = cmds.createNode("transform", n="{}_{}_MODULE".format(self.side, self.label))
         self.moduleUtilities = cmds.createNode("transform", n="{}_{}_utilities".format(self.side, self.label))
         # self.moduleRig = cmds.createNode("transform", "{}_{}_rig".format(self.side, self.label))
-
-        cmds.parent(self.moduleUtilies, self.moduleNode)
+        cmds.parent(self.moduleUtilities, self.moduleNode)
+        cmds.parent(self.moduleNode, "modules")
+        
 
     # To be called in the module
     def createPlugParent(self, plug=None, position=None, rotation=None):

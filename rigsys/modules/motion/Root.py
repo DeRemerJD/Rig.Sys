@@ -54,15 +54,15 @@ class Root(motionBase.MotionModuleBase):
         rootCtrl = cmds.createNode("transform", n=self.getFullName() + "_CTRL")
         cmds.parent(rootCtrl, rootPar)
         rootCtrlObj = ctrlCrv.Ctrl(
-            node=rootCtrl, shape=self.ctrlShapes, scale=self.ctrlScale
+            node=rootCtrl, shape=self.ctrlShapes, scale=self.ctrlScale, orient=[90,0,0]
             )
         rootCtrlObj.giveCtrlShape()
         if self.addOffset:
             offsetPar = cmds.createNode(
-                "transform", n=self.getFullName() + "_grp"
+                "transform", n=self.getFullName() + "Offset_grp"
             )
             offsetCtrl = cmds.createNode(
-                "transform", n=self.getFullName() + "_CTRL"
+                "transform", n=self.getFullName() + "Offset_CTRL"
             )
             cmds.parent(offsetCtrl, offsetPar)
             cmds.parent(offsetPar, rootCtrl)
@@ -70,9 +70,10 @@ class Root(motionBase.MotionModuleBase):
             for x in self.ctrlScale:
                 offsetScale.append(x*.75)
             offsetCtrlObj = ctrlCrv.Ctrl(
-                node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale
+                node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale, orient=[90,0,0]
                 )
             offsetCtrlObj.giveCtrlShape()
 
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)
+        cmds.parent(rootPar, self.worldParent)

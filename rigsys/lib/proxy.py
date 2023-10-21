@@ -1,5 +1,5 @@
 """Proxy class for rigsys modules."""
-
+import maya.cmds as cmds
 
 class Proxy:
     """Proxy class for rigsys modules."""

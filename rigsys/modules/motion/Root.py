@@ -35,19 +35,19 @@ class Root(motionBase.MotionModuleBase):
         print(self.ctrlScale)
         print(self.addOffset)
 
-        # MAKE MODULE NODES
-        self.moduleHierarchy()
-
-        # Make Plug Transforms
-        self.plugParent = self.createPlugParent()
-        self.worldParent = self.createWorldParent()
-
         # Get Proxy pos / rot values
         proxyPosition = self.proxies["Root"].position
         proxyRotation = self.proxies["Root"].rotation
 
-        # CHECK: TODO: Delete if SIDE and LABEL are properly generated.
-        cmds.createNode('transform', n=self.side + "_" + self.label)
+        # MAKE MODULE NODES
+        self.moduleHierarchy()
+
+        # Make Plug Transforms
+        self.plugParent = self.createPlugParent(position=proxyPosition, rotation=proxyRotation)
+        self.worldParent = self.createWorldParent()
+
+        
+        
 
         # Structure
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")

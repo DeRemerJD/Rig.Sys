@@ -1,5 +1,5 @@
 """Base class for all modules."""
-
+import maya.cmds as cmds
 
 class ModuleBase:
     """Base class for all modules."""
@@ -35,3 +35,6 @@ class ModuleBase:
     def getFullName(self):
         """Return the full name of the module."""
         return f"{self.side}_{self.label}_{self.name}"
+    
+    
+

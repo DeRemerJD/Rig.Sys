@@ -43,7 +43,7 @@ class Rig:
 
         # Create a group node for the rig
         if not cmds.objExists(self.name):
-            self.rigNode = cmds.createNode("transform", n=self.name, em=True)
+            self.rigNode = cmds.createNode("transform", n=self.name)
             self.buildRigHierarchy()
         else:
             self.rigNode = self.name

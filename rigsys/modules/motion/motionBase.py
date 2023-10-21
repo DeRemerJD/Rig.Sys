@@ -24,7 +24,9 @@ class MotionModuleBase(moduleBase.ModuleBase):
         # Module Based Constructors
         self.moduleNode = None
         self.moduleUtilies = None
-        self.moduleRig = None
+        # self.moduleRig = None
+        self.plugParent = None
+        self.worldParent = None
 
         if self.parent is not None:
             self._rig.setParent(self, self.parent)
@@ -55,22 +57,28 @@ class MotionModuleBase(moduleBase.ModuleBase):
         return super().doMirror()
     
     def moduleHierarchy(self):
-        self.moduleNode = cmds.createNode("transform", "{}_{}_MODULE".format(self.side, self.label))
-        self.moduleUtilities = cmds.createNode("transform", "{}_{}_utilities".format(self.side, self.label))
-        self.moduleRig = cmds.createNode("transform", "{}_{}_rig".format(self.side, self.label))
+        self.moduleNode = cmds.createNode("transform", n="{}_{}_MODULE".format(self.side, self.label))
+        self.moduleUtilities = cmds.createNode("transform", n="{}_{}_utilities".format(self.side, self.label))
+        # self.moduleRig = cmds.createNode("transform", "{}_{}_rig".format(self.side, self.label))
 
-        cmds.parent([self.moduleUtilies, self.moduleRig], self.moduleNode)
+        cmds.parent(self.moduleUtilies, self.moduleNode)
 
     # To be called in the module
-    def createPlugParent(self, plug):
-        plugParent = cmds.createNode("transform", n="{}_{}_plugParent".format(self.side, self.labe))
-        cmds.xform(plugParent, ws=True, t=cmds.xform(plug, q=True, ws=True, t=True))
-        cmds.xform(plugParent, ws=True, ro=cmds.xform(plug, q=True, ws=True, ro=True))
-        cmds.parent(plugParent, self.moduleRig)
+    def createPlugParent(self, plug=None, position=None, rotation=None):
+        plugParent = cmds.createNode("transform", n="{}_{}_plugParent".format(self.side, self.label))
+        if plug:
+            cmds.xform(plugParent, ws=True, t=cmds.xform(plug, q=True, ws=True, t=True))
+            cmds.xform(plugParent, ws=True, ro=cmds.xform(plug, q=True, ws=True, ro=True))
+        if position:
+            cmds.xform(plugParent, ws=True, t=position)
+        if rotation:
+            cmds.xform(plugParent, ws=True, ro=rotation)
+            
+        cmds.parent(plugParent, self.moduleNode)
         return plugParent
     
     # To be called in the module
     def createWorldParent(self):
-        worldParent = cmds.createNode("transform", n="{}_{}_worldParent".format(self.side, self.labe))
-        cmds.parent(worldParent, self.moduleRig)
+        worldParent = cmds.createNode("transform", n="{}_{}_worldParent".format(self.side, self.label))
+        cmds.parent(worldParent, self.moduleNode)
         return worldParent

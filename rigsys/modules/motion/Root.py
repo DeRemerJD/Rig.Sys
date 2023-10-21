@@ -11,15 +11,15 @@ import maya.cmds as cmds
 class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, *args, ctrlShapes="circle", ctrlScale=[1.0, 1.0, 1.0], addOffset=True, **kwargs) -> None:
+    def __init__(self, *args, side="", label="", ctrlShapes="circle", ctrlScale=[1.0, 1.0, 1.0], addOffset=True, **kwargs) -> None:
         """Initialize the module."""
-        super().__init__(args, kwargs)
+        super().__init__(args, kwargs, side=side, label=label)
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
         self.ctrlScale = ctrlScale
 
         self.proxies = {
-            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="M", label="Root")
+            "Root": proxy.Proxy(position=[0, 0, 0], rotation=[0, 0, 0], side="M", label="Root", name="Base")
         }
 
     def buildProxies(self):
@@ -28,9 +28,25 @@ class Root(motionBase.MotionModuleBase):
 
     def buildModule(self) -> None:
         """Run the module."""
-        # Build overall structure
+        print("DEBUGGING. . .")
+        print(self.side)
+        print(self.label)
+        print(self.ctrlShapes)
+        print(self.ctrlScale)
+        print(self.addOffset)
+
+        # MAKE MODULE NODES
+        self.moduleHierarchy()
+
+        # Make Plug Transforms
+        self.plugParent = self.createPlugParent()
+        self.worldParent = self.createWorldParent()
+
+        # Get Proxy pos / rot values
         proxyPosition = self.proxies["Root"].position
-        # Checking if the vars are carrying over.
+        proxyRotation = self.proxies["Root"].rotation
+
+        # CHECK: TODO: Delete if SIDE and LABEL are properly generated.
         cmds.createNode('transform', n=self.side + "_" + self.label)
 
         # Structure
@@ -57,4 +73,6 @@ class Root(motionBase.MotionModuleBase):
                 node=offsetCtrl, shape=self.ctrlShapes, scale=offsetScale
                 )
             offsetCtrlObj.giveCtrlShape()
+
         cmds.xform(rootPar, ws=True, t=proxyPosition)
+        cmds.xform(rootPar, ws=True, ro=proxyRotation)

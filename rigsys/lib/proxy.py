@@ -27,3 +27,6 @@ class Proxy:
         if self.parent:
             parent = "{}_{}_{}_proxy".format(self.side, self.label, self.parent)
             cmds.parent(prx, parent)
+        if self.plug:
+            proxyModule = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
+            cmds.parent(proxyModule, "proxies")

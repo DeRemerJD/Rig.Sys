@@ -3,10 +3,18 @@ import maya.cmds as cmds
 import pymel.core as pm
 import maya.OpenMaya as om
 
-def createJoint(jointName):
-    cmds.createNode("joint", n=jointName)
+# Creates a joint; with flags for mirroring.
+def createJoint(jointName, position=[0.0, 0.0, 0.0], rotation=[0.0, 0.0, 0.0],
+                mirrorPosition=False, mirrorRotation=False, freeze=False):
+    joint = cmds.createNode("joint", n=jointName)
+    cmds.xform(joint, ws=True, t=position)
+    cmds.xform(joint, ws=True, ro=rotation)
+    mirrorJoints(joint, mirrorPosition, mirrorRotation)
+    if freeze:
+        cmds.makeIdentity(joint, a=True)
+    return joint
     
-
+# Aiming notes to one target.
 def aim(nodes=[], target=[], aimAxis="+x", upAxis="-z", upObj=None, 
         vector="-z", upType="object", objRot=None, match=False,
         rotateOrder="xyz"):
@@ -74,6 +82,7 @@ def aim(nodes=[], target=[], aimAxis="+x", upAxis="-z", upObj=None,
             for node in nodes[1:]:
                 cmds.setAttr('{0}.r{1}'.format(node,matchAx),matchVal)
 
+# Aim a series of nodes down a chain.
 def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None, 
         vector="-z", upType="object", objRot=None, rotateOrder="xyz"):
     dontExist = []
@@ -129,7 +138,8 @@ def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None,
         if childs:
             cmds.parent(childs, targets[i])    
 
-def mirrorJoints(joints, position=True, rotation=True):
+# Basic mirroring for the YZ plane. TODO: add other mirroring types.
+def mirrorJoints(joints, position=True, rotation=True, freeze=False):
     if type(joints) is not list:
         joints = [joints]
     
@@ -142,6 +152,8 @@ def mirrorJoints(joints, position=True, rotation=True):
             ro[0] = ro[0]+180
             ro[1] = ro[1]*-1
             ro[2] = ro[2]*-1
+        if freeze:
+            cmds.makeIdentity
 
 
 #Function that takes a string vector and returns the proper numerical vector.

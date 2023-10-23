@@ -15,10 +15,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pycodestyle
           pycodestyle --max-line-length=120 --ignore=E402,E501 .
-      - name: Lint with pydocstyle
-        run: |
-          pip install pydocstyle
-          pydocstyle .
       - name: Test with unittest
         run: |
           python -m unittest

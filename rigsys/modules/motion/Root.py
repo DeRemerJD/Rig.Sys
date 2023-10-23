@@ -11,10 +11,14 @@ import maya.cmds as cmds
 class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, *args, side="", label="", ctrlShapes="circle", ctrlScale=[1.0, 1.0, 1.0], addOffset=True,
+    def __init__(self, *args, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
                  **kwargs) -> None:
         """Initialize the module."""
         super().__init__(args, kwargs, side=side, label=label)
+
+        if ctrlScale is None:
+            ctrlScale = [1.0, 1.0, 1.0]
+
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
         self.ctrlScale = ctrlScale

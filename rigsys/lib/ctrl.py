@@ -5,14 +5,22 @@ import maya.cmds as cmds
 class Ctrl:
     """Class to hold information on a control."""
 
-    def __init__(self, node: str = "", shape: str = "circle", scale: list = [1.0, 1.0, 1.0],
-                 orient: list = [0.0, 0.0, 0.0], offset: list = [0.0, 0.0, 0.0],) -> None:
+    def __init__(self, node: str = "", shape: str = "circle", scale: list = None,
+                 orient: list = None, offset: list = None) -> None:
         """Initialize the control."""
         # Allowed shapes are
         # circle
         # square
         # box
         # sphere
+
+        if scale is None:
+            scale = [1.0, 1.0, 1.0]
+        if orient is None:
+            orient = [0.0, 0.0, 0.0]
+        if offset is None:
+            offset = [0.0, 0.0, 0.0]
+
         self.shape = shape
         self.node = node
         self.scale = scale

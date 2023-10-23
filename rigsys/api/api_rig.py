@@ -133,7 +133,7 @@ class Rig:
         # TODO: Mirroring
 
     def buildRigHierarchy(self):
-
+        """Build the rig hierarchy."""
         self.motionNodes = cmds.createNode("transform", n="modules")
         self.geometryNodes = cmds.createNode("transform", n="geometry")
         self.skeletonNodes = cmds.createNode("transform", n="skeleton")

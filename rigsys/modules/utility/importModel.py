@@ -1,5 +1,6 @@
 """Import model utility module."""
 
+import logging
 import os
 
 import rigsys.modules.utility.utilityBase as utilityBase
@@ -7,13 +8,16 @@ import rigsys.modules.utility.utilityBase as utilityBase
 import maya.cmds as cmds
 
 
+logger = logging.getLogger(__name__)
+
+
 class ImportModel(utilityBase.UtilityModuleBase):
     """Import model utility module."""
 
-    def __init__(self, rig, name: str = "", buildOrder: int = 3000, isMuted: bool = False, filePath: str = "",
-                 underGroup: str = None) -> None:
+    def __init__(self, rig, label: str = "", buildOrder: int = 3000, isMuted: bool = False,
+                 filePath: str = "", underGroup: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig, name, buildOrder, isMuted)
+        super().__init__(rig, label, buildOrder, isMuted, mirror)
 
         self.filePath = filePath
         self.underGroup = underGroup
@@ -40,7 +44,7 @@ class ImportModel(utilityBase.UtilityModuleBase):
         rootNodes = []
         for node in newNodes:
             if not cmds.objExists(node):
-                print(f"node does not exist: {node}")
+                logger.warning(f"node does not exist: {node}")
                 continue
 
             parent = cmds.listRelatives(node, p=True)
@@ -55,9 +59,9 @@ class ImportModel(utilityBase.UtilityModuleBase):
             underGroup = self.underGroup
 
             if not cmds.objExists(self.underGroup):
-                underGroup = cmds.group(n=self.underGroup, em=True)
+                underGroup = cmds.createNode("transform", n=self.underGroup)
                 cmds.parent(underGroup, self._rig.rigNode)
 
         for node in rootNodes:
-            print(f"Parenting {node} under {underGroup}")
+            logger.info(f"Parenting {node} under {underGroup}")
             cmds.parent(node, underGroup)

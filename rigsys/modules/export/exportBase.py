@@ -8,9 +8,10 @@ import rigsys.modules.moduleBase as moduleBase
 class ExportModuleBase(moduleBase.ModuleBase):
     """Base class for export modules."""
 
-    def __init__(self, rig, exportPath: str, name: str = "", buildOrder: int = 5000, isMuted: bool = False) -> None:
+    def __init__(self, rig, exportPath: str, label: str = "", buildOrder: int = 5000,
+                 isMuted: bool = False, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig=rig, name=name, buildOrder=buildOrder, isMuted=isMuted)
+        super().__init__(rig=rig, label=label, buildOrder=buildOrder, isMuted=isMuted, mirror=mirror)
 
         self.exportPath = exportPath
 
@@ -21,7 +22,6 @@ class ExportModuleBase(moduleBase.ModuleBase):
             self.fullExportPath = self.exportPath
         else:
             self.fullExportPath = os.path.join(self.exportPath, self.fileName + self.extension)
-
 
     @staticmethod
     def checkIfExportPathIsFile(path: str) -> bool:

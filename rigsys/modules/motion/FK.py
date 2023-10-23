@@ -12,7 +12,9 @@ class FK(motionBase.MotionModuleBase):
         super().__init__(args, kwargs)
 
     def buildProxies(self):
+        """Build the proxies for the module."""
         return super().buildProxies()
 
     def buildModule(self):
+        """Run the module."""
         return super().buildModule()

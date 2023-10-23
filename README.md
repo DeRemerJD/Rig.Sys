@@ -28,3 +28,24 @@ import rigsys.test.testRunner as testRunner
 
 testRunner.runTests()
 ```
+
+## Motion module parenting
+
+Motion modules can be parented to other motion modules. This is done by setting the `parent` attribute on the module to the name of the parent module. If the name of the parent module is not found, an error will be raised when the character is built.
+
+**IMPORTANT: Parent modules will not inherently be built before children.** If a child module depends on something in the parent module being built, you need to make sure the parent module is built first by setting the `buildOrder` attribute.
+
+## Motion module mirroring
+
+To set a motion module to be mirrored, set the `mirror` attribute to `True` on the module. This will cause the module to be mirrored when the character is built.
+
+**IMPORTANT: Children of a mirrored module are not automatically mirrored,** the user must set the `mirror` attribute on each child module they wish to be mirrored.
+
+Example:
+
+- `M_Spine` (not mirrored)
+  - `L_Arm` (mirrored)
+    - `L_Hand` (mirrored)
+    - `L_Watch` (not mirrored)
+  - `R_Arm` (created by mirroring `L_Arm`)
+    - `R_Hand` (created by mirroring `L_Hand`)

@@ -3,7 +3,10 @@
 
 import os
 import shutil
+import logging
 import sys
+
+logger = logging.getLogger(__name__)
 
 # if you have some packages that you often reload, you can put them here,
 # and they will get reloaded if "packages" attribute is not explicitly stated
@@ -14,7 +17,7 @@ def unloadPackages(silent=True, packages=None):
     """Unload all modules in the given packages.
 
     Args:
-        silent (bool, optional): Whether to print out the modules that are being unloaded. Defaults to True.
+        silent (bool, optional): Whether to log the modules that are being unloaded. Defaults to True.
         packages (list, optional): List of packages to unload. Defaults to "rigsys".
     """
     if packages is None:
@@ -33,13 +36,13 @@ def unloadPackages(silent=True, packages=None):
             if sys.modules[moduleToReload] is not None:
                 del (sys.modules[moduleToReload])
                 if not silent:
-                    print(f"Unloaded: {moduleToReload}")
+                    logger.debug(f"Unloaded: {moduleToReload}")
 
         except KeyError:
             if silent:
                 pass
             else:
-                print(f"Could not unload: {moduleToReload}")
+                logger.warning(f"Could not unload: {moduleToReload}")
 
 
 def nukePycFiles(folderPath=None, verbose=True):
@@ -47,7 +50,7 @@ def nukePycFiles(folderPath=None, verbose=True):
 
     Args:
         folderPath: The path to the folder to remove the .pyc files from.
-        verbose: If True, print the names of the files removed.
+        verbose: If True, log the names of the files removed.
     """
     if folderPath is None:
         folderPath = os.path.join(os.path.dirname(__file__), os.pardir)
@@ -57,9 +60,9 @@ def nukePycFiles(folderPath=None, verbose=True):
             if file.endswith(".pyc") or file.endswith(".bak"):
                 os.remove(os.path.join(root, file))
                 if verbose:
-                    print(f"Removed {os.path.abspath(os.path.join(root, file))}")
+                    logger.info(f"Removed {os.path.abspath(os.path.join(root, file))}")
         for dirName in dirs:
             if dirName.startswith("__pycache__") or dirName.startswith(".pytest_cache"):
                 shutil.rmtree(os.path.join(root, dirName))
                 if verbose:
-                    print(f"Removed {os.path.abspath(os.path.join(root, dirName))}")
+                    logger.info(f"Removed {os.path.abspath(os.path.join(root, dirName))}")

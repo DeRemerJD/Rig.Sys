@@ -1,11 +1,12 @@
 """Rig API module."""
 
+import logging
+
 import maya.cmds as cmds
 
 import rigsys.modules.motion as motion
-import rigsys.modules.deformer as deformer
-import rigsys.modules.utility as utility
-import rigsys.modules.export as export
+
+logger = logging.getLogger(__name__)
 
 
 class Rig:
@@ -21,6 +22,58 @@ class Rig:
         self.exportModules = {}
 
         self.rigNode = None
+        self.motionNodes = None
+        self.geometryNodes = None
+        self.skeletonNodes = None
+        self.deformerNodes = None
+        self.utilityNodes = None
+        self.proxyNodes = None
+
+    def preBuild(self) -> list:
+        """Run any pre-build steps.
+
+        Returns:
+            list: A list of all modules that need to be built.
+        """
+        allModules: list = []
+        allModules.extend(self.motionModules.values())
+        allModules.extend(self.deformerModules.values())
+        allModules.extend(self.utilityModules.values())
+        allModules.extend(self.exportModules.values())
+
+        # Mirroring - motion modules
+        newMotionModules = []
+        for module in self.motionModules.values():
+            if module.mirror:
+                mirroredModule = module.doMirror()
+                if mirroredModule is not None:
+                    newMotionModules.append(mirroredModule)
+
+        for module in newMotionModules:
+            self.motionModules[module.getFullName()] = module
+            allModules.append(module)
+
+        # Mirroring - utility modules
+        newUtilityModules = []
+        for module in self.utilityModules.values():
+            if module.mirror:
+                mirroredModule = module.doMirror()
+                if mirroredModule is not None:
+                    newUtilityModules.append(mirroredModule)
+
+        for module in newUtilityModules:
+            self.utilityModules[module.getFullName()] = module
+            allModules.append(module)
+
+        # Parenting
+        for module in allModules:
+            if module.parent is not None:
+                self.setParent(module.getFullName(), module.parent)
+
+        # Sort by build order
+        allModules.sort(key=lambda x: x.buildOrder)
+
+        return allModules
 
     def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False) -> bool:
         """Build the rig up to the specified level.
@@ -37,17 +90,12 @@ class Rig:
 
         # Create a group node for the rig
         if not cmds.objExists(self.name):
-            self.rigNode = cmds.group(n=self.name, em=True)
+            self.rigNode = cmds.createNode("transform", n=self.name)
+            self.buildRigHierarchy()
         else:
             self.rigNode = self.name
 
-        allModules: list = []
-        allModules.extend(self.motionModules.values())
-        allModules.extend(self.deformerModules.values())
-        allModules.extend(self.utilityModules.values())
-        allModules.extend(self.exportModules.values())
-
-        allModules.sort(key=lambda x: x.buildOrder)
+        allModules = self.preBuild()
 
         for module in allModules:
             if buildLevel != -1 and module.buildOrder > buildLevel:
@@ -56,10 +104,15 @@ class Rig:
             if module.isMuted:
                 continue
 
+            logger.info(f"Building module {module.getFullName()}...")
+
             if isinstance(module, motion.MotionModuleBase):
                 module.run(buildProxiesOnly=buildProxiesOnly)
+
             else:
                 module.run()
+
+            logger.info(f"Module {module.getFullName()} built.")
 
         # TODO: Do something with the success variable
         return success
@@ -74,26 +127,22 @@ class Rig:
 
         childModule = self.motionModules[childModuleName]
         parentModule = self.motionModules[parentModuleName]
-        childModule.parent = parentModule.name
+        childModule.parent = parentModule.getFullName()
         childModule._parentObject = parentModule
 
         # TODO: Mirroring
 
-    def addMotionModule(self, moduleType, moduleName=""):
-        """Add a motion module to the rig."""
-        if moduleType not in motion.moduleTypes:
-            raise Exception(f"Motion module type {moduleType} does not exist.")
+    def buildRigHierarchy(self):
+        """Build the rig hierarchy."""
+        self.motionNodes = cmds.createNode("transform", n="modules")
+        self.geometryNodes = cmds.createNode("transform", n="geometry")
+        self.skeletonNodes = cmds.createNode("transform", n="skeleton")
+        self.deformerNodes = cmds.createNode("transform", n="deformers")
+        self.utilityNodes = cmds.createNode("transform", n="utilities")
+        self.proxyNodes = cmds.createNode("transform", n="proxies")
 
-        if moduleName == "":
-            moduleName = moduleType
+        coreNodes = [self.motionNodes, self.geometryNodes,
+                     self.skeletonNodes, self.deformerNodes,
+                     self.utilityNodes, self.proxyNodes]
 
-        if moduleName in self.motionModules:
-            raise Exception(f"Motion module {moduleName} already exists.")
-
-        moduleClass = motion.moduleTypes[moduleType]
-        module = moduleClass(self, moduleName)
-        self.motionModules[moduleName] = module
-
-        # TODO: Sides, mirroring
-
-        return module
+        cmds.parent(coreNodes, self.rigNode)

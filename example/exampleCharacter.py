@@ -8,6 +8,7 @@ import os
 
 import rigsys as rigsys
 import rigsys.api.api_rig as api_rig
+import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
 import rigsys.modules.export as export
 
@@ -23,26 +24,57 @@ class ExampleCharacter(api_rig.Rig):
         super().__init__(name)
 
         self.exampleCharacterFolder = os.path.abspath(os.path.join(rigsys.__file__, os.pardir, os.pardir, "example"))
-        print(f"self.exampleCharacterFolder: {self.exampleCharacterFolder}")
-        print(os.path.exists(self.exampleCharacterFolder))
 
-        self.motionModules = {}
-        self.deformerModules = {}
-        self.utilityModules = {
-            "ImportModel": utility.ImportModel(
+        self.motionModules = {
+            "M_Root": motion.TestMotionModule(
                 self,
-                filePath=os.path.join(self.exampleCharacterFolder, "cube.mb"),
-                underGroup=""
+                side="M",
+                name="Root",
+            ),
+            "M_Spine": motion.TestMotionModule(
+                self,
+                side="M",
+                name="Spine",
+                parent="M_Root",
+            ),
+            "L_Arm": motion.TestMotionModule(
+                self,
+                side="L",
+                name="Arm",
+                mirror=True,
+                parent="M_Spine",
+            ),
+            "L_Hand": motion.TestMotionModule(
+                self,
+                side="L",
+                name="Hand",
+                mirror=True,
+                parent="L_Arm",
+            ),
+            "L_Watch": motion.TestMotionModule(
+                self,
+                side="L",
+                name="Watch",
+                parent="L_Arm",
             ),
         }
+
+        self.deformerModules = {}
+        self.utilityModules = {
+            # "ImportModel": utility.ImportModel(
+            #     self,
+            #     filePath=os.path.join(self.exampleCharacterFolder, "cube.mb"),
+            #     underGroup=""
+            # ),
+        }
         self.exportModules = {
-            "FBXExport": export.FBXExport(
-                self,
-                exportPath=os.path.join(self.exampleCharacterFolder, "ExampleRig_export.fbx"),
-                exportAll=True,
-                exportSelected=False,
-                nodesToExport=None,
-            ),
+            # "FBXExport": export.FBXExport(
+            #     self,
+            #     exportPath=os.path.join(self.exampleCharacterFolder, "ExampleRig_export.fbx"),
+            #     exportAll=True,
+            #     exportSelected=False,
+            #     nodesToExport=None,
+            # ),
         }
 
 

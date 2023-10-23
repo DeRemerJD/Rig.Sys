@@ -1,25 +1,33 @@
 """Base class for motion modules."""
 
-
 import rigsys.modules.moduleBase as moduleBase
+
+import maya.cmds as cmds
 
 
 class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules."""
 
-    def __init__(self, rig, name: str = "", buildOrder: int = 2000, isMuted: bool = False,
-                 parent: str = None) -> None:
+    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
+                 isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig=rig, name=name, buildOrder=buildOrder, isMuted=isMuted)
+        super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
+                         mirror=mirror)
 
-        self.plug: str = ""
+        self.plug: dict = {}
+        # Key: label, Value: Node
         self.socket: dict = {}
 
+        self.proxies: dict = {}
         self.parent = parent
         self._parentObject = None
 
-        if self.parent is not None:
-            self._rig.setParent(self, self.parent)
+        # Module Based Constructors
+        self.moduleNode = None
+        self.moduleUtilities = None
+        # self.moduleRig = None
+        self.plugParent = None
+        self.worldParent = None
 
     def run(self, buildProxiesOnly: bool = False):
         """Run the module."""
@@ -34,8 +42,46 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def buildProxies(self):
         """Build the proxies for the module."""
-        pass
+        for proxy in self.proxies.values():
+            proxy.build()
 
     def buildModule(self):
         """Build the rest of the module."""
         pass
+
+    def doMirror(self):
+        """Mirror the module."""
+        # TODO: Implement mirror
+        return super().doMirror()
+
+    def parentToRootNode(self, node):
+        """Parent the given node under the rig node."""
+        cmds.parent(node, self._rig.rigNode)
+
+    def moduleHierarchy(self):
+        """Create the module hierarchy."""
+        self.moduleNode = cmds.createNode("transform", n="{}_{}_MODULE".format(self.side, self.label))
+        self.moduleUtilities = cmds.createNode("transform", n="{}_{}_utilities".format(self.side, self.label))
+        # self.moduleRig = cmds.createNode("transform", "{}_{}_rig".format(self.side, self.label))
+        cmds.parent(self.moduleUtilities, self.moduleNode)
+        cmds.parent(self.moduleNode, "modules")
+
+    def createPlugParent(self, plug=None, position=None, rotation=None):
+        """Create a plug parent for the module."""
+        plugParent = cmds.createNode("transform", n="{}_{}_plugParent".format(self.side, self.label))
+        if plug:
+            cmds.xform(plugParent, ws=True, t=cmds.xform(plug, q=True, ws=True, t=True))
+            cmds.xform(plugParent, ws=True, ro=cmds.xform(plug, q=True, ws=True, ro=True))
+        if position:
+            cmds.xform(plugParent, ws=True, t=position)
+        if rotation:
+            cmds.xform(plugParent, ws=True, ro=rotation)
+
+        cmds.parent(plugParent, self.moduleNode)
+        return plugParent
+
+    def createWorldParent(self):
+        """Create a world parent for the module."""
+        worldParent = cmds.createNode("transform", n="{}_{}_worldParent".format(self.side, self.label))
+        cmds.parent(worldParent, self.moduleNode)
+        return worldParent

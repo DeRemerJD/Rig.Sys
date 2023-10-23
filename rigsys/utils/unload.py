@@ -1,7 +1,10 @@
 """Utility function to unload modules for use in Maya."""
 
 
+import logging
 import sys
+
+logger = logging.getLogger(__name__)
 
 # if you have some packages that you often reload, you can put them here,
 # and they will get reloaded if "packages" attribute is not explicitly stated
@@ -31,10 +34,10 @@ def unloadPackages(silent=True, packages=None):
             if sys.modules[moduleToReload] is not None:
                 del (sys.modules[moduleToReload])
                 if not silent:
-                    print(f"Unloaded: {moduleToReload}")
+                    logger.debug(f"Unloaded: {moduleToReload}")
 
         except KeyError:
             if silent:
                 pass
             else:
-                print(f"Could not unload: {moduleToReload}")
+                logger.warning(f"Could not unload: {moduleToReload}")

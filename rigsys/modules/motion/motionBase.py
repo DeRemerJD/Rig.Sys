@@ -1,8 +1,8 @@
 """Base class for motion modules."""
-import maya.cmds as cmds
-
 
 import rigsys.modules.moduleBase as moduleBase
+
+import maya.cmds as cmds
 
 
 class MotionModuleBase(moduleBase.ModuleBase):
@@ -28,9 +28,6 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.plugParent = None
         self.worldParent = None
 
-        if self.parent is not None:
-            self._rig.setParent(self, self.parent)
-
     def run(self, buildProxiesOnly: bool = False):
         """Run the module."""
         # Build proxy step
@@ -55,6 +52,10 @@ class MotionModuleBase(moduleBase.ModuleBase):
         """Mirror the module."""
         # TODO: Implement mirror
         return super().doMirror()
+
+    def parentToRootNode(self, node):
+        """Parent the given node under the rig node."""
+        cmds.parent(node, self._rig.rigNode)
     
     def moduleHierarchy(self):
         self.moduleNode = cmds.createNode("transform", n="{}_{}_MODULE".format(self.side, self.label))

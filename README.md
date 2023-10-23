@@ -16,19 +16,6 @@ Modular rigging system for Autodesk Maya.
 Characters are stored as Python files that subclass from the `Character` class. Data such as proxy translations and skin
 weights are stored in JSON files.
 
-## Unit testing
-
-The rigsys package provides unit tests and a test runner that needs to be run within Maya. Copy and paste the following code into the script editor:
-
-```python
-import rigsys.utils.unload as unload
-unload.unloadPackages(packages=["rigsys"])
-
-import rigsys.test.testRunner as testRunner
-
-testRunner.runTests()
-```
-
 ## Motion module parenting
 
 Motion modules can be parented to other motion modules. This is done by setting the `parent` attribute on the module to the name of the parent module. If the name of the parent module is not found, an error will be raised when the character is built.
@@ -49,3 +36,16 @@ Example:
     - `L_Watch` (not mirrored)
   - `R_Arm` (created by mirroring `L_Arm`)
     - `R_Hand` (created by mirroring `L_Hand`)
+
+## Unit testing
+
+The rigsys package provides unit tests and a test runner that needs to be run within Maya. Copy and paste the following code into the script editor:
+
+```python
+import rigsys.utils.unload as unload
+unload.unloadPackages(packages=["rigsys"])
+
+import rigsys.test.testRunner as testRunner
+
+testRunner.runTests()
+```

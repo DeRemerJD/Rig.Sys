@@ -5,11 +5,9 @@ import maya.cmds as cmds
 class Ctrl:
     """Class to hold information on a control."""
 
-    def __init__(self, node: str = "", shape: str = "circle", 
-                scale: list = [1.0, 1.0, 1.0], orient: list = [0.0, 0.0, 0.0], 
-                offset: list = [0.0, 0.0, 0.0]) -> None:
+    def __init__(self, node: str = "", shape: str = "circle", scale: list = [1.0, 1.0, 1.0],
+                 orient: list = [0.0, 0.0, 0.0], offset: list = [0.0, 0.0, 0.0],) -> None:
         """Initialize the control."""
-
         # Allowed shapes are
         # circle
         # square
@@ -21,7 +19,6 @@ class Ctrl:
         self.orient = orient
         self.offset = offset
 
-
     def giveCtrlShape(self):
         """Give the control a shape."""
         shapes, crvNodes = self.curveLibrary(self.shape)
@@ -29,8 +26,7 @@ class Ctrl:
         cmds.delete(crvNodes)
 
     def curveLibrary(self, shape):
-        """
-        This houses the allowed control shapes; by checking the allowedShapes list to
+        """This houses the allowed control shapes; by checking the allowedShapes list to
         verify if the selected type exists. Parse through the list, create a curve,
         parse through the shapes and original curves and rename if necessary.
         """
@@ -106,6 +102,5 @@ class Ctrl:
             cmds.xform(crvNode, r=True, ro=self.orient)
             cmds.xform(crvNode, r=True, t=self.offset)
             cmds.makeIdentity(crvNode, a=True)
-            
 
         return shapes, originalCurveNodes

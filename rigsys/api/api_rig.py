@@ -142,8 +142,7 @@ class Rig:
         self.proxyNodes = cmds.createNode("transform", n="proxies")
 
         coreNodes = [self.motionNodes, self.geometryNodes,
-                     self.skeletonNodes,self.deformerNodes,
-                     self.utilityNodes,self.proxyNodes]
-        
-        cmds.parent(coreNodes, self.rigNode)
+                     self.skeletonNodes, self.deformerNodes,
+                     self.utilityNodes, self.proxyNodes]
 
+        cmds.parent(coreNodes, self.rigNode)

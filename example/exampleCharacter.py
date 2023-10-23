@@ -44,11 +44,18 @@ class ExampleCharacter(api_rig.Rig):
                 mirror=True,
                 parent="M_Spine",
             ),
+            "L_Hand": motion.TestMotionModule(
+                self,
+                side="L",
+                name="Hand",
+                mirror=True,
+                parent="L_Arm",
+            ),
             "L_Watch": motion.TestMotionModule(
                 self,
                 side="L",
                 name="Watch",
-                parent="M_Spine",
+                parent="L_Arm",
             ),
         }
 

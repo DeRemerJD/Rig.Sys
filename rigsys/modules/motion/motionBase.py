@@ -8,10 +8,10 @@ import maya.cmds as cmds
 class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules."""
 
-    def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 2000,
+    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig=rig, name=name, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
+        super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
                          mirror=mirror)
 
         self.plug: dict = {}

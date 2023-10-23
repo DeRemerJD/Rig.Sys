@@ -1,7 +1,5 @@
 """Proxy class for rigsys modules."""
 
-# TODO: @Jacob - at Zubio we had proxies for nurbs, curves, etc. Do we want any of those here?
-
 import copy
 import logging
 
@@ -44,7 +42,6 @@ class Proxy:
             newProxy.side = "L"
 
         # Transform data
-        # TODO: @Jacob, I copied this from the zubio proxies, make sure this is correct
         newProxy.position[0] *= -1
         newProxy.rotation[0] *= -1
         newProxy.rotation[1] *= -1

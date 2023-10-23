@@ -92,8 +92,6 @@ class ModuleBase:
         elif self.side == "R":
             newModule.side = "L"
 
-        # TODO: Parenting
-
         # Proxies
         for key, proxy in self.proxies.items():
             # Don't mirror middle proxies

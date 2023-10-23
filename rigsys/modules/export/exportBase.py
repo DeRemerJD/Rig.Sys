@@ -8,10 +8,10 @@ import rigsys.modules.moduleBase as moduleBase
 class ExportModuleBase(moduleBase.ModuleBase):
     """Base class for export modules."""
 
-    def __init__(self, rig, exportPath: str, name: str = "", label: str = "", buildOrder: int = 5000,
+    def __init__(self, rig, exportPath: str, label: str = "", buildOrder: int = 5000,
                  isMuted: bool = False, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig=rig, name=name, label=label, buildOrder=buildOrder, isMuted=isMuted, mirror=mirror)
+        super().__init__(rig=rig, label=label, buildOrder=buildOrder, isMuted=isMuted, mirror=mirror)
 
         self.exportPath = exportPath
 

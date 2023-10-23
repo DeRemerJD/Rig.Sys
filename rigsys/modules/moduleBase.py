@@ -13,14 +13,13 @@ logger = logging.getLogger(__name__)
 class ModuleBase:
     """Base class for all modules."""
 
-    def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 0,
+    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 0,
                  isMuted: bool = False, mirror: bool = False) -> None:
         """Initialize the module."""
-        self.name: str = name
-        if self.name == "":
-            self.name = type(self).__name__
         self.side = side
         self.label = label
+        if self.label == "":
+            self.label = type(self).__name__
         self.buildOrder: int = buildOrder
         self.dependencies: dict = {}
         self.ctrls: dict = {}
@@ -104,4 +103,4 @@ class ModuleBase:
 
     def getFullName(self):
         """Return the full name of the module."""
-        return f"{self.side}_{self.name}"
+        return f"{self.side}_{self.label}"

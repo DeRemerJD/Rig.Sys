@@ -10,10 +10,10 @@ import maya.cmds as cmds
 class TestMotionModule(motionBase.MotionModuleBase):
     """Test motion module."""
 
-    def __init__(self, rig, name: str = "", side: str = "", label: str = "", buildOrder: int = 2000,
+    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig, name, side, label, buildOrder, isMuted, parent, mirror)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror)
 
         self.proxies = {
             "Proxy1": proxy.Proxy(side="M", label="Proxy1", position=[0, 0, 0]),

@@ -34,7 +34,9 @@ class Ctrl:
         cmds.delete(crvNodes)
 
     def curveLibrary(self, shape):
-        """This houses the allowed control shapes; by checking the allowedShapes list to
+        """Curve library for the control shapes.
+
+        This houses the allowed control shapes; by checking the allowedShapes list to
         verify if the selected type exists. Parse through the list, create a curve,
         parse through the shapes and original curves and rename if necessary.
         """

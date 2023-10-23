@@ -28,9 +28,6 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.plugParent = None
         self.worldParent = None
 
-        if self.parent is not None:
-            self._rig.setParent(self, self.parent)
-
     def run(self, buildProxiesOnly: bool = False):
         """Run the module."""
         # Build proxy step

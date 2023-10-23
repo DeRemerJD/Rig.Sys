@@ -11,10 +11,14 @@ logger = logging.getLogger(__name__)
 class Proxy:
     """Proxy class for rigsys modules."""
 
-    def __init__(self, position=[0.0, 0.0, 0.0], rotation=[0.0, 0.0, 0.0],
-                 side="M", label="", name="", parent=None, upVector=False,
+    def __init__(self, side="M", label="", name="", parent=None, upVector=False, position=None, rotation=None,
                  plug=False) -> None:
         """Initialize the proxy."""
+        if position is None:
+            position = [0.0, 0.0, 0.0]
+        if rotation is None:
+            rotation = [0.0, 0.0, 0.0]
+
         self.position = position
         self.rotation = rotation
         self.side = side

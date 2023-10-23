@@ -2,9 +2,14 @@
 import maya.cmds as cmds
 
 
-def createJoint(jointName, position=[0.0, 0.0, 0.0], rotation=[0.0, 0.0, 0.0], mirrorPosition=False,
+def createJoint(jointName, position=None, rotation=None, mirrorPosition=False,
                 mirrorRotation=False, freeze=False,):
     """Create a joint with the given name, position, and rotation."""
+    if position is None:
+        position = [0.0, 0.0, 0.0]
+    if rotation is None:
+        rotation = [0.0, 0.0, 0.0]
+
     joint = cmds.createNode("joint", n=jointName)
     cmds.xform(joint, ws=True, t=position)
     cmds.xform(joint, ws=True, ro=rotation)

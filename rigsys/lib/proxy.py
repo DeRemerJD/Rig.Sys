@@ -3,26 +3,26 @@
 import copy
 import logging
 
+import maya.cmds as cmds
+
 logger = logging.getLogger(__name__)
 
 
 class Proxy:
     """Proxy class for rigsys modules."""
 
-    def __init__(self, side: str, label: str, position: list = None, rotation: list = None) -> None:
+    def __init__(self, position=[0.0, 0.0, 0.0], rotation=[0.0, 0.0, 0.0],
+                 side="M", label="", name="", parent=None, upVector=False,
+                 plug=False) -> None:
         """Initialize the proxy."""
-        self.side = side
-        self.label = label
-        if position is None:
-            position = [0, 0, 0]
-        if rotation is None:
-            rotation = [0, 0, 0]
         self.position = position
         self.rotation = rotation
-
-    def build(self):
-        """Build the proxy."""
-        pass
+        self.side = side
+        self.label = label
+        self.name = name
+        self.parent = parent
+        self.upVector = upVector
+        self.plug = plug
 
     def getFullName(self):
         """Return the full name of the proxy."""
@@ -48,3 +48,15 @@ class Proxy:
         newProxy.rotation[2] *= -1
 
         return newProxy
+
+    def build(self):
+        """Build the proxy."""
+        prx = cmds.createNode("joint", n="{}_{}_{}_proxy".format(self.side, self.label, self.name))
+
+        cmds.xform(prx, ws=True, t=self.position, ro=self.rotation)
+        if self.parent:
+            parent = "{}_{}_{}_proxy".format(self.side, self.label, self.parent)
+            cmds.parent(prx, parent)
+        if self.plug:
+            proxyModule = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
+            cmds.parent(proxyModule, "proxies")

@@ -22,6 +22,12 @@ class Rig:
         self.exportModules = {}
 
         self.rigNode = None
+        self.motionNodes = None
+        self.geometryNodes = None
+        self.skeletonNodes = None
+        self.deformerNodes = None
+        self.utilityNodes = None
+        self.proxyNodes = None
 
     def preBuild(self) -> list:
         """Run any pre-build steps.
@@ -84,7 +90,8 @@ class Rig:
 
         # Create a group node for the rig
         if not cmds.objExists(self.name):
-            self.rigNode = cmds.group(n=self.name, em=True)
+            self.rigNode = cmds.createNode("transform", n=self.name)
+            self.buildRigHierarchy()
         else:
             self.rigNode = self.name
 
@@ -122,3 +129,21 @@ class Rig:
         parentModule = self.motionModules[parentModuleName]
         childModule.parent = parentModule.getFullName()
         childModule._parentObject = parentModule
+
+        # TODO: Mirroring
+
+    def buildRigHierarchy(self):
+
+        self.motionNodes = cmds.createNode("transform", n="modules")
+        self.geometryNodes = cmds.createNode("transform", n="geometry")
+        self.skeletonNodes = cmds.createNode("transform", n="skeleton")
+        self.deformerNodes = cmds.createNode("transform", n="deformers")
+        self.utilityNodes = cmds.createNode("transform", n="utilities")
+        self.proxyNodes = cmds.createNode("transform", n="proxies")
+
+        coreNodes = [self.motionNodes, self.geometryNodes,
+                     self.skeletonNodes,self.deformerNodes,
+                     self.utilityNodes,self.proxyNodes]
+        
+        cmds.parent(coreNodes, self.rigNode)
+

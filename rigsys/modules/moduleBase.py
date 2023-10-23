@@ -5,6 +5,8 @@ import logging
 
 import rigsys.utils.stringUtils as stringUtils
 
+import maya.cmds as cmds
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,6 @@ class ModuleBase:
         self.name: str = name
         if self.name == "":
             self.name = type(self).__name__
-
         self.side = side
         self.label = label
         self.buildOrder: int = buildOrder
@@ -26,7 +27,6 @@ class ModuleBase:
         self.isMuted: bool = isMuted
         self.isRun: bool = False
         self.mirror = mirror
-        self._mirrorObject = None  # FIXME: We may not need this
 
         self._rig = rig
 
@@ -104,9 +104,4 @@ class ModuleBase:
 
     def getFullName(self):
         """Return the full name of the module."""
-        # TODO: @Jacob, is this the behavior we want?
-        # I feel like part of the problem is that I'm still not 100% sure what self.label is for
-        if self.label == "":
-            return f"{self.side}_{self.name}"
-        else:
-            return f"{self.side}_{self.label}_{self.name}"
+        return f"{self.side}_{self.name}"

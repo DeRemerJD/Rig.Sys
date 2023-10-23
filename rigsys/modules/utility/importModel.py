@@ -59,7 +59,7 @@ class ImportModel(utilityBase.UtilityModuleBase):
             underGroup = self.underGroup
 
             if not cmds.objExists(self.underGroup):
-                underGroup = cmds.group(n=self.underGroup, em=True)
+                underGroup = cmds.createNode("transform", n=self.underGroup)
                 cmds.parent(underGroup, self._rig.rigNode)
 
         for node in rootNodes:

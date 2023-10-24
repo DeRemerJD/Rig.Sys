@@ -45,7 +45,7 @@ def unloadPackages(silent=True, packages=None):
                 logger.warning(f"Could not unload: {moduleToReload}")
 
 
-def nukePycFiles(folderPath=None, verbose=True):
+def nukePycFiles(folderPath=None, verbose=False):
     """Remove all .pyc files in a folder.
 
     Args:

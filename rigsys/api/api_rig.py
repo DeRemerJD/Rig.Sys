@@ -68,7 +68,7 @@ class Rig:
             allModules.append(module)
 
         # Parenting
-        for module in allModules:
+        for module in self.motionModules.values():
             if module.parent is not None:
                 self.setParent(module.getFullName(), module.parent)
 

@@ -11,7 +11,7 @@ class FBXExport(exportBase.ExportModuleBase):
     """FBX Export Module."""
 
     def __init__(self, rig, exportPath: str, label: str = "", buildOrder: int = 5000,
-                 isMuted: bool = False, exportAll: bool = True, exportSelected: bool = False,
+                 isMuted: bool = False, exportAll: bool = False, exportSelected: bool = False,
                  nodesToExport: list = None, mirror: bool = False) -> None:
         """Initialize the module.
 
@@ -33,7 +33,8 @@ class FBXExport(exportBase.ExportModuleBase):
         self.exportSelected = exportSelected
 
         if nodesToExport is None:
-            self.nodesToExport = []
+            nodesToExport = []
+        self.nodesToExport = nodesToExport
 
     def run(self) -> None:
         """Run the module."""

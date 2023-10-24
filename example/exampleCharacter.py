@@ -84,7 +84,7 @@ class ExampleCharacter(api_rig.Rig):
 
 if __name__ == "__main__":
     character = ExampleCharacter()
-    # character.build()
+    proxyDataFile = os.path.join(character.exampleCharacterFolder, "exampleCharacter_proxies.json")
 
-    proxyFile = os.path.join(character.exampleCharacterFolder, "exampleCharacter_proxies.json")
-    character.saveProxyTranslations(proxyFile)
+    character.build(usedSavedProxyData=True, proxyDataFile=proxyDataFile)
+    # character.saveProxyTranslations(proxyDataFile)

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 
 import maya.cmds as cmds
 
@@ -76,18 +77,32 @@ class Rig:
 
         return allModules
 
-    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False) -> bool:
+    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True,
+              proxyDataFile: str = "") -> bool:
         """Build the rig up to the specified level.
 
         Args:
             buildLevel (int, optional): The level to which the rig should be built. Defaults to -1, which means all
                 modules will be built.
             buildProxiesOnly (bool, optional): If True, only the proxies will be built. Defaults to False.
+            useSavedProxyData (bool, optional): If True, the proxy data will be loaded from a file. Defaults to True.
+            proxyDataFile (str, optional): The file to load the proxy data from. Defaults to "".
 
         Returns:
             bool: True if successful, False otherwise.
         """
         success = True
+
+        proxyData = None
+
+        if usedSavedProxyData:
+            if proxyDataFile == "":
+                raise Exception("No proxy data file specified.")
+            elif not os.path.exists(proxyDataFile):
+                raise Exception(f"Proxy data file {proxyDataFile} does not exist.")
+            else:
+                with open(proxyDataFile, "r") as file:
+                    proxyData = json.load(file)
 
         cmds.file(new=True, force=True)
 
@@ -110,7 +125,8 @@ class Rig:
             logger.info(f"Building module {module.getFullName()}...")
 
             if isinstance(module, motion.MotionModuleBase):
-                module.run(buildProxiesOnly=buildProxiesOnly)
+                module.run(buildProxiesOnly=buildProxiesOnly, usedSavedProxyData=usedSavedProxyData,
+                           proxyData=proxyData)
 
             else:
                 module.run()
@@ -151,6 +167,9 @@ class Rig:
     def saveProxyTranslations(self, fileName):
         """Save proxy translations to a given file."""
         proxyData = {}
+
+        # Ensure we get proxies from mirrored modules as well
+        self.preBuild()
 
         for module in self.motionModules.values():
             proxyData[module.getFullName()] = {}

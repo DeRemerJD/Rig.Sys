@@ -126,3 +126,5 @@ You can also provide a pattern to the `runTests()` function to only run tests th
 ```python
 testRunner.runTests(pattern="test_rig")
 ```
+
+Based on the naming convention of the tests, you can single out specific types of modules (i.e. "test_export" or "test_motion") to run all tests of that module type.

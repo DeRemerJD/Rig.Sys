@@ -1,20 +1,19 @@
 """Run all tests in the test folder."""
 
-import io
 import os
-from unittest import TestLoader, TextTestRunner
+import pytest
+
+from rigsys.utils.unload import unloadPackages, nukePycFiles
 
 
-def runTests(pattern="test_*.py"):
+def runTests(pattern="test_"):
     """Run all tests in the test folder."""
+    unloadPackages(silent=False, packages=["rigsys"])
+    nukePycFiles()
+
     testPath = os.path.dirname(__file__)
 
-    testSuite = TestLoader().discover(testPath, pattern=pattern)
-    stream = io.StringIO()
-    runner = TextTestRunner(stream=stream, verbosity=2)
-    runner.run(testSuite)
-    print("\n\n============================== RESULTS: ==============================\n")
-    print(stream.getvalue())
+    pytest.main([testPath, "-k", pattern])
 
 
 if __name__ == "__main__":

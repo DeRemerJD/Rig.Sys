@@ -77,7 +77,7 @@ class Rig:
 
         return allModules
 
-    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True,
+    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False, usedSavedProxyData: bool = False,
               proxyDataFile: str = "") -> bool:
         """Build the rig up to the specified level.
 

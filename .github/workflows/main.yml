@@ -1,4 +1,4 @@
-name: python-unittest
+name: python-lint
 
 on:
   pull_request:

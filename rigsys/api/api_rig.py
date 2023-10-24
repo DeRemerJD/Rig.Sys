@@ -133,8 +133,6 @@ class Rig:
         childModule.parent = parentModule.getFullName()
         childModule._parentObject = parentModule
 
-        # TODO: Mirroring
-
     def buildRigHierarchy(self):
         """Build the rig hierarchy."""
         self.motionNodes = cmds.createNode("transform", n="modules")

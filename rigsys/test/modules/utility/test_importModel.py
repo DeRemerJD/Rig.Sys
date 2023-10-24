@@ -47,7 +47,7 @@ class TestImportModel(unittest.TestCase):
             ),
         }
 
-        self.rig.build()
+        self.rig.build(usedSavedProxyData=False)
 
         self.assertTrue(cmds.objExists("pCube1"))
         nodeParent = cmds.listRelatives("pCube1", parent=True)

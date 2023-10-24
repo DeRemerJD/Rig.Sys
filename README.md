@@ -39,6 +39,31 @@ Example:
 
 ## Unit testing
 
+Unit testing for rigsys is done using [pytest](https://docs.pytest.org/en/7.4.x/). You can install it automatically by running the following script within Maya.
+
+```python
+import subprocess
+import sys
+
+mayapyExecutable = os.path.dirname(sys.executable)
+mayapyExecutable = os.path.join(mayapyExecutable, "mayapy.exe")
+
+def pipInstallPackage(packageName) -> bool:
+    """Use pip to install a package."""
+    command = [
+        mayapyExecutable, "-m", "pip", "install", "--upgrade", "--force-reinstall", packageName
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(result.stdout)
+        return True
+    else:
+        print(result.stderr)
+        return False
+        
+pipInstallPackage("pytest")
+```
+
 The rigsys package provides unit tests and a test runner that needs to be run within Maya. Copy and paste the following code into the script editor:
 
 ```python

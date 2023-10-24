@@ -1,6 +1,8 @@
 """Utility function to unload modules for use in Maya."""
 
 
+import os
+import shutil
 import logging
 import sys
 
@@ -15,7 +17,7 @@ def unloadPackages(silent=True, packages=None):
     """Unload all modules in the given packages.
 
     Args:
-        silent (bool, optional): Whether to print out the modules that are being unloaded. Defaults to True.
+        silent (bool, optional): Whether to log the modules that are being unloaded. Defaults to True.
         packages (list, optional): List of packages to unload. Defaults to "rigsys".
     """
     if packages is None:
@@ -41,3 +43,26 @@ def unloadPackages(silent=True, packages=None):
                 pass
             else:
                 logger.warning(f"Could not unload: {moduleToReload}")
+
+
+def nukePycFiles(folderPath=None, verbose=False):
+    """Remove all .pyc files in a folder.
+
+    Args:
+        folderPath: The path to the folder to remove the .pyc files from.
+        verbose: If True, log the names of the files removed.
+    """
+    if folderPath is None:
+        folderPath = os.path.join(os.path.dirname(__file__), os.pardir)
+
+    for root, dirs, files in os.walk(folderPath):
+        for file in files:
+            if file.endswith(".pyc") or file.endswith(".bak"):
+                os.remove(os.path.join(root, file))
+                if verbose:
+                    logger.info(f"Removed {os.path.abspath(os.path.join(root, file))}")
+        for dirName in dirs:
+            if dirName.startswith("__pycache__") or dirName.startswith(".pytest_cache"):
+                shutil.rmtree(os.path.join(root, dirName))
+                if verbose:
+                    logger.info(f"Removed {os.path.abspath(os.path.join(root, dirName))}")

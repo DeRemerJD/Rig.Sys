@@ -27,8 +27,8 @@ class Root(motionBase.MotionModuleBase):
             "Root": proxy.Proxy(
                 position=[0, 0, 0],
                 rotation=[0, 0, 0],
-                side="M",
-                label="Root",
+                side=self.side,
+                label=self.label,
                 name="Base",
             )
         }

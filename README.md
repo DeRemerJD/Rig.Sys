@@ -37,42 +37,6 @@ Example:
   - `R_Arm` (created by mirroring `L_Arm`)
     - `R_Hand` (created by mirroring `L_Hand`)
 
-## Unit testing
-
-Unit testing for rigsys is done using [pytest](https://docs.pytest.org/en/7.4.x/). You can install it automatically by running the following script within Maya.
-
-```python
-import subprocess
-import sys
-
-mayapyExecutable = os.path.dirname(sys.executable)
-mayapyExecutable = os.path.join(mayapyExecutable, "mayapy.exe")
-
-def pipInstallPackage(packageName) -> bool:
-    """Use pip to install a package."""
-    command = [
-        mayapyExecutable, "-m", "pip", "install", "--upgrade", "--force-reinstall", packageName
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode == 0:
-        print(result.stdout)
-        return True
-    else:
-        print(result.stderr)
-        return False
-        
-pipInstallPackage("pytest")
-```
-
-The rigsys package provides unit tests and a test runner that needs to be run within Maya. Copy and paste the following code into the script editor:
-
-```python
-import rigsys.utils.unload as unload
-unload.unloadPackages(packages=["rigsys"])
-
-import rigsys.test.testRunner as testRunner
-
-testRunner.runTests()
 ## Proxy transformation saving and loading
 
 Proxy transformations (world space translations and rotations) are saved in a user-specified json file.
@@ -116,4 +80,49 @@ proxyDataFile = "C:/path/to/proxyData.json"
 
 character.build(usedSavedProxyData=True, proxyDataFile=proxyDataFile)
 # character.saveProxyTransformations(proxyDataFile)
+```
+
+## Unit testing
+
+Unit testing for rigsys is done using [pytest](https://docs.pytest.org/en/7.4.x/). You can install it automatically by running the following script within Maya.
+
+```python
+import subprocess
+import sys
+
+mayapyExecutable = os.path.dirname(sys.executable)
+mayapyExecutable = os.path.join(mayapyExecutable, "mayapy.exe")
+
+def pipInstallPackage(packageName) -> bool:
+    """Use pip to install a package."""
+    command = [
+        mayapyExecutable, "-m", "pip", "install", "--upgrade", "--force-reinstall", packageName
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(result.stdout)
+        return True
+    else:
+        print(result.stderr)
+        return False
+        
+pipInstallPackage("pytest")
+```
+
+The rigsys package provides unit tests and a test runner that needs to be run within Maya. Copy and paste the following code into the script editor:
+
+```python
+import rigsys.utils.unload as unload
+unload.unloadPackages(packages=["rigsys"])
+unload.nukePycFiles()
+
+import rigsys.test.testRunner as testRunner
+
+testRunner.runTests()
+```
+
+You can also provide a pattern to the `runTests()` function to only run tests that match the pattern. For example, to only run tests that match the pattern `test_rig`, you would run the following:
+
+```python
+testRunner.runTests(pattern="test_rig")
 ```

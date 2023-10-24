@@ -29,32 +29,32 @@ class ExampleCharacter(api_rig.Rig):
             "M_Root": motion.TestMotionModule(
                 self,
                 side="M",
-                name="Root",
+                label="Root",
             ),
             "M_Spine": motion.TestMotionModule(
                 self,
                 side="M",
-                name="Spine",
+                label="Spine",
                 parent="M_Root",
             ),
             "L_Arm": motion.TestMotionModule(
                 self,
                 side="L",
-                name="Arm",
+                label="Arm",
                 mirror=True,
                 parent="M_Spine",
             ),
             "L_Hand": motion.TestMotionModule(
                 self,
                 side="L",
-                name="Hand",
+                label="Hand",
                 mirror=True,
                 parent="L_Arm",
             ),
             "L_Watch": motion.TestMotionModule(
                 self,
                 side="L",
-                name="Watch",
+                label="Watch",
                 parent="L_Arm",
             ),
         }

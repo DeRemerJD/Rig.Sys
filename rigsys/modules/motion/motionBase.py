@@ -1,8 +1,12 @@
 """Base class for motion modules."""
 
+import logging
+
 import rigsys.modules.moduleBase as moduleBase
 
 import maya.cmds as cmds
+
+logger = logging.getLogger(__name__)
 
 
 class MotionModuleBase(moduleBase.ModuleBase):
@@ -29,8 +33,19 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.plugParent = None
         self.worldParent = None
 
-    def run(self, buildProxiesOnly: bool = False):
+    def run(self, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True, proxyData: dict = {}) -> None:
         """Run the module."""
+        if usedSavedProxyData:
+            try:
+                moduleProxyData = proxyData[self.getFullName()]
+
+                for proxyKey, proxyTransformationData in moduleProxyData.items():
+                    self.proxies[proxyKey].position = proxyTransformationData["position"]
+                    self.proxies[proxyKey].rotation = proxyTransformationData["rotation"]
+
+            except KeyError:
+                logger.error(f"Proxy data for module {self.getFullName()} not found.")
+
         # Build proxy step
         self.buildProxies()
 

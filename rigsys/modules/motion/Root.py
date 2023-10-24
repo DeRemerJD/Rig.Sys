@@ -11,10 +11,10 @@ import maya.cmds as cmds
 class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, *args, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
-                 **kwargs) -> None:
+    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
+                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(args, kwargs, side=side, label=label)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -27,8 +27,8 @@ class Root(motionBase.MotionModuleBase):
             "Root": proxy.Proxy(
                 position=[0, 0, 0],
                 rotation=[0, 0, 0],
-                side="M",
-                label="Root",
+                side=self.side,
+                label=self.label,
                 name="Base",
             )
         }

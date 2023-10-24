@@ -1,6 +1,8 @@
 """Rig API module."""
 
+import json
 import logging
+import os
 
 import maya.cmds as cmds
 
@@ -75,18 +77,34 @@ class Rig:
 
         return allModules
 
-    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False) -> bool:
+    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True,
+              proxyDataFile: str = "") -> bool:
         """Build the rig up to the specified level.
 
         Args:
             buildLevel (int, optional): The level to which the rig should be built. Defaults to -1, which means all
                 modules will be built.
             buildProxiesOnly (bool, optional): If True, only the proxies will be built. Defaults to False.
+            useSavedProxyData (bool, optional): If True, the proxy data will be loaded from a file. Defaults to True.
+            proxyDataFile (str, optional): The file to load the proxy data from. Defaults to "".
 
         Returns:
             bool: True if successful, False otherwise.
         """
         success = True
+
+        proxyData = None
+
+        if usedSavedProxyData:
+            if proxyDataFile == "":
+                raise Exception("No proxy data file specified.")
+            elif not os.path.exists(proxyDataFile):
+                raise Exception(f"Proxy data file {proxyDataFile} does not exist.")
+            else:
+                with open(proxyDataFile, "r") as file:
+                    proxyData = json.load(file)
+
+        cmds.file(new=True, force=True)
 
         # Create a group node for the rig
         if not cmds.objExists(self.name):
@@ -107,7 +125,8 @@ class Rig:
             logger.info(f"Building module {module.getFullName()}...")
 
             if isinstance(module, motion.MotionModuleBase):
-                module.run(buildProxiesOnly=buildProxiesOnly)
+                module.run(buildProxiesOnly=buildProxiesOnly, usedSavedProxyData=usedSavedProxyData,
+                           proxyData=proxyData)
 
             else:
                 module.run()
@@ -130,8 +149,6 @@ class Rig:
         childModule.parent = parentModule.getFullName()
         childModule._parentObject = parentModule
 
-        # TODO: Mirroring
-
     def buildRigHierarchy(self):
         """Build the rig hierarchy."""
         self.motionNodes = cmds.createNode("transform", n="modules")
@@ -146,3 +163,30 @@ class Rig:
                      self.utilityNodes, self.proxyNodes]
 
         cmds.parent(coreNodes, self.rigNode)
+
+    def saveProxyTransformations(self, fileName):
+        """Save proxy transformations to a given file."""
+        proxyData = {}
+
+        # Ensure we get proxies from mirrored modules as well
+        self.preBuild()
+
+        for module in self.motionModules.values():
+            proxyData[module.getFullName()] = {}
+
+            for proxyKey, proxy in module.proxies.items():
+                sceneName = f"{proxy.side}_{proxy.label}_{proxy.name}_proxy"
+                if not cmds.objExists(sceneName):
+                    logger.warning(f"Proxy {sceneName} does not exist.")
+                    continue
+
+                proxyPosition = cmds.xform(sceneName, query=True, ws=True, translation=True)
+                proxyRotation = cmds.xform(sceneName, query=True, ws=True, rotation=True)
+
+                proxyData[module.getFullName()][proxyKey] = {
+                    "position": proxyPosition,
+                    "rotation": proxyRotation,
+                }
+
+        with open(fileName, "w") as file:
+            json.dump(proxyData, file, indent=4)

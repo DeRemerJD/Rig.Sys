@@ -1,5 +1,6 @@
 """Rig API module."""
 
+import json
 import logging
 
 import maya.cmds as cmds
@@ -88,6 +89,8 @@ class Rig:
         """
         success = True
 
+        cmds.file(new=True, force=True)
+
         # Create a group node for the rig
         if not cmds.objExists(self.name):
             self.rigNode = cmds.createNode("transform", n=self.name)
@@ -146,3 +149,27 @@ class Rig:
                      self.utilityNodes, self.proxyNodes]
 
         cmds.parent(coreNodes, self.rigNode)
+
+    def saveProxyTranslations(self, fileName):
+        """Save proxy translations to a given file."""
+        proxyData = {}
+
+        for module in self.motionModules.values():
+            proxyData[module.getFullName()] = {}
+
+            for proxyKey, proxy in module.proxies.items():
+                sceneName = f"{proxy.side}_{proxy.label}_{proxy.name}_proxy"
+                if not cmds.objExists(sceneName):
+                    logger.warning(f"Proxy {sceneName} does not exist.")
+                    continue
+
+                proxyPosition = cmds.xform(sceneName, query=True, ws=True, translation=True)
+                proxyRotation = cmds.xform(sceneName, query=True, ws=True, rotation=True)
+
+                proxyData[module.getFullName()][proxyKey] = {
+                    "position": proxyPosition,
+                    "rotation": proxyRotation,
+                }
+
+        with open(fileName, "w") as file:
+            json.dump(proxyData, file, indent=4)

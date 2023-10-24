@@ -16,7 +16,12 @@ class TestMotionModule(motionBase.MotionModuleBase):
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror)
 
         self.proxies = {
-            "Proxy1": proxy.Proxy(side="M", label="Proxy1", position=[0, 0, 0]),
+            "Proxy1": proxy.Proxy(
+                side=self.side,
+                label=self.label,
+                name="Proxy1",
+                position=[0, 0, 0]
+            ),
         }
 
     def buildProxies(self):

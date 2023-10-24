@@ -12,9 +12,6 @@ import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
 import rigsys.modules.export as export
 
-import maya.cmds as cmds
-cmds.file(new=True, force=True)
-
 
 class ExampleCharacter(api_rig.Rig):
     """Example character to showcase the rigsys module."""
@@ -26,7 +23,7 @@ class ExampleCharacter(api_rig.Rig):
         self.exampleCharacterFolder = os.path.abspath(os.path.join(rigsys.__file__, os.pardir, os.pardir, "example"))
 
         self.motionModules = {
-            "M_Root": motion.TestMotionModule(
+            "M_Root": motion.Root(
                 self,
                 side="M",
                 label="Root",
@@ -48,6 +45,13 @@ class ExampleCharacter(api_rig.Rig):
                 self,
                 side="L",
                 label="Hand",
+                mirror=True,
+                parent="L_Arm",
+            ),
+            "L_Hand_2": motion.TestMotionModule(
+                self,
+                side="L",
+                label="Hand_2",
                 mirror=True,
                 parent="L_Arm",
             ),
@@ -80,4 +84,7 @@ class ExampleCharacter(api_rig.Rig):
 
 if __name__ == "__main__":
     character = ExampleCharacter()
-    character.build()
+    proxyDataFile = os.path.join(character.exampleCharacterFolder, "exampleCharacter_proxies.json")
+
+    character.build(usedSavedProxyData=True, proxyDataFile=proxyDataFile)
+    # character.saveProxyTransformations(proxyDataFile)

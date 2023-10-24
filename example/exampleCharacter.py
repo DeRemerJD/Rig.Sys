@@ -87,4 +87,4 @@ if __name__ == "__main__":
     proxyDataFile = os.path.join(character.exampleCharacterFolder, "exampleCharacter_proxies.json")
 
     character.build(usedSavedProxyData=True, proxyDataFile=proxyDataFile)
-    # character.saveProxyTranslations(proxyDataFile)
+    # character.saveProxyTransformations(proxyDataFile)

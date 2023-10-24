@@ -39,9 +39,9 @@ class MotionModuleBase(moduleBase.ModuleBase):
             try:
                 moduleProxyData = proxyData[self.getFullName()]
 
-                for proxyKey, proxyTranslationData in moduleProxyData.items():
-                    self.proxies[proxyKey].position = proxyTranslationData["position"]
-                    self.proxies[proxyKey].rotation = proxyTranslationData["rotation"]
+                for proxyKey, proxyTransformationData in moduleProxyData.items():
+                    self.proxies[proxyKey].position = proxyTransformationData["position"]
+                    self.proxies[proxyKey].rotation = proxyTransformationData["rotation"]
 
             except KeyError:
                 logger.error(f"Proxy data for module {self.getFullName()} not found.")

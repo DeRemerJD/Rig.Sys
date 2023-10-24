@@ -164,8 +164,8 @@ class Rig:
 
         cmds.parent(coreNodes, self.rigNode)
 
-    def saveProxyTranslations(self, fileName):
-        """Save proxy translations to a given file."""
+    def saveProxyTransformations(self, fileName):
+        """Save proxy transformations to a given file."""
         proxyData = {}
 
         # Ensure we get proxies from mirrored modules as well

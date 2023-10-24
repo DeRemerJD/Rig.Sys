@@ -3,6 +3,8 @@
 import os
 import pytest
 
+import maya.cmds as cmds
+
 from rigsys.utils.unload import unloadPackages, nukePycFiles
 
 
@@ -14,6 +16,8 @@ def runTests(pattern="test_"):
     testPath = os.path.dirname(__file__)
 
     pytest.main([testPath, "-k", pattern])
+
+    cmds.file(new=True, force=True)
 
 
 if __name__ == "__main__":

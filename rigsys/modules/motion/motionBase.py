@@ -13,23 +13,27 @@ class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules."""
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
-                 isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
+                 isMuted: bool = False, parent: str = None, mirror: bool = False,
+                 selectedPlug: str = "", selectedParentSocket: str = "") -> None:
         """Initialize the module."""
         super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
                          mirror=mirror)
 
-        self.plug: dict = {}
-        # Key: label, Value: Node
-        self.socket: dict = {}
-
         self.proxies: dict = {}
+
+        # Key: label, Value: Node
+        self.plugs: dict = {}
+        self.sockets: dict = {}
+
+        self.selectedPlug = selectedPlug
+        self.selectedParentSocket = selectedParentSocket
+
         self.parent = parent
         self._parentObject = None
 
         # Module Based Constructors
         self.moduleNode = None
         self.moduleUtilities = None
-        # self.moduleRig = None
         self.plugParent = None
         self.worldParent = None
 

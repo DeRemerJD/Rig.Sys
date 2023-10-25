@@ -22,6 +22,14 @@ Motion modules can be parented to other motion modules. This is done by setting 
 
 **IMPORTANT: Parent modules will not inherently be built before children.** If a child module depends on something in the parent module being built, you need to make sure the parent module is built first by setting the `buildOrder` attribute.
 
+The actual parenting will be done by the `MotionModuleParenting` utility module. This module searches for motion modules that have parenting information provided and performs the parenting in Maya. (See the [Plugs and Sockets](#plugs-and-sockets) section below.) If you don't include one, one will be added automatically. You may want to add this module manually if you want to control the order in which the parenting is done. It defaults, like all utility modules, to building at order 3000.
+
+### Plugs and Sockets
+
+The module author defines the `module.plugs` and `module.sockets` dictionaries. These should be declared in the `__init__()` function with the key as the name of the plug/socket and the value as `None`. During the `run()` function (or `buildProxies()`/`buildModule()` functions), a node should be created and assigned properly in the plugs/sockets dictionary.
+
+When creating a character, to properly do parenting, assign the `selectedPlug` and `selectedParentSocket` to choose which plug and socket to use for parenting. **Make sure that these match keys in the plug dictionary of the current module and socket dictionary of the parent module!** See [`exampleCharacter.py`](example/exampleCharacter.py) for an example of how to do this.
+
 ## Motion module mirroring
 
 To set a motion module to be mirrored, set the `mirror` attribute to `True` on the module. This will cause the module to be mirrored when the character is built.

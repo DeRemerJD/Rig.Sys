@@ -7,6 +7,7 @@ import os
 import maya.cmds as cmds
 
 import rigsys.modules.motion as motion
+import rigsys.modules.utility as utility
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,14 @@ class Rig:
         Returns:
             list: A list of all modules that need to be built.
         """
+        # Add a motionModuleParenting module if one doesn't already exist
+        motionModuleParentingAdded = any(
+            isinstance(module, utility.MotionModuleParenting) for module in self.utilityModules.values()
+        )
+
+        if not motionModuleParentingAdded:
+            self.utilityModules["MotionModuleParenting"] = utility.MotionModuleParenting(self)
+
         allModules: list = []
         allModules.extend(self.motionModules.values())
         allModules.extend(self.deformerModules.values())
@@ -130,6 +139,8 @@ class Rig:
 
             else:
                 module.run()
+
+            module.isRun = True
 
             logger.info(f"Module {module.getFullName()} built.")
 

@@ -40,6 +40,8 @@ class ExampleCharacter(api_rig.Rig):
                 label="Arm",
                 mirror=True,
                 parent="M_Spine",
+                selectedPlug="SomePlug",
+                selectedParentSocket="SomeSocket",
             ),
             "L_Hand": motion.TestMotionModule(
                 self,
@@ -47,6 +49,8 @@ class ExampleCharacter(api_rig.Rig):
                 label="Hand",
                 mirror=True,
                 parent="L_Arm",
+                selectedPlug="SomePlug",
+                selectedParentSocket="SomeSocket",
             ),
             "L_Hand_2": motion.TestMotionModule(
                 self,
@@ -54,6 +58,8 @@ class ExampleCharacter(api_rig.Rig):
                 label="Hand_2",
                 mirror=True,
                 parent="L_Arm",
+                selectedPlug="AnotherPlug",
+                selectedParentSocket="AnotherSocket",
             ),
             "L_Watch": motion.TestMotionModule(
                 self,
@@ -69,6 +75,9 @@ class ExampleCharacter(api_rig.Rig):
             #     self,
             #     filePath=os.path.join(self.exampleCharacterFolder, "cube.mb"),
             #     underGroup=""
+            # ),
+            # "MotionModuleParenting": utility.MotionModuleParenting(
+            #     self,
             # ),
         }
         self.exportModules = {

@@ -12,9 +12,10 @@ class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
-                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False) -> None:
+                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False,
+                 selectedPlug: str = "", selectedParentSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]

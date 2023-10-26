@@ -79,6 +79,11 @@ class ExampleCharacter(api_rig.Rig):
             # "MotionModuleParenting": utility.MotionModuleParenting(
             #     self,
             # ),
+            "PythonCreateSphere": utility.PythonCode(
+                self,
+                pythonFile=os.path.join(self.exampleCharacterFolder, "create_sphere.py"),
+                label="PythonCreateSphere",
+            )
         }
         self.exportModules = {
             # "FBXExport": export.FBXExport(

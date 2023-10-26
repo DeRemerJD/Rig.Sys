@@ -34,6 +34,11 @@ class Root(motionBase.MotionModuleBase):
             )
         }
 
+        self.socket = {
+            "Base": None,
+            "Offset": None
+        }
+
     def buildProxies(self):
         """Build the proxies for the module."""
         return super().buildProxies()
@@ -46,6 +51,7 @@ class Root(motionBase.MotionModuleBase):
         print(self.ctrlShapes)
         print(self.ctrlScale)
         print(self.addOffset)
+        print(self.socket)
 
         # Get Proxy pos / rot values
         proxyPosition = self.proxies["Root"].position
@@ -71,6 +77,10 @@ class Root(motionBase.MotionModuleBase):
             orient=[90, 0, 0],
         )
         rootCtrlObj.giveCtrlShape()
+        rootJnt = cmds.createNode(
+            "joint", n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name)
+            )
+        cmds.parent(rootJnt, rootCtrl)
         if self.addOffset:
             offsetPar = cmds.createNode(
                 "transform", n=self.getFullName() + "Offset_grp"
@@ -78,6 +88,10 @@ class Root(motionBase.MotionModuleBase):
             offsetCtrl = cmds.createNode(
                 "transform", n=self.getFullName() + "Offset_CTRL"
             )
+            offsetJnt = cmds.createNode(
+            "joint", n="{}_{}_Offset".format(self.side, self.label)
+            )
+            cmds.parent(offsetJnt, offsetCtrl)
             cmds.parent(offsetCtrl, offsetPar)
             cmds.parent(offsetPar, rootCtrl)
             offsetScale = []
@@ -94,3 +108,9 @@ class Root(motionBase.MotionModuleBase):
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)
         cmds.parent(rootPar, self.worldParent)
+
+        
+        self.socket["Base"] = rootJnt
+        if self.addOffset:
+            self.socket["Offset"] = offsetJnt
+        print(self.socket)

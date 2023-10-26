@@ -237,3 +237,36 @@ def rotateOrderToEnumValue(rotateOrder):
     elif rotateOrder == "zyx":
         enumVal = 5
     return enumVal
+
+
+def getPoleVector(node1, node2, node3, multiplier=1.0):
+
+    # Get Vectors of each node
+    vectorStart = om.MVector(cmds.xform(node1, q=True, ws=True, rp=True))
+    vectorMid = om.MVector(cmds.xform(node2, q=True, ws=True, rp=True))
+    vectorEnd = om.MVector(cmds.xform(node3, q=True, ws=True, rp=True))
+
+    # Get  Start / Mid and Start / End vectoors
+    startMid = vectorMid - vectorStart
+    startEnd = vectorEnd - vectorStart
+
+    # Dot Product
+    dotProduct = startMid * startEnd
+
+    # Get Projection of Dot and startEnd
+    projection = float(dotProduct) / float(startEnd.length())
+
+    # Normal
+    normal = startEnd.normal()
+
+    # Projected Normal
+    projectionNormal = normal * projection
+
+    # Direction
+    direction = startMid - projectionNormal
+    directionScale = direction * multiplier
+
+    # Destination 
+    destination = directionScale + vectorMid
+
+    return destination

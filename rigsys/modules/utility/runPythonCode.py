@@ -27,5 +27,9 @@ class PythonCode(UtilityModuleBase):
             raise ValueError(f"File does not exist: {self.pythonFile}")
 
         with open(self.pythonFile) as f:
-            code = compile(f.read(), self.pythonFile, 'exec')
-            exec(code, globals(), locals())
+            try:
+                code = compile(f.read(), self.pythonFile, 'exec')
+                exec(code, globals(), locals())
+            except Exception as e:
+                logger.error(f"Error executing python file: {self.pythonFile}")
+                raise e

@@ -188,9 +188,11 @@ class FKSegment(motionBase.MotionModuleBase):
         coords = []
         
         if self.IKRail:
+            IKJoints = []
             # Create Guide joints
             for fCtrl in FKCtrls:
-                fkJnt = cmds.createNode("joint", n="f{}_{}_guide")
+                fkJnt = cmds.createNode("joint", n=fCtrl.replace("_CTRL", "_guide"))
+                ikJnt = cmds.createNode("joint", n=fCtrl.replace("_CTRL", "_ik"))
                 cmds.xform(fkJnt, ws=True, t=
                            cmds.xform(fCtrl, q=True, ws=True, t=True))
                 cmds.xform(fkJnt, ws=True, ro=
@@ -198,14 +200,32 @@ class FKSegment(motionBase.MotionModuleBase):
                 cmds.makeIdentity(fkJnt, a=True)
                 FKJoints.append(fkJnt)
 
+                cmds.xform(ikJnt, ws=True, t=
+                           cmds.xform(fCtrl, q=True, ws=True, t=True))
+                cmds.xform(ikJnt, ws=True, ro=
+                           cmds.xform(fCtrl, q=True, ws=True, ro=True))
+                cmds.makeIdentity(ikJnt, a=True)
+                IKJoints.append(ikJnt)
+
+            index = 0
+            for ikJnt in IKJoints:
+                if ikJnt != IKJoints[-1]:
+                    cmds.parent(IKJoints[index+1], ikJnt)
+
+
             # Get coords
             for fkJnt in FKJoints:
                 t = cmds.xform(fkJnt, q=True, ws=True, t=True)
                 coords.append(t)
             spans = len(coords) - 1
+
+            # Make Curves
             ikCurve = cmds.curve(
                 n=f"{self.getFullName()}_IKCurve", p=coords, d=3, ch=False)
             cmds.rebuildCurve(ikCurve, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=1, s=spans, d=3, ch=False)
+
+            ikCurveShape = cmds.listRelatives(ikCurve, c=True, s=True)[0]
+            ikCurveShape = cmds.rename(ikCurveShape, ikCurve+"Shape")
 
             
             tempCrv1 = cmds.duplicate(ikCurve, n=ikCurve+"TEMP_1")
@@ -218,6 +238,40 @@ class FKSegment(motionBase.MotionModuleBase):
                       u=True, c=0, ar=1, ss=1, rn=0, po=0, rsn=True, ch=False)[0]
             cmds.rebuildSurface(rbn, rpo=1, rt=0, end=1, kr=0, kcp=0,kc=0, su=spans, sv=1,
                                 du=3, dv=1, fr=0, dir=2, ch=False)
+            
+            rbnShape = cmds.listRelatives(rbn, c=True, s=True)[0]
+            rbnShape = cmds.rename(rbnShape, rbn+"Shape")
+
+            cmds.delete([tempCrv1, tempCrv2])
+
+            # Make Follicles and Connections
+            follicles = []
+            follicleShapes = []
+            follicleGrp = cmds.createNode("transform", n=f"{self.getFullName()}_follicles_grp")
+            name = 0
+            for fkJnt in FKJoints:
+                folPar = cmds.createNode("transform", n=f"{self.getFullName()}_{name}_fol")
+                fol = cmds.createNode("follicle", n=f"{self.getFullName()}_{name}_folShape", p=folPar)
+                follicles.append(folPar)
+                follicleShapes.append(fol)
+                cmds.parent(folPar, follicleGrp)
+
+                cmds.connectAttr(f"{rbnShape}.local", f"{fol}.inputSurface")
+                cmds.connectAttr(f"{rbnShape}.worldMatrix[0]", f"{fol}.inputWorldMatrix")
+                cmds.connectAttr(f"{fol}.outTranslate", f"{folPar}.translate")
+                cmds.connectAttr(f"{fol}.outRotate", f"{folPar}.rotate")
+
+                cpos = cmds.createNode("closestPointOnSurface", n=f"{self.getFullName()}_{name}_cpos")
+                dm = cmds.createNode("decomposeMatrix", n=f"{self.getFullName()}_{name}_dm")
+
+                cmds.connectAttr(f"{IKJoints[name]}.worldMatrix[0]", f"{dm}.inputMatrix")
+                cmds.connectAttr(f"{dm}.outputTranslate", f"{cpos}.inPosition")
+                cmds.connectAttr(f"{rbnShape}.worldSpace", f"{cpos}.inputSurface")
+                cmds.connectAttr(f"{cpos}.result.parameterU", f"{fol}.parameterU")
+
+                name+=1
+                
+
 
 
 

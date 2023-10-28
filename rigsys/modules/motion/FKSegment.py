@@ -93,18 +93,89 @@ class FKSegment(motionBase.MotionModuleBase):
 
         FKCtrls = []
         FKGrps = []
+        OffsetCtrls = []
+        OffsetGrps = []        
+        RFKCtrls = []
+        RFKGrps = []
+        RFKOffsets = []
         ### MODULE STRUCTURE ###
         for key, proxy in self.proxies.items():
             if key is not "UpVector" or key is not "End":
-                grp = cmds.createNode("transform", n="{}_{}_grp".format(
+                fgrp = cmds.createNode("transform", n="{}_{}_grp".format(
                     self.getFullName(), self.proxies[key].name))
-                ctrl = cmds.createNode("transform", n="{}_{}_CTRL".format(
+                fctrl = cmds.createNode("transform", n="{}_{}_CTRL".format(
                     self.getFullName(), self.proxies[key].name))
                 
-                cmds.parent(ctrl, grp)
-                FKCtrls.append(ctrl)
-                FKGrps.append(grp)
-        # Structure
+                cmds.parent(fctrl, fgrp)
+                FKCtrls.append(fctrl)
+                FKGrps.append(fgrp)
+                
+                if self.addOffset:
+                    pass
+
+                if self.reverse:
+                    rgrp = cmds.createNode("transform", n="{}_{}_Rev_grp".format(
+                    self.getFullName(), self.proxies[key].name))
+                    rctrl = cmds.createNode("transform", n="{}_{}_Rev_CTRL".format(
+                    self.getFullName(), self.proxies[key].name))
+                    roff = cmds.createNode("transform", n="{}_{}_Rev_offset".format(
+                    self.getFullName(), self.proxies[key].name))
+
+                    cmds.parent(rctrl, rgrp)
+                    cmds.parent(roff, rctrl)
+
+                    RFKCtrls.append(rctrl)
+                    RFKGrps.append(rgrp)
+                    RFKOffsets.append(roff)
+
+
+        # TODO: 
+        '''
+        Hierarchy of Rig / Components
+        N number items
+            - FK Skel: Floating Joints.
+            - FK Ctrls: Typical Parent - Child relationship .
+              (ParCtrlGrp > ParCtlr > ChildCtrlGrp > ChildCtrl).
+            - RFK Skel: Hijack the FK Skel; Floating number of N items.
+            - RFK Ctrls: Reverse parent child order of FK; add an offset grp / transform
+              to be a child of the Ctrl and reverse its rotation order, and rotation input
+              from the matching FK control.
+            - Offset Skel: Hijack the FK floating joints. 
+            - Offset Ctrls:Single point Ctrls that match the FK or RFK xforms. 
+              ( If FK, match FK, if RFK match RFK) These ctrls should be free floating,
+              constrained to the relevant node. 
+            - IK Skel: New joints in Fk predicted order and position. If this is build FK skel becomes guides
+              to deform the IK Curve and Ribbon.
+            - IK Curve: Generate Curve from the skel ws coords.
+            - IK Spline: Use IK Skel start / end and the IK Curve to generate.
+            - Ribbon: Generate from lofting the IK Curve with an offset in a single axis. 
+              Do note that the ribbon should be linear in V and cubic in U
+            - Follicles: Create Follicles on the ribbon, one for each IK Skel node. Use a
+              'closestPointOnSurface'(CPOS) node to derive U Param value from the IK Skel joints.
+              IK Skel.worldSpace > decomposeMatrix > outTranslate > CPOS.inPosition > Follicle.uParam
+            - Scaling: Curve Info Node to get IK Curve length. Multiply Divide to normalize, output of
+              this node should goto the primary axis scale of each (except last) IK Joint. Add Blending
+              from an attribute and a blendColors node.
+            - Rail Skel: New Array of floating joints, set to follow the position and rotation of the 
+              follicle nodes. They may require and offset node (transform for targeted rotation offsets)
+              to be as clean as possible. 
+            - Driving the Ribbon and IK Curve:
+              This can be done by either using the FK skel / guides to skin the  IK Curve and Ribbon, or
+              by plugging directly into the CV / control point of the IK Curve and Ribbon. The Ribbon will 
+              require offsets to account for a dimension. 
+              
+        '''
+
+        cmds.delete(RFKGrps[-1])
+
+        RFKCtrls.pop(-1)
+        RFKGrps.pop(-1)
+        RFKOffsets.pop(-1)
+
+        reverseEnd = cmds.createNode("transform", n=f"{self.getFullName()}_ReverseParentTarget")
+        
+
+        # REFERENCE: DELETE ME LATER 
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
         rootCtrl = cmds.createNode("transform", n=self.getFullName() + "_CTRL")
         cmds.parent(rootCtrl, rootPar)

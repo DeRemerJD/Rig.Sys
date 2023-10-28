@@ -4,6 +4,7 @@
 import rigsys.modules.motion.motionBase as motionBase
 import rigsys.lib.ctrl as ctrlCrv
 import rigsys.lib.proxy as proxy
+import rigsys.lib.joint as jointTools
 
 import maya.cmds as cmds
 
@@ -12,7 +13,7 @@ class FKSegment(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=1,
-                 reverse=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
+                 reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
                  mirror: bool = False, selectedPlug: str = "", selectedParentSocket: str = "") -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
@@ -25,6 +26,7 @@ class FKSegment(motionBase.MotionModuleBase):
         self.ctrlScale = ctrlScale
         self.segments = segments
         self.reverse = reverse
+        self.IKRail = IKRail
 
         self.proxies = {
             "Start": proxy.Proxy(
@@ -91,6 +93,7 @@ class FKSegment(motionBase.MotionModuleBase):
         )
         self.worldParent = self.createWorldParent()
 
+        # CREATING NODES
         FKCtrls = []
         FKGrps = []
         OffsetCtrls = []
@@ -101,33 +104,130 @@ class FKSegment(motionBase.MotionModuleBase):
         ### MODULE STRUCTURE ###
         for key, proxy in self.proxies.items():
             if key is not "UpVector" or key is not "End":
-                fgrp = cmds.createNode("transform", n="{}_{}_grp".format(
+                fGrp = cmds.createNode("transform", n="{}_{}_grp".format(
                     self.getFullName(), self.proxies[key].name))
-                fctrl = cmds.createNode("transform", n="{}_{}_CTRL".format(
+                fCtrl = cmds.createNode("transform", n="{}_{}_CTRL".format(
                     self.getFullName(), self.proxies[key].name))
                 
-                cmds.parent(fctrl, fgrp)
-                FKCtrls.append(fctrl)
-                FKGrps.append(fgrp)
+                cmds.parent(fCtrl, fGrp)
+                FKCtrls.append(fCtrl)
+                FKGrps.append(fGrp)
+
+                cmds.xform(fGrp, ws=True, t=self.proxies[key].position)
                 
                 if self.addOffset:
-                    pass
+                    oGrp = cmds.createNode("transform", n="{}_{}Local_grp".format(
+                    self.getFullName(), self.proxies[key].name))
+                    oCtrl = cmds.createNode("transform", n="{}_{}Local_CTRL".format(
+                    self.getFullName(), self.proxies[key].name))
+                
+                cmds.parent(oCtrl, oGrp)
+                OffsetCtrls.append(oCtrl)
+                OffsetGrps.append(oGrp)
+                cmds.xform(oGrp, ws=True, t=self.proxies[key].position)
 
                 if self.reverse:
-                    rgrp = cmds.createNode("transform", n="{}_{}_Rev_grp".format(
+                    rGrp = cmds.createNode("transform", n="{}_{}_Rev_grp".format(
                     self.getFullName(), self.proxies[key].name))
-                    rctrl = cmds.createNode("transform", n="{}_{}_Rev_CTRL".format(
+                    rCtrl = cmds.createNode("transform", n="{}_{}_Rev_CTRL".format(
                     self.getFullName(), self.proxies[key].name))
-                    roff = cmds.createNode("transform", n="{}_{}_Rev_offset".format(
+                    rOff = cmds.createNode("transform", n="{}_{}_Rev_offset".format(
                     self.getFullName(), self.proxies[key].name))
 
-                    cmds.parent(rctrl, rgrp)
-                    cmds.parent(roff, rctrl)
+                    cmds.parent(rCtrl, rGrp)
+                    cmds.parent(rOff, rCtrl)
 
-                    RFKCtrls.append(rctrl)
-                    RFKGrps.append(rgrp)
-                    RFKOffsets.append(roff)
+                    RFKCtrls.append(rCtrl)
+                    RFKGrps.append(rGrp)
+                    RFKOffsets.append(rOff)
+                    cmds.xform(rGrp, ws=True, t=self.proxies[key].position)
+        #Orient FK
+        jointTools.aimSequence(
+            targets=FKGrps, aimAxis="+x", upAxis="-z", 
+            upObj=f"{self.getFullName}_{self.proxies['UpVector'].name}_proxy"
+            )
+        if self.reverse:
+            jointTools.aimSequence(
+            targets=RFKGrps, aimAxis="+x", upAxis="-z", 
+            upObj=f"{self.getFullName}_{self.proxies['UpVector'].name}_proxy"
+            )
+        if self.addOffset:
+            jointTools.aimSequence(
+            targets=OffsetGrps, aimAxis="+x", upAxis="-z", 
+            upObj=f"{self.getFullName}_{self.proxies['UpVector'].name}_proxy"
+            )
 
+        # Parenting
+        index = 1
+        for fCtrl in FKCtrls:
+            if not index > len(FKCtrls):
+                cmds.parent(FKGrps[index], fCtrl)
+            index+=1 
+
+        if self.reverse:
+            RFKGrps.reverse()
+            RFKCtrls.reverse()
+            RFKOffsets.reverse()
+            index = 1
+            for rOff in RFKOffsets:
+                if not index > len(RFKOffsets):
+                    cmds.parent(RFKGrps[index], rOff)
+                index+=1            
+
+        if self.addOffset:
+            if self.reverse:
+                for rCtrl, oGrp in zip(RFKCtrls, OffsetGrps):
+                    ptc = cmds.parentConstraint(rCtrl, oGrp, n=oGrp+"_ptc", mo=0)[0]
+                    cmds.setAttr(ptc+".interpType", 2)
+            else:
+                for fCtrl, oGrp in zip(FKCtrls, OffsetGrps):
+                    ptc = cmds.parentConstraint(rCtrl, oGrp, n=oGrp+"_ptc", mo=0)[0]
+                    cmds.setAttr(ptc+".interpType", 2)
+
+        FKJoints = []
+        coords = []
+        
+        if self.IKRail:
+            # Create Guide joints
+            for fCtrl in FKCtrls:
+                fkJnt = cmds.createNode("joint", n="f{}_{}_guide")
+                cmds.xform(fkJnt, ws=True, t=
+                           cmds.xform(fCtrl, q=True, ws=True, t=True))
+                cmds.xform(fkJnt, ws=True, ro=
+                           cmds.xform(fCtrl, q=True, ws=True, ro=True))
+                cmds.makeIdentity(fkJnt, a=True)
+                FKJoints.append(fkJnt)
+
+            # Get coords
+            for fkJnt in FKJoints:
+                t = cmds.xform(fkJnt, q=True, ws=True, t=True)
+                coords.append(t)
+            spans = len(coords) - 1
+            ikCurve = cmds.curve(
+                n=f"{self.getFullName()}_IKCurve", p=coords, d=3, ch=False)
+            cmds.rebuildCurve(ikCurve, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=1, s=spans, d=3, ch=False)
+
+            
+            tempCrv1 = cmds.duplicate(ikCurve, n=ikCurve+"TEMP_1")
+            tempCrv2 = cmds.duplicate(ikCurve, n=ikCurve+"TEMP_2")
+
+            cmds.xform(tempCrv1, ws=True, t=[-1,0,0])
+            cmds.xform(tempCrv2, ws=True, t=[1,0,0])
+            
+            rbn = cmds.loft(tempCrv1, tempCrv2, d=3, n=f"{self.getFullName()}_rbn", 
+                      u=True, c=0, ar=1, ss=1, rn=0, po=0, rsn=True, ch=False)[0]
+            cmds.rebuildSurface(rbn, rpo=1, rt=0, end=1, kr=0, kcp=0,kc=0, su=spans, sv=1,
+                                du=3, dv=1, fr=0, dir=2, ch=False)
+
+
+
+            
+
+            
+
+        
+        
+        
 
         # TODO: 
         '''
@@ -165,15 +265,6 @@ class FKSegment(motionBase.MotionModuleBase):
               require offsets to account for a dimension. 
               
         '''
-
-        cmds.delete(RFKGrps[-1])
-
-        RFKCtrls.pop(-1)
-        RFKGrps.pop(-1)
-        RFKOffsets.pop(-1)
-
-        reverseEnd = cmds.createNode("transform", n=f"{self.getFullName()}_ReverseParentTarget")
-        
 
         # REFERENCE: DELETE ME LATER 
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")

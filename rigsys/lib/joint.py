@@ -121,7 +121,7 @@ def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z", 
         if childs:
             cmds.parent(childs, w=1)
 
-        cmds.setAttr(i + ".rotateOrder", rotateOrderVal)
+        cmds.setAttr(targets[i] + ".rotateOrder", rotateOrderVal)
 
         # If this is the last item in the loop, match orientations to previous item.
         if targets[i] == targets[-1]:
@@ -171,7 +171,7 @@ def mirrorJoints(joints, position=True, rotation=True, freeze=False):
 
     for joint in joints:
         t = cmds.xform(joint, q=True, ws=True, t=True)
-        ro = cmds.xform(joint, q=True, ws=True, ws=True)
+        ro = cmds.xform(joint, q=True, ws=True, ro=True)
         if position:
             t[0] = t[0] * -1
         if rotation:

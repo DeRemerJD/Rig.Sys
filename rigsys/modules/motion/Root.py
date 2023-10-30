@@ -45,13 +45,6 @@ class Root(motionBase.MotionModuleBase):
 
     def buildModule(self) -> None:
         """Run the module."""
-        print("DEBUGGING. . .")
-        print(self.side)
-        print(self.label)
-        print(self.ctrlShapes)
-        print(self.ctrlScale)
-        print(self.addOffset)
-        print(self.socket)
 
         # Get Proxy pos / rot values
         proxyPosition = self.proxies["Root"].position

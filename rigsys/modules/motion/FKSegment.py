@@ -219,9 +219,11 @@ class FKSegment(motionBase.MotionModuleBase):
 
         if self.addOffset:
             if self.reverse:
+                RFKCtrls.reverse()
                 for rCtrl, oGrp in zip(RFKCtrls, OffsetGrps):
                     ptc = cmds.parentConstraint(rCtrl, oGrp, n=oGrp+"_ptc", mo=0)[0]
                     cmds.setAttr(ptc+".interpType", 2)
+                RFKCtrls.reverse()
             else:
                 for fCtrl, oGrp in zip(FKCtrls, OffsetGrps):
                     ptc = cmds.parentConstraint(rCtrl, oGrp, n=oGrp+"_ptc", mo=0)[0]
@@ -271,11 +273,11 @@ class FKSegment(motionBase.MotionModuleBase):
                 t = cmds.xform(fkJnt, q=True, ws=True, t=True)
                 coords.append(t)
             spans = len(coords) - 1
-
+            
             # Make Curves
             ikCurve = cmds.curve(
                 n=f"{self.getFullName()}_IKCurve", p=coords, d=3)
-            cmds.rebuildCurve(ikCurve, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=1, s=spans, d=3, ch=False)
+            cmds.rebuildCurve(ikCurve, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=1, s=spans, d=1, ch=False)
 
             ikCurveShape = cmds.listRelatives(ikCurve, c=True, s=True)[0]
             ikCurveShape = cmds.rename(ikCurveShape, ikCurve+"Shape")
@@ -304,7 +306,7 @@ class FKSegment(motionBase.MotionModuleBase):
             rbnShape = cmds.rename(rbnShape, rbn+"Shape")
 
             cmds.delete([tempCrv1, tempCrv2])
-
+            
             # Make Follicles and Connections
             follicles = []
             follicleShapes = []
@@ -333,21 +335,25 @@ class FKSegment(motionBase.MotionModuleBase):
                 cmds.setAttr(f"{fol}.parameterV", .5)
 
                 name+=1
-
+            
             curveSCLS = cmds.skinCluster(
                 FKJoints, ikCurve, sm=0, wd=0, mi=4, n=f"{ikCurve}_scls"
                 )
             ribbonSCLS = cmds.skinCluster(
                 FKJoints, rbn, sm=0, wd=0, mi=4, n=f"{rbn}_scls"
             )
+
+            railJoints = []
+            # Make Rail Joints
+            for fol, ikJnt in zip(follicles, IKJoints):
+                rJnt = cmds.createNode("joint", n=fol.replace("_fol", ""))
             
             # Add Streching
-            cmds.addAttr(FKCtrls[0], ln="stretch", dv=0, min=0, max=1, at="float")
-
+            cmds.addAttr(FKCtrls[0], ln="stretch", dv=0, min=0, max=1, at="float", k=True)
 
         if self.reverse:
             if self.addOffset:
-                for oCtrl, fkJnt in zip(OffsetGrps, FKJoints):
+                for oCtrl, fkJnt in zip(OffsetCtrls, FKJoints):
                     ptc = cmds.parentConstraint(oCtrl, fkJnt, n=f"{fkJnt}_ptc", mo=0)[0]
                     cmds.setAttr(f"{ptc}.interpType", 2)
             else:

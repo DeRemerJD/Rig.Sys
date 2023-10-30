@@ -138,12 +138,11 @@ class FKSegment(motionBase.MotionModuleBase):
                     cmds.parent(rCtrl, rGrp)
                     cmds.parent(rOff, rCtrl)
 
-                    cmds.setAttr(f"{rOff}.rotateOrder", 5)
-
                     RFKCtrls.append(rCtrl)
                     RFKGrps.append(rGrp)
                     RFKOffsets.append(rOff)
                     cmds.xform(rGrp, ws=True, t=self.proxies[key].position)
+
         #Orient FK
         jointTools.aimSequence(
             targets=FKGrps, aimAxis="+x", upAxis="-z", 
@@ -166,6 +165,8 @@ class FKSegment(motionBase.MotionModuleBase):
             targets=RFKCtrls, aimAxis="+x", upAxis="-z", 
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
             )
+            for rOff in RFKOffsets:
+                cmds.setAttr(f"{rOff}.rotateOrder", 5)
         if self.addOffset:
             jointTools.aimSequence(
             targets=OffsetGrps, aimAxis="+x", upAxis="-z", 
@@ -185,7 +186,7 @@ class FKSegment(motionBase.MotionModuleBase):
             fkCtrlObject = ctrlCrv.Ctrl(
                 node=fCtrl,
                 shape="sphere",
-                scale=[self.ctrlScale[0]*.5, self.ctrlScale[1]*.5, self.ctrlScale[2]*.5],
+                scale=[self.ctrlScale[0]*.75, self.ctrlScale[1]*.75, self.ctrlScale[2]*.75],
                 offset=[0,0,-10]
             )
             fkCtrlObject.giveCtrlShape()
@@ -234,6 +235,7 @@ class FKSegment(motionBase.MotionModuleBase):
                 offsetCtrlObject = ctrlCrv.Ctrl(
                     node=oCtrl,
                     shape="circle",
+                    orient=[0,90,0],
                     scale=self.ctrlScale
                 )
                 offsetCtrlObject.giveCtrlShape()
@@ -344,12 +346,75 @@ class FKSegment(motionBase.MotionModuleBase):
             )
 
             railJoints = []
+            railOffsets = []
             # Make Rail Joints
             for fol, ikJnt in zip(follicles, IKJoints):
-                rJnt = cmds.createNode("joint", n=fol.replace("_fol", ""))
+                rJntOffset = cmds.createNode("transform", n=fol.replace("_fol", "railOffset"))
+                rJnt = cmds.createNode("joint", n=fol.replace("_fol", "_rail"))
+                cmds.parent(rJnt, rJntOffset)
+                cmds.xform(rJntOffset, ws=True, t=cmds.xform(
+                    ikJnt, q=True, ws=True, t=True
+                ))
+                cmds.xform(rJntOffset, ws=True, ro=cmds.xform(
+                    ikJnt, q=True, ws=True, ro=True
+                ))
+                ptc = cmds.parentConstraint(fol, rJntOffset, n=f"{rJnt}_ptc", mo=0)[0]
+                cmds.setAttr(f"{ptc}.interpType", 2)
+
+                railJoints.append(rJnt)
+                railOffsets.append(rJntOffset)
+                
             
             # Add Streching
             cmds.addAttr(FKCtrls[0], ln="stretch", dv=0, min=0, max=1, at="float", k=True)
+            for fCtrl in FKCtrls:
+                if fCtrl != FKCtrls[0]:
+                    cmds.addAttr(fCtrl, ln="stretch", proxy=f"{FKCtrls[0]}.stretch", at="float", min=0, max=1, k=True)
+            if self.reverse:
+                for rCtrl in RFKCtrls:
+                    cmds.addAttr(rCtrl, ln="stretch", proxy=f"{FKCtrls[0]}.stretch", at="float", min=0, max=1, k=True)
+            if self.addOffset:
+                for oCtrl in OffsetCtrls:
+                    cmds.addAttr(oCtrl, ln="stretch", proxy=f"{FKCtrls[0]}.stretch", at="float", min=0, max=1, k=True)
+
+            ci = cmds.createNode("curveInfo", n=f"{self.getFullName()}_ci")
+            stretchMD = cmds.createNode("multiplyDivide", n=f"{self.getFullName()}_md")
+            stretchBC = cmds.createNode("blendColors", n=f"{self.getFullName()}_md")
+            cmds.connectAttr(f"{ikCurveShape}.worldSpace", f"{ci}.inputCurve")
+            cmds.connectAttr(f"{ci}.arcLength", f"{stretchMD}.input1.input1X")
+            cmds.setAttr(f"{stretchMD}.operation", 2)
+            ciLen = cmds.getAttr(f"{ci}.arcLength")
+            cmds.setAttr(f"{stretchMD}.input2.input2X", ciLen)
+            cmds.setAttr(f"{stretchBC}.color2.color2R", 1.0)
+            cmds.connectAttr(f"{stretchMD}.output.outputX", f"{stretchBC}.color1.color1R")
+            cmds.connectAttr(f"{FKCtrls[0]}.stretch", f"{stretchBC}.blender")
+            for ikJnt in IKJoints:
+                if ikJnt != IKJoints[-1]:
+                    cmds.connectAttr(f"{stretchBC}.output.outputR", f"{ikJnt}.scaleX")
+
+            # If Offsets add vis Toggle
+            if self.addOffset:
+                cmds.addAttr(FKCtrls[0], ln="localVisibility", dv=0, min=0, max=1, at="float", k=True)
+                for fCtrl in FKCtrls:
+                    if fCtrl != FKCtrls[0]:
+                        cmds.addAttr(fCtrl, ln="localVisibility", proxy=f"{FKCtrls[0]}.localVisibility", at="float", min=0, max=1, k=True)
+                if self.reverse:
+                    for rCtrl in RFKCtrls:
+                        cmds.addAttr(rCtrl, ln="localVisibility", proxy=f"{FKCtrls[0]}.localVisibility", at="float", min=0, max=1, k=True)
+
+                for oGrp in OffsetGrps:
+                    cmds.connectAttr(f"{FKCtrls[0]}.localVisibility", f"{oGrp}.visibility")    
+
+            # Parenting
+            cmds.parent([ikHandle, ikCurve, rbn, follicleGrp], self.moduleUtilities)
+            cmds.parent(FKGrps[0], self.plugParent)
+            if self.addOffset:
+                cmds.parent(OffsetGrps, self.plugParent)
+            cmds.parent(railOffsets, self.plugParent)
+            cmds.parent(FKJoints, self.plugParent)
+            cmds.parent(IKJoints[0], self.plugParent)
+
+
 
         if self.reverse:
             if self.addOffset:
@@ -364,6 +429,8 @@ class FKSegment(motionBase.MotionModuleBase):
             for fkCtrl, fkJnt in zip(FKCtrls, FKJoints):
                     ptc = cmds.parentConstraint(fkCtrl, fkJnt, n=f"{fkJnt}_ptc", mo=0)[0]
                     cmds.setAttr(f"{ptc}.interpType", 2)
+
+        
             
 
 

@@ -428,22 +428,7 @@ class FKSegment(motionBase.MotionModuleBase):
         else:
             for fkCtrl, fkJnt in zip(FKCtrls, FKJoints):
                     ptc = cmds.parentConstraint(fkCtrl, fkJnt, n=f"{fkJnt}_ptc", mo=0)[0]
-                    cmds.setAttr(f"{ptc}.interpType", 2)
-
-        
-            
-
-
-
-
-            
-
-            
-
-        
-        
-        
-
+                    cmds.setAttr(f"{ptc}.interpType", 2)   
         # TODO: 
         '''
         Hierarchy of Rig / Components
@@ -480,52 +465,3 @@ class FKSegment(motionBase.MotionModuleBase):
               require offsets to account for a dimension. 
               
         '''
-
-        # # REFERENCE: DELETE ME LATER 
-        # rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
-        # rootCtrl = cmds.createNode("transform", n=self.getFullName() + "_CTRL")
-        # cmds.parent(rootCtrl, rootPar)
-        # rootCtrlObj = ctrlCrv.Ctrl(
-        #     node=rootCtrl,
-        #     shape=self.ctrlShapes,
-        #     scale=self.ctrlScale,
-        #     orient=[90, 0, 0],
-        # )
-        # rootCtrlObj.giveCtrlShape()
-        # rootJnt = cmds.createNode(
-        #     "joint", n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name)
-        #     )
-        # cmds.parent(rootJnt, rootCtrl)
-        # if self.addOffset:
-        #     offsetPar = cmds.createNode(
-        #         "transform", n=self.getFullName() + "Offset_grp"
-        #     )
-        #     offsetCtrl = cmds.createNode(
-        #         "transform", n=self.getFullName() + "Offset_CTRL"
-        #     )
-        #     offsetJnt = cmds.createNode(
-        #     "joint", n="{}_{}_Offset".format(self.side, self.label)
-        #     )
-        #     cmds.parent(offsetJnt, offsetCtrl)
-        #     cmds.parent(offsetCtrl, offsetPar)
-        #     cmds.parent(offsetPar, rootCtrl)
-        #     offsetScale = []
-        #     for x in self.ctrlScale:
-        #         offsetScale.append(x * 0.75)
-        #     offsetCtrlObj = ctrlCrv.Ctrl(
-        #         node=offsetCtrl,
-        #         shape=self.ctrlShapes,
-        #         scale=offsetScale,
-        #         orient=[90, 0, 0],
-        #     )
-        #     offsetCtrlObj.giveCtrlShape()
-
-        # cmds.xform(rootPar, ws=True, t=proxyPosition)
-        # cmds.xform(rootPar, ws=True, ro=proxyRotation)
-        # cmds.parent(rootPar, self.worldParent)
-
-        
-        # self.socket["Base"] = rootJnt
-        # if self.addOffset:
-        #     self.socket["Offset"] = offsetJnt
-        # print(self.socket)

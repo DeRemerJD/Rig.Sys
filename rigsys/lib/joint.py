@@ -1,5 +1,6 @@
 """Helper classes and functions for building joints."""
 import maya.cmds as cmds
+import maya.OpenMaya as om
 
 
 def createJoint(jointName, position=None, rotation=None, mirrorPosition=False,

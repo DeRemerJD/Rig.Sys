@@ -12,7 +12,7 @@ import maya.cmds as cmds
 class FKSegment(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=1,
+    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
                  reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
                  mirror: bool = False, selectedPlug: str = "", selectedParentSocket: str = "") -> None:
         """Initialize the module."""
@@ -34,7 +34,8 @@ class FKSegment(motionBase.MotionModuleBase):
                 rotation=[0, 0, 0],
                 side=self.side,
                 label=self.label,
-                name="Start"
+                name="Start",
+                plug=True
             ),
             "End": proxy.Proxy(
                 position=[0, 10, 0],

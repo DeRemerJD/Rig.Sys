@@ -108,8 +108,23 @@ class FK(motionBase.MotionModuleBase):
             FKJoints, aimAxis="+x", upAxis="-z", 
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
             )
-        
+        FKGrps = []
+        FKCtrls = []
         for fJnt in FKJoints:
             grp = cmds.createNode("transform", n=f"{fJnt}_grp")
             ctrl = cmds.createNode("transform", n=f"{fJnt}_CTRL")
             cmds.parent(ctrl, grp)
+
+            cmds.xform(grp, ws=True, t=cmds.xform(
+                fJnt, q=True, ws=True, t=True
+            ))
+            cmds.xform(grp, ws=True, ro=cmds.xform(
+                fJnt, q=True, ws=True, ro=True
+            ))
+
+            FKGrps.append(grp)
+            FKCtrls.append(ctrl)
+
+            
+
+

@@ -3,6 +3,8 @@
 
 from PySide2 import QtWidgets, QtCore
 
+from rigsys.ui.add_module_dialog import AddModuleDialog
+
 
 class RigUI(QtWidgets.QWidget):
     """A UI for rigsys."""
@@ -76,10 +78,14 @@ class RigUI(QtWidgets.QWidget):
         self.build_button.clicked.connect(self.build_rig)
         self.main_layout.addWidget(self.build_button)
 
-
     def add_module(self):
         """Add a module to the rig."""
-        print("Add module")
+        dialog = AddModuleDialog()
+
+        if dialog.exec_():
+            print(f"Adding module {dialog.selected_module}")
+        else:
+            print("Canceled")
 
     def remove_module(self):
         """Remove a module from the rig."""

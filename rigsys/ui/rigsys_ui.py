@@ -112,7 +112,20 @@ class RigUI(QtWidgets.QWidget):
 
     def remove_module(self):
         """Remove a module from the rig."""
-        print("Removing module")
+        # If there's no selected module, return
+        if not self.module_list_widget.selectedItems():
+            return
+
+        module_to_delete = self.module_list_widget.selectedItems()[0].text()
+        list_item_to_delete = self.module_list_widget.selectedItems()[0]
+
+        try:
+            del self.rig.motionModules[module_to_delete]
+            self.module_list_widget.takeItem(self.module_list_widget.row(list_item_to_delete))
+
+        except KeyError:
+            print(f"Module {module_to_delete} not found")
+            return
 
     def build_rig(self):
         """Build the rig."""

@@ -5,6 +5,9 @@ from PySide2 import QtWidgets, QtCore
 
 from rigsys.ui.add_module_dialog import AddModuleDialog
 
+import rigsys
+import rigsys.modules as rigsys_modules
+
 
 class RigUI(QtWidgets.QWidget):
     """A UI for rigsys."""
@@ -12,6 +15,8 @@ class RigUI(QtWidgets.QWidget):
     def __init__(self):
         """Initialize the UI."""
         super().__init__()
+
+        self.rig = rigsys.Rig()
 
         self.setup_ui()
 
@@ -83,17 +88,36 @@ class RigUI(QtWidgets.QWidget):
         dialog = AddModuleDialog()
 
         if dialog.exec_():
-            print(f"Adding module {dialog.selected_module}")
-        else:
-            print("Canceled")
+            selected_module_type = dialog.selected_module
+
+            new_module_full_name = f"{dialog.get_selected_side()}_{dialog.selected_module}"
+            new_module_full_name = self.check_duplicate_names(new_module_full_name)
+
+            new_module = rigsys_modules.allModuleTypes[selected_module_type](self.rig)
+            self.rig.motionModules[new_module_full_name] = new_module
+            self.module_list_widget.addItem(new_module_full_name)
+
+    def check_duplicate_names(self, name):
+        """Ensure a name isn't a duplicate of an existing module."""
+        if name not in self.rig.motionModules.keys():
+            return name
+
+        i = 0
+        temp_name = name
+        while temp_name in self.rig.motionModules.keys():
+            i += 1
+            temp_name = f"{name}_{i}"
+
+        return temp_name
 
     def remove_module(self):
         """Remove a module from the rig."""
-        print("Remove module")
+        print("Removing module")
 
     def build_rig(self):
         """Build the rig."""
-        print("Build rig")
+        print("Building rig")
+        self.rig.build()  # TODO: Include build level
 
 
 if __name__ == "__main__":

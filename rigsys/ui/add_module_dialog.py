@@ -24,11 +24,13 @@ class AddModuleDialog(QtWidgets.QDialog):
         self.main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_layout)
 
+        # Search bar
         self.search_bar = QtWidgets.QLineEdit()
         self.search_bar.setPlaceholderText("Search")
         self.search_bar.textChanged.connect(self.search)
         self.main_layout.addWidget(self.search_bar)
 
+        # Module list
         self.module_list = QtWidgets.QListWidget()
         self.module_list.itemClicked.connect(self.item_clicked)
         self.module_list.itemDoubleClicked.connect(self.accept)
@@ -37,6 +39,31 @@ class AddModuleDialog(QtWidgets.QDialog):
 
         self.fill_module_list()
 
+        # Side selection
+        self.radio_button_layout = QtWidgets.QHBoxLayout()
+        self.main_layout.addLayout(self.radio_button_layout)
+
+        self.radio_button_layout.addWidget(QtWidgets.QLabel("Side: "))
+
+        self.l_side_radio_button = QtWidgets.QRadioButton("L")
+        self.l_side_radio_button.setChecked(True)
+        self.radio_button_layout.addWidget(self.l_side_radio_button)
+
+        self.m_side_radio_button = QtWidgets.QRadioButton("M")
+        self.radio_button_layout.addWidget(self.m_side_radio_button)
+
+        self.r_side_radio_button = QtWidgets.QRadioButton("R")
+        self.radio_button_layout.addWidget(self.r_side_radio_button)
+
+        # Module naming
+        self.module_naming_layout = QtWidgets.QHBoxLayout()
+        self.main_layout.addLayout(self.module_naming_layout)
+
+        self.module_name_line_edit = QtWidgets.QLineEdit()
+        self.module_name_line_edit.setPlaceholderText("Module Name")
+        self.module_naming_layout.addWidget(self.module_name_line_edit)
+
+        # Accept/Cancel buttons
         self.button_layout = QtWidgets.QHBoxLayout()
         self.main_layout.addLayout(self.button_layout)
 
@@ -80,3 +107,18 @@ class AddModuleDialog(QtWidgets.QDialog):
         """Handle a module being clicked."""
         self.accept_button.setEnabled(True)
         self.selected_module = self.module_list.currentItem().text()
+
+        self.module_name_line_edit.setText(self.selected_module)
+
+    def get_selected_side(self):
+        """Get the currently selected side."""
+        if self.l_side_radio_button.isChecked():
+            return "L"
+        elif self.m_side_radio_button.isChecked():
+            return "M"
+        elif self.r_side_radio_button.isChecked():
+            return "R"
+
+    def get_module_name(self):
+        """Return the module name entered by the user."""
+        return self.module_name_line_edit.text()

@@ -1,5 +1,7 @@
 """A dialog for adding a module to the rig."""
 
+# TODO: Group the modules by type
+
 
 from PySide2 import QtWidgets, QtCore
 

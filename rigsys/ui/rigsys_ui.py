@@ -4,6 +4,7 @@
 from PySide2 import QtWidgets, QtCore
 
 from rigsys.ui.add_module_dialog import AddModuleDialog
+from rigsys.ui.proceduralSettingsWidget.settingsWidget import SettingsWidget
 
 import rigsys
 import rigsys.modules as rigsys_modules
@@ -32,6 +33,7 @@ class RigUI(QtWidgets.QWidget):
         """Set up the UI."""
         self.setWindowTitle("RigSys UI")
         self.resize(500, 500)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
 
         self.main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_layout)
@@ -112,18 +114,22 @@ class RigUI(QtWidgets.QWidget):
         self.module_splitter.addWidget(self.module_list_widget_holder)
 
         self.module_list_widget = QtWidgets.QListWidget()
+        self.module_list_widget.itemClicked.connect(self.on_module_clicked)
         self.module_list_widget.setAlternatingRowColors(True)
         self.module_list_layout.addWidget(self.buttons_widget)
         self.module_list_layout.addWidget(self.module_list_widget)
 
         # Module settings
-        self.module_settings_widget = QtWidgets.QWidget()
-        self.module_settings_layout = QtWidgets.QHBoxLayout()
+        self.module_settings_widget_holder = QtWidgets.QWidget()
+        self.module_settings_layout = QtWidgets.QVBoxLayout()
         self.module_settings_layout.setAlignment(QtCore.Qt.AlignTop)
-        self.module_settings_widget.setLayout(self.module_settings_layout)
-        self.module_splitter.addWidget(self.module_settings_widget)
+        self.module_settings_widget_holder.setLayout(self.module_settings_layout)
+        self.module_splitter.addWidget(self.module_settings_widget_holder)
 
         self.module_settings_layout.addWidget(QtWidgets.QLabel("Module Settings"))
+
+        self.module_settings_widget = QtWidgets.QWidget()
+        self.module_settings_layout.addWidget(self.module_settings_widget)
 
         # Build button
         self.build_button = QtWidgets.QPushButton("Build")
@@ -131,6 +137,7 @@ class RigUI(QtWidgets.QWidget):
         self.build_button.clicked.connect(self.build_rig)
         self.main_layout.addWidget(self.build_button)
 
+    # ----------------------------------------------- UI UPDATE FUNCTIONS ----------------------------------------------
     def add_module(self):
         """Add a module to the rig."""
         dialog = AddModuleDialog()
@@ -211,6 +218,17 @@ class RigUI(QtWidgets.QWidget):
 
         # TODO: Update the UI for any modules that won't be built at this build level
         # TODO: Highlight improper inputs in red
+
+    def on_module_clicked(self):
+        """Update the module settings when a module is clicked."""
+        current_module_name = self.module_list_widget.currentItem().text()
+        current_module = self.rig.motionModules[current_module_name]
+
+        self.module_settings_widget = SettingsWidget(
+            inObject=current_module,
+            variables=current_module.baseEditableParameters()
+        )
+        self.module_settings_layout.addWidget(self.module_settings_widget)
 
 
 if __name__ == "__main__":

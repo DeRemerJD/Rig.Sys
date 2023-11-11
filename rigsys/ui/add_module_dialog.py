@@ -22,6 +22,7 @@ class AddModuleDialog(QtWidgets.QDialog):
     def setup_ui(self):
         """Set up the UI for the dialog."""
         self.setWindowTitle("Add Module")
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
 
         self.main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_layout)

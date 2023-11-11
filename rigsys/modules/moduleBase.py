@@ -29,6 +29,10 @@ class ModuleBase:
 
         self._rig = rig
 
+    def baseEditableParameters(self) -> list:
+        """Return the base editable parameters for modules."""
+        return ["side", "label", "buildOrder", "isMuted", "mirror"]
+
     def run(self) -> None:
         """Run the module.
 

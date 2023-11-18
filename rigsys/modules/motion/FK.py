@@ -125,6 +125,18 @@ class FK(motionBase.MotionModuleBase):
             FKGrps.append(grp)
             FKCtrls.append(ctrl)
 
+            if self.addOffset:
+                oGrp = cmds.createNode("transform", n=f"{fJnt}_grp")
+                oCtrl = cmds.createNode("transform", n=f"{fJnt}_CTRL")
+                cmds.parent(ctrl, grp)
+
+                cmds.xform(grp, ws=True, t=cmds.xform(
+                    fJnt, q=True, ws=True, t=True
+                ))
+                cmds.xform(grp, ws=True, ro=cmds.xform(
+                    fJnt, q=True, ws=True, ro=True
+                ))
+
             
 
 

@@ -134,8 +134,8 @@ def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z", 
                     cJnts = cmds.listRelatives(targets[i - 1], children=True)
                     if cJnts is not None:
                         if targets[i] in cJnts:
-                            cmds.setAttr(targets[i] + ".jointOrient" + axis, 0)
-                            cmds.setAttr(targets[i] + ".rotate" + axis, 0)
+                            cmds.setAttr(targets[i] + ".jointOrient" + axis.upper(), 0)
+                            cmds.setAttr(targets[i] + ".rotate" + axis.upper(), 0)
 
         # Otherwise, aim it properly.
         else:

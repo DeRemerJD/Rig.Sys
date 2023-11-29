@@ -128,7 +128,7 @@ class FK(motionBase.MotionModuleBase):
             if self.addOffset:
                 oGrp = cmds.createNode("transform", n=f"{fJnt}_grp")
                 oCtrl = cmds.createNode("transform", n=f"{fJnt}_CTRL")
-                cmds.parent(ctrl, grp)
+                cmds.parent(oCtrl, oGrp)
 
                 cmds.xform(grp, ws=True, t=cmds.xform(
                     fJnt, q=True, ws=True, t=True
@@ -136,6 +136,19 @@ class FK(motionBase.MotionModuleBase):
                 cmds.xform(grp, ws=True, ro=cmds.xform(
                     fJnt, q=True, ws=True, ro=True
                 ))
+
+                cmds.parent(oGrp, ctrl)
+
+                ptc = cmds.parentConstraint(ctrl, fJnt, n=f"{fJnt}_ptc", mo=0)[0]
+                cmds.setAttr(f"{ptc}.interpType", 2)
+                sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
+            else:
+                ptc = cmds.parentConstraint(ctrl, fJnt, n=f"{fJnt}_ptc", mo=0)[0]
+                cmds.setAttr(f"{ptc}.interpType", 2)
+                sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
+
+
+
 
             
 

@@ -224,9 +224,14 @@ class RigUI(QtWidgets.QWidget):
         current_module_name = self.module_list_widget.currentItem().text()
         current_module = self.rig.motionModules[current_module_name]
 
+        # Remove the old module_settings_widget
+        self.module_settings_layout.removeWidget(self.module_settings_widget)
+        # FIXME: Doesn't seem to properly remove the widget if there's a NumberInputWidget in it
+
+        module_vars = current_module.baseEditableParameters() + current_module.customEditableParameters()
         self.module_settings_widget = SettingsWidget(
             inObject=current_module,
-            variables=current_module.baseEditableParameters()
+            variables=module_vars
         )
         self.module_settings_layout.addWidget(self.module_settings_widget)
 

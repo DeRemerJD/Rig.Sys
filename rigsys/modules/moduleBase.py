@@ -33,6 +33,10 @@ class ModuleBase:
         """Return the base editable parameters for modules."""
         return ["side", "label", "buildOrder", "isMuted", "mirror"]
 
+    def customEditableParameters(self) -> list:
+        """Return the custom editable parameters for modules."""
+        return []
+
     def run(self) -> None:
         """Run the module.
 

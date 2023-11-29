@@ -23,6 +23,7 @@ class Root(motionBase.MotionModuleBase):
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
         self.ctrlScale = ctrlScale
+        self.testNum = 0
 
         self.proxies = {
             "Root": proxy.Proxy(
@@ -38,6 +39,9 @@ class Root(motionBase.MotionModuleBase):
             "Base": None,
             "Offset": None
         }
+
+    def customEditableParameters(self) -> list:
+        return ["testNum"]
 
     def buildProxies(self):
         """Build the proxies for the module."""

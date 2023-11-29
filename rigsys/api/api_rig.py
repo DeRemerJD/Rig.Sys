@@ -6,6 +6,7 @@ import os
 
 import maya.cmds as cmds
 
+from rigsys.modules.moduleBase import ModuleBase
 import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
 
@@ -19,10 +20,10 @@ class Rig:
         """Initialize the rig."""
         self.name: str = name
 
-        self.motionModules = {}
-        self.deformerModules = {}
-        self.utilityModules = {}
-        self.exportModules = {}
+        self.motionModules: dict[str, ModuleBase] = {}
+        self.deformerModules: dict[str, ModuleBase] = {}
+        self.utilityModules: dict[str, ModuleBase] = {}
+        self.exportModules: dict[str, ModuleBase] = {}
 
         self.rigNode = None
         self.motionNodes = None

@@ -375,7 +375,6 @@ class FileInputWidget(LargeInputWidget):
 
         val = getattr(self.inObject, self.var.name)
         val = os.path.normpath(val)
-        val = stringUtilities.compressRelativePath(val)
         self.valLabel = QtWidgets.QLabel(val)
         self.valLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.valLabel.setToolTip(val)
@@ -395,23 +394,9 @@ class FileInputWidget(LargeInputWidget):
         """Set up the start directory for the file dialog."""
         self.startDirectory = self.var.startDirectory
 
-        if self.startDirectory == "character":
-            import zubio.api.api_character as api_character
-            self.startDirectory = api_character.getCharacter()
-            self.startDirectory = api_character.getCharacterFolderPath(self.startDirectory)
-
-        elif self.startDirectory == "production":
-            if api_production.checkProduction():
-                self.startDirectory = api_production.getProduction()
-            else:
-                self.startDirectory = os.path.expanduser("~")
-
-        elif self.startDirectory == "" or self.startDirectory == "." or self.startDirectory is None or \
+        if self.startDirectory == "" or self.startDirectory == "." or self.startDirectory is None or \
                 not os.path.exists(self.startDirectory) or not os.path.isdir(self.startDirectory):
-            if api_production.checkProduction():
-                self.startDirectory = api_production.getProduction()
-            else:
-                self.startDirectory = os.path.expanduser("~")
+            self.startDirectory = os.path.expanduser("~")
 
     def abbreviateValLabel(self):
         """Abbreviate the file path if it's too long."""
@@ -442,7 +427,6 @@ class FileInputWidget(LargeInputWidget):
             return
 
         selectedFile = os.path.normpath(dialog.selectedFiles()[0])
-        selectedFile = stringUtilities.compressRelativePath(selectedFile)
 
         setattr(self.inObject, self.var.name, selectedFile)
 
@@ -450,17 +434,3 @@ class FileInputWidget(LargeInputWidget):
         self.valLabel.setText(selectedFile)
         self.valLabel.setToolTip(selectedFile)
         self.abbreviateValLabel()
-
-        # Set mirrored
-        if not hasattr(self.inObject, "_mirroredObject") or not hasattr(self.inObject, "isMirror"):
-            return
-
-        if self.inObject._mirroredObject is None or not self.inObject.isMirror or \
-                not self.inObject._mirroredObject.isMirrored:
-            return
-
-        try:
-            mirroredString = stringUtilities.mirrorString(selectedFile)
-            setattr(self.inObject._mirroredObject, self.var.name, mirroredString)
-        except AttributeError:
-            print(f"Mirrored object has no attribute {self.var.name}")

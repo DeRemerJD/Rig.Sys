@@ -5,6 +5,8 @@ import rigsys.modules.motion.motionBase as motionBase
 import rigsys.lib.ctrl as ctrlCrv
 import rigsys.lib.proxy as proxy
 
+from proceduralSettingsWidget.parameters import uiParam
+
 import maya.cmds as cmds
 
 
@@ -24,6 +26,7 @@ class Root(motionBase.MotionModuleBase):
         self.ctrlShapes = ctrlShapes
         self.ctrlScale = ctrlScale
         self.testNum = 0
+        self.testFile = ""
 
         self.proxies = {
             "Root": proxy.Proxy(
@@ -41,7 +44,7 @@ class Root(motionBase.MotionModuleBase):
         }
 
     def customEditableParameters(self) -> list:
-        return ["testNum"]
+        return ["testNum", uiParam(self, "testFile", isFile=True)]
 
     def buildProxies(self):
         """Build the proxies for the module."""

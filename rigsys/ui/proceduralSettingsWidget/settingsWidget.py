@@ -29,6 +29,11 @@ class SettingsWidget(QtWidgets.QWidget):
         if self.variables is None:
             self.variables = vars(self.inObject).keys()
 
+        testParam = parameters._boolUIParam("testParam")
+        testParam2 = parameters.uiParam(self.inObject, "testFile", isFile=True)
+        # Hitting problems because we have a pip-installed version of proceduralSettingsWidget and a local version
+        # Probably want to remove the pip-installed version
+
         self.setupVariables()
 
     def setupVariables(self):
@@ -38,16 +43,25 @@ class SettingsWidget(QtWidgets.QWidget):
         self.setLayout(self.layout)
 
         for variable in self.variables:
-            self.addVariable(variable)
+            self.add_variable(variable)
 
-    def addVariable(self, variable_name):
+    def add_variable(self, variable):
         """Add a variable to the widget."""
-        value = getattr(self.inObject, variable_name)
+        if isinstance(variable, str):
+            self.add_variable_simple(variable)
+        elif isinstance(variable, parameters._baseUIParam):
+            self.add_variable_uiParam(variable)
+        else:
+            logger.error(f"Unsupported variable type {type(variable)} for variable {variable}")
+
+    def add_variable_simple(self, variable):
+        """Add a string variable to the widget."""
+        value = getattr(self.inObject, variable)
 
         if isinstance(value, bool):
             bool_input_widget = inputWidgets.BoolInputWidget(
                 inObject=self.inObject,
-                var=variable_name,
+                var=variable,
                 parent=self
             )
             self.layout.addWidget(bool_input_widget)
@@ -55,7 +69,7 @@ class SettingsWidget(QtWidgets.QWidget):
         elif isinstance(value, str):
             str_input_widget = inputWidgets.TextInputWidget(
                 inObject=self.inObject,
-                var=variable_name,
+                var=variable,
                 parent=self
             )
             self.layout.addWidget(str_input_widget)
@@ -63,10 +77,28 @@ class SettingsWidget(QtWidgets.QWidget):
         elif isinstance(value, int) or isinstance(value, float):
             number_input_widget = inputWidgets.NumberInputWidget(
                 inObject=self.inObject,
-                var=variable_name,
+                var=variable,
                 parent=self
             )
             self.layout.addWidget(number_input_widget)
 
         else:
-            logger.error(f"Unsupported variable type {type(value)} for variable {variable_name}")
+            logger.error(f"Unsupported variable type {type(value)} for variable {variable}")
+
+    def add_variable_uiParam(self, variable: parameters._baseUIParam):
+        """Add a uiParam variable to the widget."""
+        if isinstance(variable, parameters._boolUIParam):
+            bool_input_widget = inputWidgets.BoolInputWidget(
+                inObject=self.inObject,
+                var=variable.name,
+                parent=self
+            )
+            self.layout.addWidget(bool_input_widget)
+
+        elif isinstance(variable, parameters._strUIParameter) and (variable.isFile or variable.isDir):
+            file_input_widget = inputWidgets.FileInputWidget(
+                inObject=self.inObject,
+                var=variable.name,
+                parent=self
+            )
+            self.layout.addWidget(file_input_widget)

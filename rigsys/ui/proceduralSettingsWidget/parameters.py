@@ -74,10 +74,9 @@ class _floatUIParameter(_baseUIParam):
 
 
 class _strUIParameter(_baseUIParam):
-    def __init__(self, name, displayName=None, defaultValue=None, isCtrlStyle=False, isFile=False, isDir=False,
+    def __init__(self, name, displayName=None, defaultValue=None, isFile=False, isDir=False,
                  startDirectory="", isComboBox=False, comboBoxItems=None):
         super(_strUIParameter, self).__init__(name, displayName, defaultValue)
-        self.isCtrlStyle = isCtrlStyle
         self.isFile = isFile
         self.isDir = isDir
         self.startDirectory = startDirectory

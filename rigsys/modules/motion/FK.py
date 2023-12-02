@@ -13,9 +13,9 @@ class FK(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
-                 mirror: bool = False, selectedPlug: str = "", selectedParentSocket: str = "") -> None:
+                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
         
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes

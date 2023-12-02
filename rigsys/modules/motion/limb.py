@@ -13,9 +13,9 @@ class FK(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
-                 mirror: bool = False, selectedPlug: str = "", selectedParentSocket: str = "") -> None:
+                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
         
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
@@ -79,3 +79,8 @@ class FK(motionBase.MotionModuleBase):
         baseJoints = []
         IKJoints = []
         FKJoints = []
+
+    def buildSkeleton(self):
+        for key, val in self.proxies.items():
+            jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
+            cmds.xform(jnt, ws=True, t=val.position)

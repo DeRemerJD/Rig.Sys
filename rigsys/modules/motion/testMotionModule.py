@@ -12,9 +12,9 @@ class TestMotionModule(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 selectedPlug: str = "", selectedParentSocket: str = "") -> None:
+                 selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
 
         self.proxies = {
             "Proxy1": proxy.Proxy(

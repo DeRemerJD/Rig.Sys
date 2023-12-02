@@ -14,9 +14,9 @@ class FKSegment(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
                  reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
-                 mirror: bool = False, selectedPlug: str = "", selectedParentSocket: str = "") -> None:
+                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -71,8 +71,11 @@ class FKSegment(motionBase.MotionModuleBase):
             self.proxies["End"].parent = str(segments-1)
 
         self.socket = {
-            "Start": None,
-            "End": None
+            "Start": None
+        }
+        self.plugs = {
+            "Local": self.plugParent,
+            "World": self.worldParent
         }
         if self.segments > 1:
             for i in range(1, self.segments):
@@ -415,8 +418,6 @@ class FKSegment(motionBase.MotionModuleBase):
             cmds.parent(FKJoints, self.plugParent)
             cmds.parent(IKJoints[0], self.plugParent)
 
-
-
         if self.reverse:
             if self.addOffset:
                 for oCtrl, fkJnt in zip(OffsetCtrls, FKJoints):
@@ -430,6 +431,11 @@ class FKSegment(motionBase.MotionModuleBase):
             for fkCtrl, fkJnt in zip(FKCtrls, FKJoints):
                     ptc = cmds.parentConstraint(fkCtrl, fkJnt, n=f"{fkJnt}_ptc", mo=0)[0]
                     cmds.setAttr(f"{ptc}.interpType", 2)   
+
+        index = 0
+        for i in railJoints:
+            self.socket[f"Rail_{index}"] = i
+            index+=1
         # TODO: 
         '''
         Hierarchy of Rig / Components

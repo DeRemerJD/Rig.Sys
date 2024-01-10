@@ -1,6 +1,6 @@
 """Helper classes and functions for building joints."""
 import maya.cmds as cmds
-import maya.OpenMaya as om
+import maya.api.OpenMaya as om
 
 
 def createJoint(jointName, position=None, rotation=None, mirrorPosition=False,
@@ -35,8 +35,8 @@ def aim(nodes=[], target=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z",
             if len(dontExist) > 0:
                 cmds.error("The Following Nodes " + str(dontExist))
 
-    if len(nodes) < 2:
-        cmds.error("Length Of Nodes Must Be At Least Two")
+    # if len(nodes) < 2:
+    #     cmds.error("Length Of Nodes Must Be At Least Two")
 
     if target == []:
         return
@@ -127,8 +127,8 @@ def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z", 
         # If this is the last item in the loop, match orientations to previous item.
         if targets[i] == targets[-1]:
             for axis in ("x", "y", "z"):
-                previousRotation = cmds.xform(targets[i - 1], q=True, a=True, ro=True)
-                cmds.xform(targets[i], a=True, ro=previousRotation)
+                previousRotation = cmds.xform(targets[i - 1], q=True, ws=True, ro=True)
+                cmds.xform(targets[i], ws=True, ro=previousRotation)
 
                 if cmds.objectType(targets[i]) == "joint":
                     cJnts = cmds.listRelatives(targets[i - 1], children=True)

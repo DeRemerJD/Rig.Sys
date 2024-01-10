@@ -80,30 +80,6 @@ class Limb(motionBase.MotionModuleBase):
         """Run the module."""
 
         '''
-        Chains for FK, IK, Base joints + Clavicle.
-        Build a surface from 0 to 10, and across x number of spans.
-        Make x number of controls for the bendy limb and n number of joints
-        bind the surface to the x ctrl joints. Have a specified start mid end ctrl/joint
-        bind the designated controls to the matching position on the base skel
-
-        lo = cmds.loft(["TestCurve", "TestCurve1"], n="TESTSURFACE", ch=0)
-        print(lo)
-        isolateSelect -update "modelPanel4";
-        ['TESTSURFACE']
-        isolateSelect -addSelectedObjects modelPanel4;
-        select -r TESTSURFACE ;
-        reverseSurface -d 3 -ch 1 -rpo 1 "TESTSURFACE";
-        // Warning: History will be off for the command since Keep Originals is off and a selected item has no history.
-        isolateSelect -update "modelPanel4";
-        // Result: TESTSURFACE
-        isolateSelect -addSelectedObjects modelPanel4;
-        rebuildSurface -ch 1 -rpo 1 -rt 0 -end 1 -kr 0 -kcp 0 -kc 0 -su 6 -du 3 -sv 1 -dv 1 -tol 0.01 -fr 0  -dir 2 "TESTSURFACE";
-        // Warning: History will be off for the command since Keep Originals is off and a selected item has no history.
-        isolateSelect -update "modelPanel4";
-        // Result: TESTSURFACE
-        isolateSelect -addSelectedObjects modelPanel4;
-
-
         TODO: 
         Note
            - This limb is comprised of the following. Parts of this description that start with a -* are in progress.
@@ -149,6 +125,9 @@ class Limb(motionBase.MotionModuleBase):
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
         IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)
         self.buildRibbon(baseJoints, upRollJoints, loRollJoints, midCtrl, endCtrl)
+
+        # Cleanup
+        cmds.parent(baseJoints[0], self.moduleUtilities)
 
     def buildSkeleton(self):
         baseJoints = []
@@ -220,8 +199,8 @@ class Limb(motionBase.MotionModuleBase):
         IKControls = []
         FKControls = []
         # IK Control
-        ikGrp = cmds.createNode('transform', n=f"{IKJoints[2]}_IK_grp")
-        ikCtrl = cmds.createNode('transform', n=f"{IKJoints[2]}_IK_CTRL", p=ikGrp)
+        ikGrp = cmds.createNode('transform', n=f"{IKJoints[2]}_grp")
+        ikCtrl = cmds.createNode('transform', n=f"{IKJoints[2]}_CTRL", p=ikGrp)
         cmds.xform(ikGrp, ws=True, t=cmds.xform(
             IKJoints[2], q=True, ws=True, t=True
         ))
@@ -299,6 +278,8 @@ class Limb(motionBase.MotionModuleBase):
         cmds.xform(clavGrp, ws=True, ro=cmds.xform(
                 baseJoints[0], q=True, ws=True, ro=True
             ))
+        
+        ptc = cmds.parentConstraint(clavCtrl, baseJoints[0], n=f"{baseJoints[0]}_ptc", mo=0)
         fkPar = cmds.listRelatives(FKControls[0], p=True)[0]
 
         # Shoulder Orientation Global / Local
@@ -403,6 +384,9 @@ class Limb(motionBase.MotionModuleBase):
         pc = cmds.pointConstraint(baseJoints[2], midGrp, n=f"{midGrp}_pc", mo=0)
         oc = cmds.orientConstraint([upRollJoints[1], loRollJoints[1]], midGrp, n=f"{midGrp}_oc", mo=0)
 
+        # Cleanup
+        cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0], endGrp, midGrp], self.plugParent)
+
         return IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK 
     
 
@@ -448,6 +432,9 @@ class Limb(motionBase.MotionModuleBase):
         loIK = loIK[0]
         pc = cmds.pointConstraint(baseJoints[2], loIK, n=f"{loIK}_pc", mo=0)
         oc = cmds.orientConstraint(baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
+        
+        #Cleanup
+        cmds.parent([upIK, loIK], self.moduleUtilities)
 
         return [upRollStart, upRollEnd], [loRollStart,loRollEnd], upIK, loIK 
          
@@ -473,6 +460,7 @@ class Limb(motionBase.MotionModuleBase):
             ribbon, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0, 
             su=6, du=3, sv=1, dv=1, tol=0.01, fr=0, dir=2, ch=False
             )
+        cmds.delete([tempCurve, tempCurve2])
         param = 0
         paramInfl = 1/(self.numberOfJoints-1)
         for i in range(self.numberOfJoints):
@@ -514,9 +502,10 @@ class Limb(motionBase.MotionModuleBase):
         rangeDist = (1/6) * 10
         tempUpSpace = cmds.createNode('transform', n='TempUpSpace')
         cmds.xform(tempUpSpace, ws=True, t=[0, 0, -10])
+        bendyCtrlGrp = cmds.createNode("transform", n=f"{self.side}_{self.label}_BendyCtrls")
         # Make Ribbon Controls
         for i in range(7):
-            grp = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_grp")
+            grp = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_grp", p=bendyCtrlGrp)
             offset = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_offset", p=grp)
             ctrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_CTRL", p=offset)
             jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_Bendy_{i}", p=ctrl)
@@ -544,7 +533,7 @@ class Limb(motionBase.MotionModuleBase):
                                       ribbon,
                                       n=f"{ribbon}_scls",
                                       tsb=True,
-                                      mi=4)[0]
+                                      mi=1)[0]
 
         # Order The Controls
         ptc = cmds.parentConstraint(upRollJoints[0], ribbonGroups[0], n=f"{ribbonGroups[0]}_ptc", mo=0)
@@ -586,6 +575,11 @@ class Limb(motionBase.MotionModuleBase):
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[4], n=f"{ribbonOffsets[4]}_ac",
                                 aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
                                 wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+        
+        # Cleanup
+        cmds.parent(ribbon, self.moduleUtilities)
+        cmds.parent(folGrp, self.moduleUtilities)
+        cmds.parent(bendyCtrlGrp, self.plugParent)
         
         
             

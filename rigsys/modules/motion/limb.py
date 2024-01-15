@@ -253,7 +253,8 @@ class Limb(motionBase.MotionModuleBase):
                 node=ctrl,
                 shape="square",
                 scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
-                offset=[0, 0, 0]
+                offset=[0, 0, 0],
+                orient=[0, 0, 90]
             )
             fkCtrlObject.giveCtrlShape()
             ptc = cmds.parentConstraint(ctrl, jnt, n=f"{jnt}_ptc", mo=0)
@@ -370,7 +371,8 @@ class Limb(motionBase.MotionModuleBase):
             node=midCtrl,
             shape="circle",
             scale=[self.ctrlScale[0]*1.5, self.ctrlScale[1]*1.5, self.ctrlScale[2]*1.5],
-            offset=[0, 0, 0]
+            offset=[0, 0, 0],
+            orient=[0, 90, 0]
         )
         midCtrlObject.giveCtrlShape()
         cmds.xform(midGrp, ws=True, t=cmds.xform(
@@ -382,7 +384,8 @@ class Limb(motionBase.MotionModuleBase):
 
         upRollJoints, loRollJoints, upIK, loIK = self.buildCounterJoints(baseJoints, socketConnector, endJnt)
         pc = cmds.pointConstraint(baseJoints[2], midGrp, n=f"{midGrp}_pc", mo=0)
-        oc = cmds.orientConstraint([upRollJoints[1], loRollJoints[1]], midGrp, n=f"{midGrp}_oc", mo=0)
+        oc = cmds.orientConstraint([upRollJoints[1], loRollJoints[1]], midGrp, n=f"{midGrp}_oc", mo=0)[0]
+        cmds.setAttr(f"{oc}.interpType", 2)
 
         # Cleanup
         cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0], endGrp, midGrp], self.plugParent)
@@ -519,7 +522,8 @@ class Limb(motionBase.MotionModuleBase):
                 node=ctrl,
                 shape="circle",
                 scale=[self.ctrlScale[0]*.75, self.ctrlScale[1]*.75, self.ctrlScale[2]*.75],
-                offset=[0, 0, 0]
+                offset=[0, 0, 0],
+                orient=[0, 90, 0]
             )
             ctrlObject.giveCtrlShape()
 

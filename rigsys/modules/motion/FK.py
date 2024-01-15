@@ -12,11 +12,11 @@ class FK(motionBase.MotionModuleBase):
     """FK Motion Module."""
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
-                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
+                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
                  mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
-        
+
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
         self.ctrlScale = ctrlScale
@@ -62,7 +62,7 @@ class FK(motionBase.MotionModuleBase):
                 par = str(i)
             self.proxies["End"] = self.proxies.pop("End")
 
-            self.proxies["End"].parent = str(segments-1)
+            self.proxies["End"].parent = str(segments - 1)
 
         self.socket = {
             "Start": None,
@@ -78,7 +78,7 @@ class FK(motionBase.MotionModuleBase):
 
     def buildModule(self):
         """Run the module."""
-    
+
         plugPosition = self.proxies["Start"].position
         plugRotation = self.proxies["Start"].rotation
         # MAKE MODULE NODES
@@ -97,17 +97,17 @@ class FK(motionBase.MotionModuleBase):
                 fJnt = cmds.createNode("joint", n=f"{self.getFullName()}_{val.name}")
                 FKJoints.append(fJnt)
                 cmds.xform(fJnt, ws=True, t=val.position)
-        
+
         index = 0
         for fJnt in FKJoints:
             if fJnt != FKJoints[-1]:
-                cmds.parent(FKJoints[index+1], fJnt)
-            index+=1
+                cmds.parent(FKJoints[index + 1], fJnt)
+            index += 1
 
         jointTools.aimSequence(
-            FKJoints, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+            FKJoints, aimAxis="+x", upAxis="-z",
+            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+        
         FKGrps = []
         FKCtrls = []
         for fJnt in FKJoints:
@@ -146,10 +146,3 @@ class FK(motionBase.MotionModuleBase):
                 ptc = cmds.parentConstraint(ctrl, fJnt, n=f"{fJnt}_ptc", mo=0)[0]
                 cmds.setAttr(f"{ptc}.interpType", 2)
                 sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
-
-
-
-
-            
-
-

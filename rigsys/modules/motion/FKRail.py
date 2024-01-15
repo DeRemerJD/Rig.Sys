@@ -13,7 +13,7 @@ class FKSegment(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
-                 reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
+                 reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
                  mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
@@ -68,7 +68,7 @@ class FKSegment(motionBase.MotionModuleBase):
                 par = str(i)
             self.proxies["End"] = self.proxies.pop("End")
 
-            self.proxies["End"].parent = str(segments-1)
+            self.proxies["End"].parent = str(segments - 1)
 
         self.socket = {
             "Start": None
@@ -102,30 +102,30 @@ class FKSegment(motionBase.MotionModuleBase):
         FKCtrls = []
         FKGrps = []
         OffsetCtrls = []
-        OffsetGrps = []        
+        OffsetGrps = []
         RFKCtrls = []
         RFKGrps = []
         RFKOffsets = []
-        ### MODULE STRUCTURE ###
+        # MODULE STRUCTURE #
         for key, proxy in self.proxies.items():
             if key != "UpVector":
                 fGrp = cmds.createNode("transform", n="{}_{}_grp".format(
                     self.getFullName(), self.proxies[key].name))
                 fCtrl = cmds.createNode("transform", n="{}_{}_CTRL".format(
                     self.getFullName(), self.proxies[key].name))
-                
+
                 cmds.parent(fCtrl, fGrp)
                 FKCtrls.append(fCtrl)
                 FKGrps.append(fGrp)
 
                 cmds.xform(fGrp, ws=True, t=self.proxies[key].position)
-                
+
                 if self.addOffset:
                     oGrp = cmds.createNode("transform", n="{}_{}Local_grp".format(
-                    self.getFullName(), self.proxies[key].name))
+                        self.getFullName(), self.proxies[key].name))
                     oCtrl = cmds.createNode("transform", n="{}_{}Local_CTRL".format(
-                    self.getFullName(), self.proxies[key  ].name))
-                
+                        self.getFullName(), self.proxies[key].name))
+
                 cmds.parent(oCtrl, oGrp)
                 OffsetCtrls.append(oCtrl)
                 OffsetGrps.append(oGrp)
@@ -133,11 +133,11 @@ class FKSegment(motionBase.MotionModuleBase):
 
                 if self.reverse:
                     rGrp = cmds.createNode("transform", n="{}_{}_Rev_grp".format(
-                    self.getFullName(), self.proxies[key].name))
+                        self.getFullName(), self.proxies[key].name))
                     rCtrl = cmds.createNode("transform", n="{}_{}_Rev_CTRL".format(
-                    self.getFullName(), self.proxies[key].name))
+                        self.getFullName(), self.proxies[key].name))
                     rOff = cmds.createNode("transform", n="{}_{}_Rev_offset".format(
-                    self.getFullName(), self.proxies[key].name))
+                        self.getFullName(), self.proxies[key].name))
 
                     cmds.parent(rCtrl, rGrp)
                     cmds.parent(rOff, rCtrl)
@@ -147,46 +147,39 @@ class FKSegment(motionBase.MotionModuleBase):
                     RFKOffsets.append(rOff)
                     cmds.xform(rGrp, ws=True, t=self.proxies[key].position)
 
-        #Orient FK
+        # Orient FK
         jointTools.aimSequence(
-            targets=FKGrps, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+            targets=FKGrps, aimAxis="+x", upAxis="-z",
+            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         jointTools.aimSequence(
-            targets=FKCtrls, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+            targets=FKCtrls, aimAxis="+x", upAxis="-z",
+            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         if self.reverse:
             jointTools.aimSequence(
-            targets=RFKGrps, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+                targets=RFKGrps, aimAxis="+x", upAxis="-z",
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-            targets=RFKOffsets, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+                targets=RFKOffsets, aimAxis="+x", upAxis="-z",
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-            targets=RFKCtrls, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+                targets=RFKCtrls, aimAxis="+x", upAxis="-z",
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             for rOff in RFKOffsets:
                 cmds.setAttr(f"{rOff}.rotateOrder", 5)
         if self.addOffset:
             jointTools.aimSequence(
-            targets=OffsetGrps, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+                targets=OffsetGrps, aimAxis="+x", upAxis="-z",
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-            targets=OffsetCtrls, aimAxis="+x", upAxis="-z", 
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy"
-            )
+                targets=OffsetCtrls, aimAxis="+x", upAxis="-z",
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
 
         # Parenting
         index = 1
         for fCtrl in FKCtrls:
             if not index >= len(FKCtrls):
                 cmds.parent(FKGrps[index], fCtrl)
-            index+=1 
+            index += 1 
             fkCtrlObject = ctrlCrv.Ctrl(
                 node=fCtrl,
                 shape="sphere",

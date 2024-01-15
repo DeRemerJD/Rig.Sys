@@ -25,4 +25,4 @@ All motion modules have attributes for working with parenting.
 - `plugs`: A dictionary of plugs. See [Plugs and sockets](plugs-and-sockets.md) for more information.
 - `sockets`: A dictionary of sockets. See [Plugs and sockets](plugs-and-sockets.md) for more information.
 - `selectedPlug`: The plug of the child (current) module that will go into the parent's socket.
-- `selectedParentSocket`: The socket of the parent module the child (current) module's plug will go into.
+- `selectedSocket`: The socket of the parent module the child (current) module's plug will go into.

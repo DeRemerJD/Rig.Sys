@@ -13,7 +13,7 @@ class QuadLimb(motionBase.MotionModuleBase):
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
                  mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "",
-                 pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
+                 pvMultiplier: float = 1.0, numberOfJoints: int = 11, ikCtrlToFloor: bool = True,
                  nameSet: dict = {"Root":"Root", "Start":"Start", "UpMid":"UpMid", "LoMid":"LoMid", "End":"End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
@@ -29,6 +29,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         self.pvMultiplier = pvMultiplier
         self.numberOfJoints = numberOfJoints
         self.nameSet = nameSet
+        self.ikCtrlToFloor = ikCtrlToFloor
 
         self.proxies = {
             self.nameSet["Root"]: proxy.Proxy(
@@ -178,6 +179,41 @@ class QuadLimb(motionBase.MotionModuleBase):
         return baseJoints, FKJoints, IKJoints, socketConnector
     
     def buildBaseControls(self, baseJoints, IKJoints, FKJoints, socketConnector):
+        # Make 3 Point IK for Quad Calc:: Guide Joints / IK
+        guideLength_1 = cmds.xform(IKJoints[2], q=True, a=True)[0]
+        guideLength_2 = cmds.xform(IKJoints[1], q=True, a=True)[0] + cmds.xform(IKJoints[3], q=True, a=True)[0]
+
+
+        # Make joints
+        startGuide = cmds.createNode("joint", n=f"{self.side}_{self.label}_StartGuide")
+        midGuide = cmds.createNode("joint", n=f"{self.side}_{self.label}_MidGuide", p=startGuide)
+        endGuide = cmds.createNode("joint", n=f"{self.side}_{self.label}_EndGuide", p=midGuide)
+
+        # Position joint root
+        cmds.xform(startGuide, ws=True, t=cmds.xform(
+            IKJoints[0], q=True, ws=True, t=True
+        ))
+        cmds.xform(startGuide, ws=True, ro=cmds.xform(
+            IKJoints[0], q=True, ws=True, ro=True
+        ))
+
+        cmds.xform(midGuide, r=True, t=[guideLength_1, 0, 0])
+        cmds.xform(endGuide, r=True, t=[guideLength_2, 0, 0])
+        cmds.xform(midGuide, r=True, ro=[0, 90, 0])
+        cmds.makeIdentity(startGuide, a=True)  
+
+        guideIKHandle = cmds.ikHandle(n=f"{self.side}_{self.label}_GuideIK", sj=startGuide, ee=endGuide, sol="ikRPsolver", p=1)
+        guideEff = cmds.rename(ik[1], f"{self.side}_{self.label}_GuideEFF")
+        guideIKHandle = guideIKHandle[0]
+        cmds.xform(guideIKHandle, ws=True, t=cmds.xform(
+            IKJoints[3], ws=True, t=True
+        ))
+        pvc = cmds.poleVectorConstraint(IKJoints[1], guideIKHandle)
+        cmds.setAttr(f"{guideIKHandle}.twist", 180)
+
+        
+
+
         # Make controls
         IKControls = []
         FKControls = []

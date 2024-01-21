@@ -414,6 +414,7 @@ class Limb(motionBase.MotionModuleBase):
         upIK = upIK[0]
         pc = cmds.pointConstraint(baseJoints[2], upIK, n=f"{upIK}_pc", mo=0)
         oc = cmds.orientConstraint(baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
+        cmds.parent(upIK, socketConnector)
 
         loRollStart = cmds.createNode("joint", n=f"{baseJoints[3]}_Roll")
         loRollEnd = cmds.createNode("joint", n=f"{baseJoints[3]}_End", p=loRollStart)
@@ -435,9 +436,10 @@ class Limb(motionBase.MotionModuleBase):
         loIK = loIK[0]
         pc = cmds.pointConstraint(baseJoints[2], loIK, n=f"{loIK}_pc", mo=0)
         oc = cmds.orientConstraint(baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
+        cmds.parent(loIK, baseJoints[3])
         
         #Cleanup
-        cmds.parent([upIK, loIK], self.moduleUtilities)
+        # cmds.parent([upIK, loIK], self.moduleUtilities)
 
         return [upRollStart, upRollEnd], [loRollStart,loRollEnd], upIK, loIK 
          

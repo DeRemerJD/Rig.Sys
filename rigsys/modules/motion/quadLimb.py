@@ -101,6 +101,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         self.worldParent = self.createWorldParent()
 
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
+        IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)        
         # IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)
         # self.buildRibbon(baseJoints, upRollJoints, loRollJoints, midCtrl, endCtrl)
 
@@ -177,11 +178,12 @@ class QuadLimb(motionBase.MotionModuleBase):
         cmds.parent(socketConnector, baseJoints[0])
         cmds.parent([baseJoints[1], FKJoints[0], IKJoints[0]], socketConnector)
         return baseJoints, FKJoints, IKJoints, socketConnector
-    
+
+
     def buildBaseControls(self, baseJoints, IKJoints, FKJoints, socketConnector):
         # Make 3 Point IK for Quad Calc:: Guide Joints / IK
-        guideLength_1 = cmds.xform(IKJoints[2], q=True, a=True)[0]
-        guideLength_2 = cmds.xform(IKJoints[1], q=True, a=True)[0] + cmds.xform(IKJoints[3], q=True, a=True)[0]
+        guideLength_1 = cmds.xform(IKJoints[2], q=True, a=True, t=True)[0]
+        guideLength_2 = cmds.xform(IKJoints[1], q=True, a=True, t=True)[0] + cmds.xform(IKJoints[3], q=True, a=True, t=True)[0]
 
 
         # Make joints
@@ -189,6 +191,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         midGuide = cmds.createNode("joint", n=f"{self.side}_{self.label}_MidGuide", p=startGuide)
         endGuide = cmds.createNode("joint", n=f"{self.side}_{self.label}_EndGuide", p=midGuide)
 
+        cmds.parent(startGuide, socketConnector)
         # Position joint root
         cmds.xform(startGuide, ws=True, t=cmds.xform(
             IKJoints[0], q=True, ws=True, t=True
@@ -197,41 +200,70 @@ class QuadLimb(motionBase.MotionModuleBase):
             IKJoints[0], q=True, ws=True, ro=True
         ))
 
+        # Add guide lengths to counter pivit guide joints, position them, freeze
         cmds.xform(midGuide, r=True, t=[guideLength_1, 0, 0])
         cmds.xform(endGuide, r=True, t=[guideLength_2, 0, 0])
         cmds.xform(midGuide, r=True, ro=[0, 90, 0])
         cmds.makeIdentity(startGuide, a=True)  
 
+        # Generate IK, place IK, constrain
         guideIKHandle = cmds.ikHandle(n=f"{self.side}_{self.label}_GuideIK", sj=startGuide, ee=endGuide, sol="ikRPsolver", p=1)
-        guideEff = cmds.rename(ik[1], f"{self.side}_{self.label}_GuideEFF")
+        guideEff = cmds.rename(guideIKHandle[1], f"{self.side}_{self.label}_GuideEFF")
         guideIKHandle = guideIKHandle[0]
         cmds.xform(guideIKHandle, ws=True, t=cmds.xform(
-            IKJoints[3], ws=True, t=True
+            IKJoints[3], q=True, ws=True, t=True
         ))
-        pvc = cmds.poleVectorConstraint(IKJoints[1], guideIKHandle)
+        # pvc = cmds.poleVectorConstraint(IKJoints[1], guideIKHandle) Instead PV to the pv control.
         cmds.setAttr(f"{guideIKHandle}.twist", 180)
-
-        
-
 
         # Make controls
         IKControls = []
         FKControls = []
         # IK Control
-        ikGrp = cmds.createNode('transform', n=f"{IKJoints[2]}_grp")
-        ikCtrl = cmds.createNode('transform', n=f"{IKJoints[2]}_CTRL", p=ikGrp)
+        ikGrp = cmds.createNode('transform', n=f"{IKJoints[3]}_grp")
+        ikCtrl = cmds.createNode('transform', n=f"{IKJoints[3]}_CTRL", p=ikGrp)
         cmds.xform(ikGrp, ws=True, t=cmds.xform(
-            IKJoints[2], q=True, ws=True, t=True
+            IKJoints[3], q=True, ws=True, t=True
         ))
+        if self.ikCtrlToFloor:
+            t = cmds.xform(ikGrp, q=True, a=True, t=True)
+            cmds.xform(ikGrp, a=True, t=[t[0], 0, t[2]])
+
+            ikCtrlObject = ctrlCrv.Ctrl(
+                node=ikCtrl,
+                shape="box",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, self.ctrlScale[1]*1, 0],
+                orient=[0, 0, 0]
+            )
+        else:
+            ikCtrlObject = ctrlCrv.Ctrl(
+                node=ikCtrl,
+                shape="box",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 0, 0]
+            )
+        ikCtrlObject.giveCtrlShape()
+        IKControls.append(ikCtrl)
+
+        ikOffsetGrp = cmds.createNode("transform", n=f"{IKJoints[3]}_Offset_grp", p=ikCtrl)
+        ikOffsetCtrl = cmds.createNode("transform", n=f"{IKJoints[3]}_Offset_CTRL", p=ikOffsetGrp)
+
+        cmds.xform(ikOffsetGrp, ws=True, t=cmds.xform(
+            IKJoints[3], q=True, ws=True, t=True
+        ))
+
+        IKControls.append(ikOffsetCtrl)
+
         ikCtrlObject = ctrlCrv.Ctrl(
-            node=ikCtrl,
+            node=ikOffsetCtrl,
             shape="sphere",
             scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
             offset=[0, 0, 0],
             orient=[0, 0, 0]
         )
         ikCtrlObject.giveCtrlShape()
-        IKControls.append(ikCtrl)
 
         # Pole Vector Control
         pvCtrl = cmds.createNode('transform', n=f"{self.poleVector}_CTRL")
@@ -251,14 +283,25 @@ class QuadLimb(motionBase.MotionModuleBase):
         IKControls.append(pvCtrl)
         
         # Make IK Handle
-        ik = cmds.ikHandle(n=f"{self.side}_{self.label}_IK", sj=IKJoints[0], ee=IKJoints[2], sol="ikRPsolver", p=1)
-        eff = cmds.rename(ik[1], f"{self.side}_{self.label}_EFF")
-        ik = ik[0]
-        cmds.parent(ik, ikCtrl)
-        oc = cmds.orientConstraint(ikCtrl, IKJoints[2], n=f"{IKJoints}_oc", mo=1)
-        pvc = cmds.poleVectorConstraint(self.poleVector, ik, n=f"{ik}_pvc")
+        ikRP = cmds.ikHandle(n=f"{self.side}_{self.label}_UP_IK", sj=IKJoints[0], ee=IKJoints[2], sol="ikRPsolver", p=1)
+        effRP = cmds.rename(ikRP[1], f"{self.side}_{self.label}_UP_EFF")
+        ikRP = ikRP[0]
+        # cmds.parent(ik, ikCtrl) Needs parenting to the calf IK
+        oc = cmds.orientConstraint(ikCtrl, IKJoints[3], n=f"{IKJoints}_oc", mo=1)
+        pvc = cmds.poleVectorConstraint(self.poleVector, ikRP, n=f"{ikRP}_pvc")
+        pvc = cmds.poleVectorConstraint(self.poleVector, guideIKHandle, n=f"{guideIKHandle}_pvc")        
 
-        sik = cmds.ikHandle(f"{self.side}")
+        ikSC = cmds.ikHandle(n=f"{self.side}_{self.label}_LO_IK", sj=IKJoints[2], ee=IKJoints[3], sol="ikSCsolver", p=1)
+        effSC = cmds.rename(ikSC[1], f"{self.side}_{self.label}_LO_EFF")
+        ikSC = ikSC[0]
+        # pvc = cmds.poleVectorConstraint(IKJoints[1], ikSC, n=f"{ikSC}_pvc")
+
+        # Add calf logic
+        oc = cmds.orientConstraint(midGuide, ikOffsetGrp, n=f"{ikOffsetGrp}_oc", mo=0)
+        cmds.parent([ikRP, ikSC], ikOffsetCtrl)
+        cmds.parent(guideIKHandle, ikCtrl)
+
+        
 
         # FK Controls
         for jnt in FKJoints:
@@ -369,46 +412,354 @@ class QuadLimb(motionBase.MotionModuleBase):
             cmds.addAttr(ctrl, ln="IK_FK_Switch", proxy=f"{ikCtrl}.IK_FK_Switch", at="float", min=0, max=1, dv=0, k=1)
         cmds.addAttr(pvCtrl, ln="IK_FK_Switch", proxy=f"{ikCtrl}.IK_FK_Switch", at="float", min=0, max=1, dv=0, k=1)
 
-        endGrp = cmds.createNode("transform", n=f"{baseJoints[3]}_grp")
-        endCtrl = cmds.createNode("transform", n=f"{baseJoints[3]}_CTRL", p=endGrp)
-        endJnt = cmds.createNode("joint", n=f"{baseJoints[3]}End")
-        cmds.xform(endJnt, ws=True, m=cmds.xform(
-            baseJoints[3], q=True, ws=True, m=True
-        ))
-        cmds.parent(endJnt, baseJoints[3])
-        ptc = cmds.parentConstraint(baseJoints[3], endGrp, n=f"{baseJoints[3]}_End_ptc", mo=0)
-        ptc = cmds.parentConstraint(endCtrl, endJnt, n=f"{endJnt}_ptc", mo=0)
-        endCtrlObject = ctrlCrv.Ctrl(
-            node=endCtrl,
-            shape="box",
-            scale=[self.ctrlScale[0]*1.15, self.ctrlScale[1]*1.15, self.ctrlScale[2]*1.15],
-            offset=[self.ctrlScale[0]*1.25, 0, 0]
-        )
-        endCtrlObject.giveCtrlShape()
+        # endGrp = cmds.createNode("transform", n=f"{baseJoints[4]}_grp")
+        # endCtrl = cmds.createNode("transform", n=f"{baseJoints[4]}_CTRL", p=endGrp)
+        # endJnt = cmds.createNode("joint", n=f"{baseJoints[4]}End")
+        # cmds.xform(endJnt, ws=True, m=cmds.xform(
+        #     baseJoints[4], q=True, ws=True, m=True
+        # ))
+        # cmds.parent(endJnt, baseJoints[4])
+        # ptc = cmds.parentConstraint(baseJoints[4], endGrp, n=f"{baseJoints[4]}_End_ptc", mo=0)
+        # ptc = cmds.parentConstraint(endCtrl, endJnt, n=f"{endJnt}_ptc", mo=0)
+        # endCtrlObject = ctrlCrv.Ctrl(
+        #     node=endCtrl,
+        #     shape="box",
+        #     scale=[self.ctrlScale[0]*1.15, self.ctrlScale[1]*1.15, self.ctrlScale[2]*1.15],
+        #     offset=[self.ctrlScale[0]*1.25, 0, 0]
+        # )
+        # endCtrlObject.giveCtrlShape()
 
-        midGrp = cmds.createNode("transform", n=f"{baseJoints[2]}_Offset_grp")
-        midCtrl = cmds.createNode("transform", n=f"{baseJoints[2]}_Offset_CTRL", p=midGrp)
-        midCtrlObject = ctrlCrv.Ctrl(
-            node=midCtrl,
-            shape="circle",
-            scale=[self.ctrlScale[0]*1.5, self.ctrlScale[1]*1.5, self.ctrlScale[2]*1.5],
-            offset=[0, 0, 0],
-            orient=[0, 90, 0]
-        )
-        midCtrlObject.giveCtrlShape()
-        cmds.xform(midGrp, ws=True, t=cmds.xform(
-            baseJoints[2], q=True, ws=True, t=True
-        ))
-        cmds.xform(midGrp, ws=True, ro=cmds.xform(
-            baseJoints[2], q=True, ws=True, ro=True
-        ))
+        # upMidGrp = cmds.createNode("transform", n=f"{baseJoints[2]}_Offset_grp")
+        # upMidCtrl = cmds.createNode("transform", n=f"{baseJoints[2]}_Offset_CTRL", p=upMidGrp)
+        # upMidCtrlObject = ctrlCrv.Ctrl(
+        #     node=upMidCtrl,
+        #     shape="circle",
+        #     scale=[self.ctrlScale[0]*1.5, self.ctrlScale[1]*1.5, self.ctrlScale[2]*1.5],
+        #     offset=[0, 0, 0],
+        #     orient=[0, 90, 0]
+        # )
+        # upMidCtrlObject.giveCtrlShape()
+        # cmds.xform(upMidGrp, ws=True, t=cmds.xform(
+        #     baseJoints[2], q=True, ws=True, t=True
+        # ))
+        # cmds.xform(upMidGrp, ws=True, ro=cmds.xform(
+        #     baseJoints[2], q=True, ws=True, ro=True
+        # ))
 
-        upRollJoints, loRollJoints, upIK, loIK = self.buildCounterJoints(baseJoints, socketConnector, endJnt)
-        pc = cmds.pointConstraint(baseJoints[2], midGrp, n=f"{midGrp}_pc", mo=0)
-        oc = cmds.orientConstraint([upRollJoints[1], loRollJoints[1]], midGrp, n=f"{midGrp}_oc", mo=0)[0]
-        cmds.setAttr(f"{oc}.interpType", 2)
+        # loMidGrp = cmds.createNode("transform", n=f"{baseJoints[3]}_Offset_grp")
+        # loMidCtrl = cmds.createNode("transform", n=f"{baseJoints[3]}_Offset_CTRL", p=loMidGrp)
+        # loMidCtrlObject = ctrlCrv.Ctrl(
+        #     node=loMidCtrl,
+        #     shape="circle",
+        #     scale=[self.ctrlScale[0]*1.5, self.ctrlScale[1]*1.5, self.ctrlScale[2]*1.5],
+        #     offset=[0, 0, 0],
+        #     orient=[0, 90, 0]
+        # )
+        # loMidCtrlObject.giveCtrlShape()
+        # cmds.xform(loMidGrp, ws=True, t=cmds.xform(
+        #     baseJoints[3], q=True, ws=True, t=True
+        # ))
+        # cmds.xform(loMidGrp, ws=True, ro=cmds.xform(
+        #     baseJoints[3], q=True, ws=True, ro=True
+        # ))
+
+        upRollJoints, loRollJoints, upIK, loIK = self.buildCounterJoints(baseJoints, socketConnector)
+        # pc = cmds.pointConstraint(baseJoints[2], upMidGrp, n=f"{upMidGrp}_pc", mo=0)
+        # oc = cmds.orientConstraint([upRollJoints[1], baseJoints[3]], upMidGrp, n=f"{upMidGrp}_oc", mo=0)[0]
+        # cmds.setAttr(f"{oc}.interpType", 2)
+        # pc = cmds.pointConstraint(baseJoints[3], loMidGrp, n=f"{loMidGrp}_pc", mo=0)
+        # oc = cmds.orientConstraint([baseJoints[3], loRollJoints [1]], loMidGrp, n=f"{loMidGrp}_oc", mo=0)[0]
+        # cmds.setAttr(f"{oc}.interpType", 2)
+
+        upGrps = []
+        upControls = []
+        # Create Up Roll Ctrls / joints
+        for i in range(3):
+            name = f"{upRollJoints[0]}_{i}"
+            grp = cmds.createNode("transform", n=f"{name}_grp")
+            ctrl = cmds.createNode("transform", n=f"{name}_CTRL", p=grp)
+            jnt = cmds.createNode("joint", n=f"{name}", p=ctrl)
+
+            ctrlOject = ctrlCrv.Ctrl(
+                node=ctrl,
+                shape="circle",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 90, 0]                  
+            )
+            ctrlOject.giveCtrlShape()
+
+            upGrps.append(grp)
+            upControls.append(ctrl)
+
+        loGrps = []
+        loControls = []
+        # Create Up Roll Ctrls / joints
+        for i in range(3):
+            name = f"{loRollJoints[0]}_{i}"
+            grp = cmds.createNode("transform", n=f"{name}_grp")
+            ctrl = cmds.createNode("transform", n=f"{name}_CTRL", p=grp)
+            jnt = cmds.createNode("joint", n=f"{name}", p=ctrl)
+
+            ctrlOject = ctrlCrv.Ctrl(
+                node=ctrl,
+                shape="circle",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 90, 0]                  
+            )
+            ctrlOject.giveCtrlShape()
+
+            loGrps.append(grp)
+            loControls.append(ctrl)
+
+        # Constrain up and lo controls 
+        ptc = cmds.parentConstraint([upRollJoints[0], upRollJoints[1]], upGrps[0], n=f"{upGrps[0]}_ptc", mo=0)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upRollJoints[0]}W0", 3)
+        cmds.setAttr(f"{ptc}.{upRollJoints[1]}W1", 1)
+
+        ptc = cmds.parentConstraint([upRollJoints[0], upRollJoints[1]], upGrps[1], n=f"{upGrps[1]}_ptc", mo=0)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upRollJoints[0]}W0", 1)
+        cmds.setAttr(f"{ptc}.{upRollJoints[1]}W1", 1)
+
+        ptc = cmds.parentConstraint([upRollJoints[0], upRollJoints[1]], upGrps[2], n=f"{upGrps[2]}_ptc", mo=0)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upRollJoints[0]}W0", 1)
+        cmds.setAttr(f"{ptc}.{upRollJoints[1]}W1", 3)
+
+        ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[0], n=f"{loGrps[0]}_ptc", mo=0)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 1)
+        cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 3)
+
+        ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[1], n=f"{loGrps[1]}_ptc", mo=0)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 1)
+        cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 1)
+
+        ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[2], n=f"{loGrps[2]}_ptc", mo=0)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 3)
+        cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 1)
 
         # Cleanup
-        cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0], endGrp, midGrp], self.plugParent)
+        cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
 
-        return IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK 
+        return IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK 
+
+    def buildCounterJoints(self, baseJoints, socketConnector):
+        upRollStart = cmds.createNode("joint", n=f"{baseJoints[1]}_Roll")
+        upRollEnd = cmds.createNode("joint", n=f"{baseJoints[1]}_End", p=upRollStart)
+        cmds.xform(upRollStart, ws=True, t=cmds.xform(
+            baseJoints[1], q=True, ws=True, t=True
+        ))
+        cmds.xform(upRollStart, ws=True, ro=cmds.xform(
+            baseJoints[1], q=True, ws=True, ro=True
+        ))
+        cmds.xform(upRollEnd, ws=True, t=cmds.xform(
+            baseJoints[2], q=True, ws=True, t=True
+        ))
+        cmds.makeIdentity(upRollStart, a=True)
+        cmds.parent(upRollStart, socketConnector)
+        upIK = cmds.ikHandle(n=f"{upRollStart}_IK", sj=upRollStart, ee=upRollEnd,
+                             sol="ikSCsolver", p=4)
+        upEff = upIK[1]
+        upEff = cmds.rename(upEff, upIK[0].replace("IK", "EFF"))
+        upIK = upIK[0]
+        pc = cmds.pointConstraint(baseJoints[2], upIK, n=f"{upIK}_pc", mo=0)
+        oc = cmds.orientConstraint(baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
+        cmds.parent(upIK, socketConnector)
+
+        # midRollStart = cmds.createNode("joint", n=f"{baseJoints[3]}_Roll")
+        # midRollEnd = cmds.createNode("joint", n=f"{baseJoints[3]}_End", p=midRollStart)
+        # cmds.xform(midRollStart, ws=True, t=cmds.xform(
+        #     baseJoints[3], q=True, ws=True, t=True
+        # ))
+        # cmds.xform(midRollStart, ws=True, ro=cmds.xform(
+        #     baseJoints[3], q=True, ws=True, ro=True
+        # ))
+        # cmds.xform(midRollEnd, ws=True, t=cmds.xform(
+        #     baseJoints[2], q=True, ws=True, t=True
+        # ))
+        # cmds.makeIdentity(midRollStart, a=True)
+        # cmds.parent(midRollStart, baseJoints[3])
+        # midIK = cmds.ikHandle(n=f"{midRollStart}_IK", sj=midRollStart, ee=midRollEnd,
+        #                      sol="ikSCsolver", p=4)
+        # midEff = midIK[1]
+        # midEff = cmds.rename(midEff, midIK[0].replace("IK", "EFF"))
+        # midIK = midIK[0]
+        # pc = cmds.pointConstraint(baseJoints[2], midIK, n=f"{midIK}_pc", mo=0)
+        # oc = cmds.orientConstraint(baseJoints[2], midRollEnd, n=f"{midRollEnd}_oc", mo=0)
+        # cmds.parent(midIK, baseJoints[3])
+
+        loRollStart = cmds.createNode("joint", n=f"{baseJoints[4]}_Roll")
+        loRollEnd = cmds.createNode("joint", n=f"{baseJoints[4]}_End", p=loRollStart)
+        cmds.xform(loRollStart, ws=True, t=cmds.xform(
+            baseJoints[4], q=True, ws=True, t=True
+        ))
+        cmds.xform(loRollStart, ws=True, ro=cmds.xform(
+            baseJoints[4], q=True, ws=True, ro=True
+        ))
+        cmds.xform(loRollEnd, ws=True, t=cmds.xform(
+            baseJoints[3], q=True, ws=True, t=True
+        ))
+        cmds.makeIdentity(loRollStart, a=True)
+        cmds.parent(loRollStart, baseJoints[4])
+        loIK = cmds.ikHandle(n=f"{loRollStart}_IK", sj=loRollStart, ee=loRollEnd,
+                             sol="ikSCsolver", p=4)
+        loEff = loIK[1]
+        loEff = cmds.rename(loEff, loIK[0].replace("IK", "EFF"))
+        loIK = loIK[0]
+        pc = cmds.pointConstraint(baseJoints[3], loIK, n=f"{loIK}_pc", mo=0)
+        oc = cmds.orientConstraint(baseJoints[3], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
+        cmds.parent(loIK, baseJoints[4])
+        # return [upRollStart, upRollEnd], [midRollStart, midRollEnd], [loRollStart, loRollEnd], upIK, midIK, loIK
+    
+        return [upRollStart, upRollEnd], [loRollStart, loRollEnd], upIK, loIK
+    
+    # def buildRibbon(self, baseJoints, upRollJoints, loRollJoints, midOffset, endOffset):
+    #     follicles = []
+    #     follicleJoints = []
+    #     ribbonControls = []
+    #     ribbonGroups = []
+    #     ribbonOffsets = []
+    #     ribbonJoints = []
+
+    #     folGrp = cmds.createNode("transform", n=f"{self.side}_{self.label}_follicles")
+
+    #     tempCurve = cmds.curve(n="TempCurve_1", d=1, p=[[0,0,0], [10, 0, 0]])
+    #     tempCurve2 = cmds.duplicate(tempCurve, n="TempCurve_2")[0]
+    #     cmds.xform(tempCurve, ws=True, t=[0, 0.5, 0])
+    #     cmds.xform(tempCurve2, ws=True, t=[0, -0.5, 0])
+
+    #     ribbon = cmds.loft([tempCurve2, tempCurve], n=f"{self.label}_{self.label}_Bendy_rbn", ch=False)[0]
+    #     cmds.reverseSurface(ribbon, d=3, ch=False, rpo=1)
+    #     cmds.rebuildSurface(
+    #         ribbon, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0, 
+    #         su=6, du=3, sv=1, dv=1, tol=0.01, fr=0, dir=2, ch=False
+    #         )
+    #     cmds.delete([tempCurve, tempCurve2])
+    #     param = 0
+    #     paramInfl = 1/(self.numberOfJoints-1)
+    #     for i in range(self.numberOfJoints):
+
+    #         #Build Follicles
+    #         fol = cmds.createNode("transform", n=f"{self.side}_{self.label}_{i}_fol")
+    #         folShape = cmds.createNode(
+    #             "follicle", n=f"{self.side}_{self.label}_{i}_folShape", p=fol)
+            
+    #         cmds.connectAttr(f"{ribbon}.worldMatrix[0]", f"{folShape}.inputWorldMatrix", f=True)
+    #         cmds.connectAttr(f"{ribbon}.local", f"{folShape}.inputSurface", f=True)
+    #         cmds.setAttr(f"{folShape}.parameterV", 0.5)
+    #         cmds.setAttr(f"{folShape}.parameterU", param)
+    #         cmds.connectAttr(f"{folShape}.outRotate", f"{fol}.rotate", f=True)
+    #         cmds.connectAttr(f"{folShape}.outTranslate", f"{fol}.translate", f=True)
+
+    #         cmds.parent(fol, folGrp)
+
+    #         if param > 1:
+    #             param = 1
+    #         param += paramInfl
+
+    #         follicles.append([fol, folShape])
+
+    #         # Build Joints
+    #         jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{i}")
+    #         cmds.xform(jnt, ws=True, t=cmds.xform(
+    #             fol, q=True, ws=True, t=True
+    #         ))
+    #         cmds.xform(jnt, ws=True, ro=cmds.xform(
+    #             fol, q=True, ws=True, ro=True
+    #         ))
+    #         cmds.parent(jnt, fol)
+    #         follicleJoints.append(jnt)
+
+    #     jointTools.aimSequence(follicleJoints, upObj=self.poleVector)
+    #     cmds.makeIdentity(follicleJoints, a=True)
+    #     setRange = 0
+    #     rangeDist = (1/6) * 10
+    #     tempUpSpace = cmds.createNode('transform', n='TempUpSpace')
+    #     cmds.xform(tempUpSpace, ws=True, t=[0, 0, -10])
+    #     bendyCtrlGrp = cmds.createNode("transform", n=f"{self.side}_{self.label}_BendyCtrls")
+    #     # Make Ribbon Controls
+    #     for i in range(7):
+    #         grp = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_grp", p=bendyCtrlGrp)
+    #         offset = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_offset", p=grp)
+    #         ctrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_Bendy_{i}_CTRL", p=offset)
+    #         jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_Bendy_{i}", p=ctrl)
+
+    #         ribbonGroups.append(grp)
+    #         ribbonOffsets.append(offset)
+    #         ribbonControls.append(ctrl)
+    #         ribbonJoints.append(jnt)
+
+    #         ctrlObject = ctrlCrv.Ctrl(
+    #             node=ctrl,
+    #             shape="circle",
+    #             scale=[self.ctrlScale[0]*.75, self.ctrlScale[1]*.75, self.ctrlScale[2]*.75],
+    #             offset=[0, 0, 0],
+    #             orient=[0, 90, 0]
+    #         )
+    #         ctrlObject.giveCtrlShape()
+
+    #         cmds.xform(grp, ws=True, t=[setRange, 0, 0])
+    #         setRange+=rangeDist
+    #     jointTools.aimSequence(ribbonGroups, upObj=tempUpSpace)
+    #     cmds.delete(tempUpSpace)
+
+    #     # Bind Ribbon
+    #     ribbonSCLS = cmds.skinCluster(ribbonJoints,
+    #                                   ribbon,
+    #                                   n=f"{ribbon}_scls",
+    #                                   tsb=True,
+    #                                   mi=1)[0]
+
+    #     # Order The Controls
+    #     ptc = cmds.parentConstraint(upRollJoints[0], ribbonGroups[0], n=f"{ribbonGroups[0]}_ptc", mo=0)
+    #     pc = cmds.pointConstraint([upRollJoints[0], midOffset], ribbonGroups[1], n=f"{ribbonGroups[1]}_pc", mo=0)[0]
+    #     oc = cmds.orientConstraint([upRollJoints[0], upRollJoints[1]], ribbonGroups[1], n=f"{ribbonGroups[1]}_oc", mo=0)[0]
+    #     cmds.setAttr(f"{pc}.{upRollJoints[0]}W0", 2)
+    #     cmds.setAttr(f"{oc}.interpType", 2)
+    #     cmds.setAttr(f"{oc}.{upRollJoints[0]}W0", 2)
+    #     pc = cmds.pointConstraint([upRollJoints[0], midOffset], ribbonGroups[2], n=f"{ribbonGroups[2]}_pc", mo=0)[0]
+    #     oc = cmds.orientConstraint([upRollJoints[0],upRollJoints[1]], ribbonGroups[2], n=f"{ribbonGroups[2]}_oc", mo=0)[0]
+    #     cmds.setAttr(f"{pc}.{midOffset}W1", 2)
+    #     cmds.setAttr(f"{oc}.interpType", 2)
+    #     cmds.setAttr(f"{oc}.{upRollJoints[1]}W1", 2)
+        
+    #     ptc = cmds.parentConstraint(endOffset, ribbonGroups[6], n=f"{ribbonGroups[6]}_ptc", mo=0)
+    #     pc = cmds.pointConstraint([endOffset, midOffset], ribbonGroups[4], n=f"{ribbonGroups[4]}_pc", mo=0)[0]
+    #     oc = cmds.orientConstraint([endOffset,loRollJoints[1]], ribbonGroups[4], n=f"{ribbonGroups[4]}_oc", mo=0)[0]
+    #     cmds.setAttr(f"{pc}.{midOffset}W1", 2)
+    #     cmds.setAttr(f"{oc}.interpType", 2)
+    #     cmds.setAttr(f"{oc}.{loRollJoints[1]}W1", 2)
+    #     pc = cmds.pointConstraint([endOffset, midOffset], ribbonGroups[5], n=f"{ribbonGroups[5]}_pc", mo=0)[0]
+    #     oc = cmds.orientConstraint([endOffset, loRollJoints[1]], ribbonGroups[5], n=f"{ribbonGroups[5]}_oc", mo=0)[0]
+    #     cmds.setAttr(f"{pc}.{endOffset}W0", 2)
+    #     cmds.setAttr(f"{oc}.interpType", 2)
+    #     cmds.setAttr(f"{oc}.{endOffset}W0", 2)
+        
+
+    #     ptc = cmds.parentConstraint(midOffset, ribbonGroups[3], n=f"{ribbonGroups[3]}_ptc", mo=0)
+
+    #     ac = cmds.aimConstraint(midOffset, ribbonOffsets[1], n=f"{ribbonOffsets[1]}_ac",
+    #                             aim=[1, 0, 0], u=[0, 1, 0], wut="objectRotation",
+    #                             wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+    #     ac = cmds.aimConstraint(midOffset, ribbonOffsets[2], n=f"{ribbonOffsets[2]}_ac",
+    #                             aim=[1, 0, 0], u=[0, 1, 0], wut="objectRotation",
+    #                             wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+    #     ac = cmds.aimConstraint(midOffset, ribbonOffsets[5], n=f"{ribbonOffsets[5]}_ac",
+    #                             aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
+    #                             wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+    #     ac = cmds.aimConstraint(midOffset, ribbonOffsets[4], n=f"{ribbonOffsets[4]}_ac",
+    #                             aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
+    #                             wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+        
+    #     # Cleanup
+    #     cmds.parent(ribbon, self.moduleUtilities)
+    #     cmds.parent(folGrp, self.moduleUtilities)
+    #     cmds.parent(bendyCtrlGrp, self.plugParent)
+        
+         

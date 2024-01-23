@@ -13,7 +13,7 @@ class QuadLimb(motionBase.MotionModuleBase):
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
                  mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "",
-                 pvMultiplier: float = 1.0, numberOfJoints: int = 11, ikCtrlToFloor: bool = True,
+                 pvMultiplier: float = 1.0, curvedCalf: bool = True, ikCtrlToFloor: bool = True,
                  nameSet: dict = {"Root":"Root", "Start":"Start", "UpMid":"UpMid", "LoMid":"LoMid", "End":"End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
@@ -27,7 +27,7 @@ class QuadLimb(motionBase.MotionModuleBase):
 
         # Module Specific Exposed Variables
         self.pvMultiplier = pvMultiplier
-        self.numberOfJoints = numberOfJoints
+        self.curvedCalf = curvedCalf
         self.nameSet = nameSet
         self.ikCtrlToFloor = ikCtrlToFloor
 
@@ -64,16 +64,38 @@ class QuadLimb(motionBase.MotionModuleBase):
                 label=self.label,
                 name=self.nameSet["LoMid"],
                 parent=self.nameSet["UpMid"]
-            ),
-            self.nameSet["End"]: proxy.Proxy(
+            )
+        }
+        if self.curvedCalf:
+            previousParent = None
+            for i in range(1, 6):
+                if previousParent is None:
+                    previousParent = self.nameSet["LoMid"]
+                self.proxies[f"{self.nameSet['LoMid']}_{i}"] =  proxy.Proxy(
+                    position=[5, 3, -1],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name=f"{self.nameSet['LoMid']}_{i}",
+                    parent=previousParent)
+                previousParent = f"{self.nameSet['LoMid']}_{i}"
+
+            self.proxies[self.nameSet["End"]] =  proxy.Proxy(
                 position=[5, 1, 0],
                 rotation=[0, 0, 0],
                 side=self.side,
                 label=self.label,
                 name=self.nameSet["End"],
-                parent=self.nameSet["LoMid"]
+                parent=previousParent
             )
-        }
+        else:
+            self.proxies[self.nameSet["End"]] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name=self.nameSet["End"],
+                parent=self.nameSet['LoMid'])
 
         # Module Based Variables
         self.poleVector = None
@@ -85,9 +107,9 @@ class QuadLimb(motionBase.MotionModuleBase):
     def buildModule(self) -> None:
         """Run the module."""
 
-        # Safety Check
-        if self.numberOfJoints <= 0:
-            cmds.error(f"Number of joints is less than 0 or 0; default 11: {self.numberOfJoints}")
+        # # Safety Check
+        # if self.numberOfJoints <= 0:
+        #     cmds.error(f"Number of joints is less than 0 or 0; default 11: {self.numberOfJoints}")
 
         plugPosition = self.proxies[self.nameSet["Root"]].position
         plugRotation = self.proxies[self.nameSet["Root"]].rotation
@@ -134,13 +156,19 @@ class QuadLimb(motionBase.MotionModuleBase):
             for i in ["X", "Y", "Z"]:
                 cmds.setAttr(f"{self.poleVector}.localScale{i}", 0, l=True)
 
-        cmds.parent(baseJoints[1], baseJoints[0])
-        cmds.parent(baseJoints[2], baseJoints[1])
-        cmds.parent(baseJoints[3], baseJoints[2])
-        cmds.parent(baseJoints[4], baseJoints[3])
+        index = 0
+        for j in baseJoints:
+            if j is not baseJoints[0]:
+                cmds.parent(j, baseJoints[index])
+                index+=1
+
+        # cmds.parent(baseJoints[1], baseJoints[0])
+        # cmds.parent(baseJoints[2], baseJoints[1])
+        # cmds.parent(baseJoints[3], baseJoints[2])
+        # cmds.parent(baseJoints[4], baseJoints[3])
 
         # jointTools.aim([baseJoints[0]], [baseJoints[1]])
-        jointTools.aimSequence([baseJoints[1], baseJoints[2], baseJoints[3], baseJoints[4]], upObj=self.poleVector)
+        jointTools.aimSequence(baseJoints[1::], upObj=self.poleVector)
         cmds.makeIdentity(baseJoints[0], a=True)
 
         index = 1
@@ -182,8 +210,17 @@ class QuadLimb(motionBase.MotionModuleBase):
 
     def buildBaseControls(self, baseJoints, IKJoints, FKJoints, socketConnector):
         # Make 3 Point IK for Quad Calc:: Guide Joints / IK
+
         guideLength_1 = cmds.xform(IKJoints[2], q=True, a=True, t=True)[0]
-        guideLength_2 = cmds.xform(IKJoints[1], q=True, a=True, t=True)[0] + cmds.xform(IKJoints[3], q=True, a=True, t=True)[0]
+        if self.curvedCalf:
+            guideLength_2 = (cmds.xform(IKJoints[1], q=True, a=True, t=True)[0] +
+                             cmds.xform(IKJoints[3], q=True, a=True, t=True)[0] +
+                             cmds.xform(IKJoints[4], q=True, a=True, t=True)[0] +
+                             cmds.xform(IKJoints[5], q=True, a=True, t=True)[0] +
+                             cmds.xform(IKJoints[6], q=True, a=True, t=True)[0] +
+                             cmds.xform(IKJoints[7], q=True, a=True, t=True)[0] )
+        else:
+            guideLength_2 = cmds.xform(IKJoints[1], q=True, a=True, t=True)[0] + cmds.xform(IKJoints[3], q=True, a=True, t=True)[0]
 
 
         # Make joints
@@ -211,7 +248,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         guideEff = cmds.rename(guideIKHandle[1], f"{self.side}_{self.label}_GuideEFF")
         guideIKHandle = guideIKHandle[0]
         cmds.xform(guideIKHandle, ws=True, t=cmds.xform(
-            IKJoints[3], q=True, ws=True, t=True
+            IKJoints[-1], q=True, ws=True, t=True
         ))
         # pvc = cmds.poleVectorConstraint(IKJoints[1], guideIKHandle) Instead PV to the pv control.
         cmds.setAttr(f"{guideIKHandle}.twist", 180)
@@ -220,10 +257,10 @@ class QuadLimb(motionBase.MotionModuleBase):
         IKControls = []
         FKControls = []
         # IK Control
-        ikGrp = cmds.createNode('transform', n=f"{IKJoints[3]}_grp")
-        ikCtrl = cmds.createNode('transform', n=f"{IKJoints[3]}_CTRL", p=ikGrp)
+        ikGrp = cmds.createNode('transform', n=f"{IKJoints[-1]}_grp")
+        ikCtrl = cmds.createNode('transform', n=f"{IKJoints[-1]}_CTRL", p=ikGrp)
         cmds.xform(ikGrp, ws=True, t=cmds.xform(
-            IKJoints[3], q=True, ws=True, t=True
+            IKJoints[-1], q=True, ws=True, t=True
         ))
         if self.ikCtrlToFloor:
             t = cmds.xform(ikGrp, q=True, a=True, t=True)
@@ -247,11 +284,11 @@ class QuadLimb(motionBase.MotionModuleBase):
         ikCtrlObject.giveCtrlShape()
         IKControls.append(ikCtrl)
 
-        ikOffsetGrp = cmds.createNode("transform", n=f"{IKJoints[3]}_Offset_grp", p=ikCtrl)
-        ikOffsetCtrl = cmds.createNode("transform", n=f"{IKJoints[3]}_Offset_CTRL", p=ikOffsetGrp)
+        ikOffsetGrp = cmds.createNode("transform", n=f"{IKJoints[-1]}_Offset_grp", p=ikCtrl)
+        ikOffsetCtrl = cmds.createNode("transform", n=f"{IKJoints[-1]}_Offset_CTRL", p=ikOffsetGrp)
 
         cmds.xform(ikOffsetGrp, ws=True, t=cmds.xform(
-            IKJoints[3], q=True, ws=True, t=True
+            IKJoints[-1], q=True, ws=True, t=True
         ))
 
         IKControls.append(ikOffsetCtrl)
@@ -281,17 +318,20 @@ class QuadLimb(motionBase.MotionModuleBase):
         )
         pvCtrlObject.giveCtrlShape()
         IKControls.append(pvCtrl)
+
+        if self.curvedCalf:
+            cmds.parent(pvPar, ikCtrl)
         
         # Make IK Handle
         ikRP = cmds.ikHandle(n=f"{self.side}_{self.label}_UP_IK", sj=IKJoints[0], ee=IKJoints[2], sol="ikRPsolver", p=1)
         effRP = cmds.rename(ikRP[1], f"{self.side}_{self.label}_UP_EFF")
         ikRP = ikRP[0]
         # cmds.parent(ik, ikCtrl) Needs parenting to the calf IK
-        oc = cmds.orientConstraint(ikCtrl, IKJoints[3], n=f"{IKJoints}_oc", mo=1)
+        oc = cmds.orientConstraint(ikCtrl, IKJoints[-1], n=f"{IKJoints}_oc", mo=1)
         pvc = cmds.poleVectorConstraint(self.poleVector, ikRP, n=f"{ikRP}_pvc")
         pvc = cmds.poleVectorConstraint(self.poleVector, guideIKHandle, n=f"{guideIKHandle}_pvc")        
 
-        ikSC = cmds.ikHandle(n=f"{self.side}_{self.label}_LO_IK", sj=IKJoints[2], ee=IKJoints[3], sol="ikSCsolver", p=1)
+        ikSC = cmds.ikHandle(n=f"{self.side}_{self.label}_LO_IK", sj=IKJoints[2], ee=IKJoints[-1], sol="ikSCsolver", p=1)
         effSC = cmds.rename(ikSC[1], f"{self.side}_{self.label}_LO_EFF")
         ikSC = ikSC[0]
         # pvc = cmds.poleVectorConstraint(IKJoints[1], ikSC, n=f"{ikSC}_pvc")
@@ -299,9 +339,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         # Add calf logic
         oc = cmds.orientConstraint(midGuide, ikOffsetGrp, n=f"{ikOffsetGrp}_oc", mo=0)
         cmds.parent([ikRP, ikSC], ikOffsetCtrl)
-        cmds.parent(guideIKHandle, ikCtrl)
-
-        
+        cmds.parent(guideIKHandle, ikCtrl)        
 
         # FK Controls
         for jnt in FKJoints:
@@ -495,23 +533,44 @@ class QuadLimb(motionBase.MotionModuleBase):
         loGrps = []
         loControls = []
         # Create Up Roll Ctrls / joints
-        for i in range(3):
-            name = f"{loRollJoints[0]}_{i}"
-            grp = cmds.createNode("transform", n=f"{name}_grp")
-            ctrl = cmds.createNode("transform", n=f"{name}_CTRL", p=grp)
-            jnt = cmds.createNode("joint", n=f"{name}", p=ctrl)
+        if self.curvedCalf:
+            index = 0
+            for i in baseJoints[4:-1]:
+                name = f"{loRollJoints[0]}_{index}"
+                grp = cmds.createNode("transform", n=f"{name}_grp")
+                ctrl = cmds.createNode("transform", n=f"{name}_CTRL", p=grp)
+                jnt = cmds.createNode("joint", n=f"{name}", p=ctrl)
+                ctrlOject = ctrlCrv.Ctrl(
+                    node=ctrl,
+                    shape="circle",
+                    scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                    offset=[0, 0, 0],
+                    orient=[0, 90, 0]                  
+                )
+                ctrlOject.giveCtrlShape()
 
-            ctrlOject = ctrlCrv.Ctrl(
-                node=ctrl,
-                shape="circle",
-                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
-                offset=[0, 0, 0],
-                orient=[0, 90, 0]                  
-            )
-            ctrlOject.giveCtrlShape()
+                loGrps.append(grp)
+                loControls.append(ctrl)
 
-            loGrps.append(grp)
-            loControls.append(ctrl)
+                index+=1
+        else:
+            for i in range(3):
+                name = f"{loRollJoints[0]}_{i}"
+                grp = cmds.createNode("transform", n=f"{name}_grp")
+                ctrl = cmds.createNode("transform", n=f"{name}_CTRL", p=grp)
+                jnt = cmds.createNode("joint", n=f"{name}", p=ctrl)
+
+                ctrlOject = ctrlCrv.Ctrl(
+                    node=ctrl,
+                    shape="circle",
+                    scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                    offset=[0, 0, 0],
+                    orient=[0, 90, 0]                  
+                )
+                ctrlOject.giveCtrlShape()
+
+                loGrps.append(grp)
+                loControls.append(ctrl)
 
         # Constrain up and lo controls 
         ptc = cmds.parentConstraint([upRollJoints[0], upRollJoints[1]], upGrps[0], n=f"{upGrps[0]}_ptc", mo=0)[0]
@@ -529,23 +588,37 @@ class QuadLimb(motionBase.MotionModuleBase):
         cmds.setAttr(f"{ptc}.{upRollJoints[0]}W0", 1)
         cmds.setAttr(f"{ptc}.{upRollJoints[1]}W1", 3)
 
-        ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[0], n=f"{loGrps[0]}_ptc", mo=0)[0]
-        cmds.setAttr(f"{ptc}.interpType", 2)
-        cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 1)
-        cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 3)
+        if self.curvedCalf:
+            index = 0
+            for i in baseJoints[4:-1]:
+                ptc = cmds.parentConstraint(i, loGrps[index], n=f"{loGrps[index]}_ptc", mo=0)
+                index+=1
+        else:
+            ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[0], n=f"{loGrps[0]}_ptc", mo=0)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 1)
+            cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 3)
 
-        ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[1], n=f"{loGrps[1]}_ptc", mo=0)[0]
-        cmds.setAttr(f"{ptc}.interpType", 2)
-        cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 1)
-        cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 1)
+            ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[1], n=f"{loGrps[1]}_ptc", mo=0)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 1)
+            cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 1)
 
-        ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[2], n=f"{loGrps[2]}_ptc", mo=0)[0]
-        cmds.setAttr(f"{ptc}.interpType", 2)
-        cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 3)
-        cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 1)
+            ptc = cmds.parentConstraint([loRollJoints[0], loRollJoints[1]], loGrps[2], n=f"{loGrps[2]}_ptc", mo=0)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{loRollJoints[0]}W0", 3)
+            cmds.setAttr(f"{ptc}.{loRollJoints[1]}W1", 1)
 
         # Cleanup
-        cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+        if self.curvedCalf:
+             print(loGrps)
+             cmds.parent([clavGrp, ikGrp, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+        else:
+            cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+        
+        cmds.parent(loGrps, self.plugParent)
+        cmds.parent(upGrps, self.plugParent)
+            
 
         return IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK 
 
@@ -594,13 +667,13 @@ class QuadLimb(motionBase.MotionModuleBase):
         # oc = cmds.orientConstraint(baseJoints[2], midRollEnd, n=f"{midRollEnd}_oc", mo=0)
         # cmds.parent(midIK, baseJoints[3])
 
-        loRollStart = cmds.createNode("joint", n=f"{baseJoints[4]}_Roll")
-        loRollEnd = cmds.createNode("joint", n=f"{baseJoints[4]}_End", p=loRollStart)
+        loRollStart = cmds.createNode("joint", n=f"{baseJoints[-1]}_Roll")
+        loRollEnd = cmds.createNode("joint", n=f"{baseJoints[-1]}_End", p=loRollStart)
         cmds.xform(loRollStart, ws=True, t=cmds.xform(
-            baseJoints[4], q=True, ws=True, t=True
+            baseJoints[-1], q=True, ws=True, t=True
         ))
         cmds.xform(loRollStart, ws=True, ro=cmds.xform(
-            baseJoints[4], q=True, ws=True, ro=True
+            baseJoints[-1], q=True, ws=True, ro=True
         ))
         cmds.xform(loRollEnd, ws=True, t=cmds.xform(
             baseJoints[3], q=True, ws=True, t=True
@@ -614,7 +687,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         loIK = loIK[0]
         pc = cmds.pointConstraint(baseJoints[3], loIK, n=f"{loIK}_pc", mo=0)
         oc = cmds.orientConstraint(baseJoints[3], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
-        cmds.parent(loIK, baseJoints[4])
+        cmds.parent(loIK, baseJoints[-1])
         # return [upRollStart, upRollEnd], [midRollStart, midRollEnd], [loRollStart, loRollEnd], upIK, midIK, loIK
     
         return [upRollStart, upRollEnd], [loRollStart, loRollEnd], upIK, loIK

@@ -93,7 +93,7 @@ class Ctrl:
             shapes.append(crvShape)
 
         elif shape == "sphere":
-            rotSets = [[0, 0, 0], [90, 0, 0], [0, 0, 90]]
+            rotSets = [[0, 0, 0], [90, 0, 0], [0, 90, 0]]
             for i in range(3):
                 shapeObj = cmds.circle(n=self.node + "_sphereCurve" + str(i), ch=False)[
                     0

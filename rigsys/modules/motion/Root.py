@@ -15,9 +15,9 @@ class Root(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 selectedPlug: str = "", selectedParentSocket: str = "") -> None:
+                 selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedParentSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -79,7 +79,7 @@ class Root(motionBase.MotionModuleBase):
         rootCtrlObj.giveCtrlShape()
         rootJnt = cmds.createNode(
             "joint", n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name)
-            )
+        )
         cmds.parent(rootJnt, rootCtrl)
         if self.addOffset:
             offsetPar = cmds.createNode(
@@ -89,7 +89,7 @@ class Root(motionBase.MotionModuleBase):
                 "transform", n=self.getFullName() + "Offset_CTRL"
             )
             offsetJnt = cmds.createNode(
-            "joint", n="{}_{}_Offset".format(self.side, self.label)
+                "joint", n="{}_{}_Offset".format(self.side, self.label)
             )
             cmds.parent(offsetJnt, offsetCtrl)
             cmds.parent(offsetCtrl, offsetPar)
@@ -109,7 +109,6 @@ class Root(motionBase.MotionModuleBase):
         cmds.xform(rootPar, ws=True, ro=proxyRotation)
         cmds.parent(rootPar, self.worldParent)
 
-        
         self.socket["Base"] = rootJnt
         if self.addOffset:
             self.socket["Offset"] = offsetJnt

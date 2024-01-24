@@ -14,7 +14,7 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 selectedPlug: str = "", selectedParentSocket: str = "") -> None:
+                 selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
         super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
                          mirror=mirror)
@@ -26,7 +26,7 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.sockets: dict = {}
 
         self.selectedPlug = selectedPlug
-        self.selectedParentSocket = selectedParentSocket
+        self.selectedSocket = selectedSocket
 
         self.parent = parent
         self._parentObject = None
@@ -105,3 +105,8 @@ class MotionModuleBase(moduleBase.ModuleBase):
         worldParent = cmds.createNode("transform", n="{}_{}_worldParent".format(self.side, self.label))
         cmds.parent(worldParent, self.moduleNode)
         return worldParent
+
+    def socketPlugParenting(self):
+        ptc = cmds.parentConstraint(self.selectedPlug, self.selectedSocket)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        sc = cmds.scaleConstraint(self.selectedPlug, self.selectedSocket)

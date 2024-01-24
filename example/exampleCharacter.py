@@ -41,7 +41,7 @@ class ExampleCharacter(api_rig.Rig):
                 mirror=True,
                 parent="M_Spine",
                 selectedPlug="SomePlug",
-                selectedParentSocket="SomeSocket",
+                selectedSocket="SomeSocket",
             ),
             "L_Hand": motion.TestMotionModule(
                 self,
@@ -50,7 +50,7 @@ class ExampleCharacter(api_rig.Rig):
                 mirror=True,
                 parent="L_Arm",
                 selectedPlug="SomePlug",
-                selectedParentSocket="SomeSocket",
+                selectedSocket="SomeSocket",
             ),
             "L_Hand_2": motion.TestMotionModule(
                 self,
@@ -59,7 +59,7 @@ class ExampleCharacter(api_rig.Rig):
                 mirror=True,
                 parent="L_Arm",
                 selectedPlug="AnotherPlug",
-                selectedParentSocket="AnotherSocket",
+                selectedSocket="AnotherSocket",
             ),
             "L_Watch": motion.TestMotionModule(
                 self,

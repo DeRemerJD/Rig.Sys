@@ -267,7 +267,7 @@ def getPoleVector(node1, node2, node3, multiplier=1.0):
     direction = startMid - projectionNormal
     directionScale = direction * multiplier
 
-    # Destination 
+    # Destination
     destination = directionScale + vectorMid
 
     return destination

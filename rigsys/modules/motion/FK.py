@@ -107,7 +107,7 @@ class FK(motionBase.MotionModuleBase):
         jointTools.aimSequence(
             FKJoints, aimAxis="+x", upAxis="-z",
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
-        
+
         FKGrps = []
         FKCtrls = []
         for fJnt in FKJoints:

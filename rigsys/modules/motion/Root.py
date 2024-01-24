@@ -5,7 +5,7 @@ import rigsys.modules.motion.motionBase as motionBase
 import rigsys.lib.ctrl as ctrlCrv
 import rigsys.lib.proxy as proxy
 
-from proceduralSettingsWidget.parameters import uiParam
+from rigsys.ui.proceduralSettingsWidget.parameters import uiParam
 
 import maya.cmds as cmds
 

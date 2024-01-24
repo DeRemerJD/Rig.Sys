@@ -52,7 +52,8 @@ class SettingsWidget(QtWidgets.QWidget):
         elif isinstance(variable, parameters._baseUIParam):
             self.add_variable_uiParam(variable)
         else:
-            logger.error(f"Unsupported variable type {type(variable)} for variable {variable}")
+            logger.error(f"Unsupported variable type {type(variable)} for variable {variable}. "
+                         f"Expected str or {(parameters._baseUIParam)}")
 
     def add_variable_simple(self, variable):
         """Add a string variable to the widget."""
@@ -98,7 +99,7 @@ class SettingsWidget(QtWidgets.QWidget):
         elif isinstance(variable, parameters._strUIParameter) and (variable.isFile or variable.isDir):
             file_input_widget = inputWidgets.FileInputWidget(
                 inObject=self.inObject,
-                var=variable.name,
+                var=variable,
                 parent=self
             )
             self.layout.addWidget(file_input_widget)

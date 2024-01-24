@@ -359,6 +359,7 @@ class FileInputWidget(LargeInputWidget):
         self.inObject = inObject
         self.var: uiParams._strUIParameter = var
 
+        self.displayName = self.var.displayName
         self.fileMode = "dir" if var.isDir else "file"
         self.startDirectory = var.startDirectory
         self.setupStartDir()
@@ -367,7 +368,7 @@ class FileInputWidget(LargeInputWidget):
 
     def setupUI(self):
         """Set up the UI."""
-        self.setTitle(self.var.displayName)
+        self.setTitle(self.displayName)
 
         midWidget = QtWidgets.QWidget()
         midLayout = QtWidgets.QHBoxLayout()

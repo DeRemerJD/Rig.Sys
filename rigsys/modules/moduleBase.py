@@ -5,8 +5,6 @@ import logging
 
 import rigsys.utils.stringUtils as stringUtils
 
-import maya.cmds as cmds
-
 logger = logging.getLogger(__name__)
 
 

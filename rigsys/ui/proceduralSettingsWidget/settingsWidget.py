@@ -2,6 +2,7 @@
 
 # TESTING CODE ONLY - REMOVE BEFORE MERGING
 import os
+from pprint import pprint
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
@@ -103,13 +104,13 @@ class SettingsWidget(QtWidgets.QWidget):
             # TODO
             pass
 
-        elif isinstance(value, QtCore.QObject):
-            # TODO
-            pass
-
         elif inspect.ismethod(value):
-            # TODO
-            pass
+            function_input_widget = inputWidgets.FunctionInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(function_input_widget)
 
         else:
             logger.error(f"Unsupported variable type {type(value)} for variable {variable}")
@@ -133,8 +134,12 @@ class SettingsWidget(QtWidgets.QWidget):
             self.main_layout.addWidget(file_input_widget)
 
         elif isinstance(variable, parameters._strUIParameter) and variable.isComboBox:
-            # TODO
-            pass
+            combo_box_input_widget = inputWidgets.ComboBoxInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(combo_box_input_widget)
 
         elif isinstance(variable, parameters._strUIParameter):
             str_input_widget = inputWidgets.TextInputWidget(
@@ -184,6 +189,8 @@ if __name__ == "__main__":
             self.int_variable = 1
             self.bool_variable = True
             self.str_variable = "test"
+            self.file_variable = ""
+            self.combo_box_var = "test_1"
 
             self.repetitions = 1
 
@@ -193,6 +200,9 @@ if __name__ == "__main__":
                 parameters.uiParam(self, "bool_variable"),
                 parameters.uiParam(self, "str_variable"),
                 parameters.uiParam(self, "print_members", args=["repetitions"]),
+                parameters.uiParam(self, "file_variable", isFile=True),
+                parameters.uiParam(self, "combo_box_var", isComboBox=True,
+                                   comboBoxItems=["test_1", "test_2", "test_3"]),
             ]
 
         def print_members(self):

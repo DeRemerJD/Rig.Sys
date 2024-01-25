@@ -174,6 +174,49 @@ class TextInputWidget(SmallInputWidget):
         setattr(self.inObject, self.name, newValue)
 
 
+class ComboBoxInputWidget(SmallInputWidget):
+    """A widget that lets the user edit a variable in a combo box."""
+
+    def __init__(self, parent=None, inObject=None, var=None):
+        """A widget that lets the user edit a variable in a combo box"""
+        super().__init__(parent)
+
+        self.inObject = inObject
+        self.var = var
+
+        if isinstance(self.var, str):
+            self.val = getattr(self.inObject, self.var)
+            self.name = self.var
+            self.displayName = self.convertDisplayName(self.var)
+            self.defaultValue = None
+            self.items = []
+
+            self.setupUI()
+            return
+
+        self.val = getattr(self.inObject, self.var.name)
+        self.name = self.var.name
+        self.displayName = self.var.displayName
+        self.defaultValue = self.var.defaultValue
+        self.items = self.var.comboBoxItems
+
+        self.setupUI()
+
+    def setupUI(self):
+        """Sets up the UI"""
+        self.setTitle(self.displayName)
+
+        self.combo = QtWidgets.QComboBox()
+        self.combo.addItems(self.items)
+        self.combo.setCurrentText(str(self.val))
+        self.combo.currentTextChanged.connect(self._updateInObject)
+        self.inputLayout.addWidget(self.combo)
+
+    def _updateInObject(self):
+        """Updates the inObject with the current value of the combo box"""
+        setattr(self.inObject, self.name, self.combo.currentText())
+
+
 class BoolInputWidget(SmallInputWidget):
     """A widget that lets the user edit a boolean variable with a check box."""
 
@@ -403,6 +446,7 @@ class FileInputWidget(LargeInputWidget):
 
     def abbreviateValLabel(self):
         """Abbreviate the file path if it's too long."""
+        # TODO: Also call this on resize
         fileNameWidth = self.valLabel.fontMetrics().boundingRect(self.valLabel.text()).width()
         widthTolerance = 500
         i = 5

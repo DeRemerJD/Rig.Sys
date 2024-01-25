@@ -98,6 +98,73 @@ def createResetToDefaultButton(parent=None) -> QtWidgets.QPushButton:
     return resetToDefaultButton
 
 
+def createAddRemoveButtons(bulkAdd=False, addSelected=False):
+    """Creates a set of buttons for adding and removing items from a list or dict.
+    Also has a flag for creating a button for adding multiple items at once."""
+    buttonFrame = QtWidgets.QGroupBox()
+    buttonFrame.setMinimumHeight(25)
+    buttonFrame.setMaximumHeight(25)
+
+    buttonFrameLayout = QtWidgets.QHBoxLayout()
+    buttonFrameLayout.setContentsMargins(0, 0, 0, 0)
+    buttonFrameLayout.setSpacing(0)
+    buttonFrame.setLayout(buttonFrameLayout)
+    buttonFrameLayout.setAlignment(QtCore.Qt.AlignLeft)
+
+    addItemButton = QtWidgets.QPushButton()
+    addItemButton.setText("+")
+    addItemButton.setMinimumWidth(25)
+    addItemButton.setMaximumWidth(25)
+    addItemButton.setMinimumHeight(25)
+    addItemButton.setMaximumHeight(25)
+    addItemButton.resize(25, 25)
+    addItemButton.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+    addItemButton.setToolTip("Add Item")
+    buttonFrame.layout().addWidget(addItemButton)
+
+    removeItemButton = QtWidgets.QPushButton()
+    removeItemButton.setText("-")
+    removeItemButton.resize(25, 25)
+    removeItemButton.setMinimumWidth(25)
+    removeItemButton.setMaximumWidth(25)
+    removeItemButton.setMinimumHeight(25)
+    removeItemButton.setMaximumHeight(25)
+    removeItemButton.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+    removeItemButton.setToolTip("Remove Item")
+    buttonFrame.layout().addWidget(removeItemButton)
+
+    if bulkAdd:
+        bulkAddButton = QtWidgets.QPushButton()
+        bulkAddButton.setText("++")
+        bulkAddButton.resize(25, 25)
+        bulkAddButton.setMinimumWidth(25)
+        bulkAddButton.setMaximumWidth(25)
+        bulkAddButton.setMinimumHeight(25)
+        bulkAddButton.setMaximumHeight(25)
+        bulkAddButton.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        bulkAddButton.setToolTip("Bulk Add Items")
+        buttonFrame.layout().addWidget(bulkAddButton)
+
+    if addSelected:
+        addSelectedButton = QtWidgets.QPushButton()
+        addSelectedButton.setText("Add Selected")
+        addSelectedButton.setMinimumHeight(25)
+        addSelectedButton.setMaximumHeight(25)
+        addSelectedButton.setToolTip("Add selected items from the scene")
+        buttonFrame.layout().addWidget(addSelectedButton)
+
+    if bulkAdd and addSelected:
+        return buttonFrame, addItemButton, removeItemButton, bulkAddButton, addSelectedButton
+
+    elif bulkAdd:
+        return buttonFrame, addItemButton, removeItemButton, bulkAddButton
+
+    elif addSelected:
+        return buttonFrame, addItemButton, removeItemButton, addSelectedButton
+
+    return buttonFrame, addItemButton, removeItemButton
+
+
 # ------------------------------------------------- INPUT WIDGETS ------------------------------------------------------
 class TextInputWidget(SmallInputWidget):
     """A widget that lets the user edit a variable in a line edit."""
@@ -389,7 +456,6 @@ class NumberInputWidget(SmallInputWidget):
 
 class FileInputWidget(LargeInputWidget):
     """A widget that lets the user set a file variable."""
-    # TODO: Convert
 
     def __init__(self, parent=None, inObject=None, var=None):
         """Initialize the widget.
@@ -402,7 +468,7 @@ class FileInputWidget(LargeInputWidget):
         super().__init__(parent)
 
         self.inObject = inObject
-        self.var: uiParams._strUIParameter = var
+        self.var = var
 
         self.displayName = self.var.displayName
         self.fileMode = "dir" if var.isDir else "file"
@@ -429,6 +495,7 @@ class FileInputWidget(LargeInputWidget):
 
         button = QtWidgets.QPushButton()
         button.setIcon(QtGui.QIcon(os.path.join(os.path.dirname(__file__), "images", "folder.png")))
+        # TODO: Icon
         button.setToolTip("Browse")
         button.setFixedWidth(26)
         button.clicked.connect(self.setVal)
@@ -536,3 +603,288 @@ class FunctionInputWidget(LargeInputWidget):
         self.bottomSpacer = QtWidgets.QWidget()
         self.bottomSpacer.setFixedHeight(10)
         self.inputLayout.addWidget(self.bottomSpacer)
+
+
+class ListInputWidget(LargeInputWidget):
+    """Subclass of LargeCustomInputWidget that allows the user to edit a list of values."""
+
+    def __init__(self, parent=None, inObject=None, var=None):
+        """
+        A widget that allows the user to edit a list of values.
+
+        Arguments:
+            parent: The parent widget.
+            inObject: The object that contains the list to be edited.
+            var: The name of the list to be edited, or a Variable object.
+        """
+
+        super().__init__(parent)
+        self.inObject = inObject
+        self.var = var
+
+        if isinstance(self.var, str):
+            self.listMode = "default"
+            self.name = self.convertDisplayName(self.var)
+            self.varName = self.var
+            self.inList = vars(self.inObject)[self.var]
+            self.defaultValue = None
+            self.isMultiVar = False
+            self.setupUI()
+            return
+
+        self.name = self.var.displayName
+        self.varName = self.var.name
+        self.inList = vars(self.inObject)[self.var.name]
+        self.defaultValue = self.var.defaultValue
+        self.isMultiVar = self.var.isMultiVar
+
+        self.listMode = "default"
+        if self.var.isVariableSize:
+            self.listMode = "variable"
+        elif 1 < len(self.inList) < 5 and all(isinstance(item, (int, float)) for item in self.inList):
+            self.listMode = "vector"
+
+        self.setupUI()
+
+    def setupUI(self):
+        self.setTitle(self.name)
+        self.layout = QtWidgets.QVBoxLayout()
+        self.setLayout(self.layout)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+
+        if self.listMode == "variable":
+            self._setupUIVariableSize()
+
+        elif self.listMode == "vector":
+            self._setupUIVectorStyle()
+
+        else:
+            self._setupUIDefault()
+
+    def addItem(self):
+        """Adds an item to the list"""
+        itemName = "Item"
+        # Check for duplicate names and append a number if necessary
+        if itemName in self.inList:
+            i = 1
+            while itemName + str(i) in self.inList:
+                i += 1
+            itemName += str(i)
+
+        self.inList.append(itemName)
+        self._updateUIVariableSize()
+
+    def removeItems(self):
+        """Removes any selected item(s) from the list"""
+        # Get selected indexes
+        selectedIndexes = self.listInputWidget.selectedIndexes()
+        if not selectedIndexes:
+            return
+
+        selectedIndexes.reverse()
+        for index in selectedIndexes:
+            self.inList.pop(index.row())
+
+        self._updateUIVariableSize()
+
+    def _setupUIVariableSize(self):
+        """Sets up a variable size list widget"""
+        topWidget = QtWidgets.QWidget()
+        topLayout = QtWidgets.QVBoxLayout()
+        topWidget.setLayout(topLayout)
+
+        # Add/Remove buttons
+        buttonFrame, addItemButton, removeItemButton = createAddRemoveButtons()
+
+        # List widget
+        self.listInputWidget = QtWidgets.QListWidget()
+        self.listInputWidget.setAlternatingRowColors(True)
+        listLayout = QtWidgets.QHBoxLayout()
+        self.listInputWidget.setLayout(listLayout)
+        self.listInputWidget.setSpacing(0)
+        self.listInputWidget.setContentsMargins(0, 0, 0, 0)
+        self.listInputWidget.itemChanged.connect(self._updateInObjectVariableSize)
+        self.listInputWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        # Add items to list
+        for i, item in enumerate(self.inList):
+            self.listInputWidget.addItem(item)
+            flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            self.listInputWidget.item(i).setFlags(flags)
+            self.listInputWidget.item(i).setSizeHint(QtCore.QSize(200, 25))
+
+        # Connections
+        addItemButton.clicked.connect(self.addItem)
+        removeItemButton.clicked.connect(self.removeItems)
+
+        topLayout.addWidget(buttonFrame)
+        topLayout.addWidget(self.listInputWidget)
+        self.inputLayout.addWidget(topWidget)
+
+    def _setupUIVectorStyle(self):
+        """Sets up a vector style list widget"""
+
+        gridWidget = QtWidgets.QWidget()
+        gridLayout = QtWidgets.QGridLayout(gridWidget)
+        gridWidget.setLayout(gridLayout)
+        gridLayout.setContentsMargins(0, 0, 0, 0)
+        gridLayout.setSpacing(0)
+        gridLayout.setAlignment(QtCore.Qt.AlignLeft)
+
+        spacerWidget = QtWidgets.QWidget()
+        spacerWidget.setMaximumWidth(10)
+        gridLayout.addWidget(spacerWidget, 0, 0)
+
+        if self.defaultValue is not None:
+            resetToDefaultButton = createResetToDefaultButton(parent=self)
+
+            def changeListWidgetColor(lineEdit, defaultValue, *args):
+                if lineEdit.text() == str(defaultValue):
+                    lineEdit.setStyleSheet("color: #FFFFFF")
+                    resetToDefaultButton.setHidden(True)
+                else:
+                    lineEdit.setStyleSheet("color: #dad8a7")
+                    resetToDefaultButton.setHidden(False)
+
+            def resetToDefault():
+                for i in range(len(self.inList)):
+                    self.inList[i] = self.defaultValue[i]
+                    lineEdit = gridLayout.itemAtPosition(0, i).widget()
+                    if not isinstance(lineEdit, QtWidgets.QLineEdit):
+                        continue
+                    lineEdit.setText(str(self.defaultValue[i]))
+                    changeListWidgetColor(lineEdit, self.defaultValue[i])
+
+                self._updateInObject(self.varName, self.defaultValue)
+
+            resetToDefaultButton.clicked.connect(resetToDefault)
+
+        for i in range(len(self.inList)):
+            lineEdit = QtWidgets.QLineEdit()
+            lineEdit.setText(str(self.inList[i]))
+            lineEdit.setMaximumWidth(100)
+            if self.isMultiVar:
+                lineEdit.textEdited.connect(partial(self._updateInObject, self.var.inVars[i]))
+            else:
+                lineEdit.textEdited.connect(partial(self._updateInObjectList, self.varName, i))
+                pass
+
+            if self.defaultValue is not None:
+                changeListWidgetColor(lineEdit, self.defaultValue[i])
+                lineEdit.textEdited.connect(partial(changeListWidgetColor, lineEdit, self.defaultValue[i]))
+
+            gridLayout.addWidget(lineEdit, 0, i + 1)
+
+        self.inputLayout.addWidget(gridWidget)
+        if self.defaultValue is not None:
+            gridLayout.addWidget(resetToDefaultButton, 0, len(self.inList) + 1)
+            resetToDefaultButton.setHidden(self.inList == self.defaultValue)
+
+    def _setupUIDefault(self):
+        """Sets up a default list widget"""
+        topWidget = QtWidgets.QWidget()
+        # topWidget.setStyleSheet("background-color: #FF0000;")
+        topLayout = QtWidgets.QVBoxLayout()
+        topLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        topWidget.setLayout(topLayout)
+
+        if self.defaultValue is not None:
+            resetToDefaultButton = createResetToDefaultButton()
+
+            def resetToDefault():
+                for i in range(len(self.inList)):
+                    self.inList[i] = self.defaultValue[i]
+                    lineEdit = topLayout.itemAt(i).widget().layout().itemAt(0).widget()
+                    if not isinstance(lineEdit, QtWidgets.QLineEdit):
+                        continue
+                    lineEdit.setText(str(self.defaultValue[i]))
+                    changeLineEditColor(lineEdit, self.defaultValue[i])
+
+                self._updateInObject(self.varName, self.defaultValue)
+
+            resetToDefaultButton.clicked.connect(resetToDefault)
+
+            def changeLineEditColor(lineEdit, defaultValue, *args):
+                if lineEdit.text() == str(defaultValue):
+                    lineEdit.setStyleSheet("color: #FFFFFF")
+                    resetToDefaultButton.setHidden(True)
+                else:
+                    lineEdit.setStyleSheet("color: #dad8a7")
+                    resetToDefaultButton.setHidden(False)
+
+        for i, item in enumerate(self.inList):
+            lineWidget = QtWidgets.QWidget()
+            hBox = QtWidgets.QHBoxLayout()
+            lineWidget.setLayout(hBox)
+
+            lineEdit = QtWidgets.QLineEdit(str(item))
+            lineEdit.setFixedWidth(200)
+            if self.isMultiVar:
+                lineEdit.textEdited.connect(partial(self._updateInObject, self.var.inVars[i]))
+            else:
+                lineEdit.textEdited.connect(partial(self._updateInObjectList, self.varName, i))
+
+            if self.defaultValue is not None:
+                changeLineEditColor(lineEdit, self.defaultValue[i])
+                lineEdit.textEdited.connect(partial(changeLineEditColor, lineEdit, self.defaultValue[i]))
+
+            hBox.addWidget(lineEdit)
+
+            topLayout.addWidget(lineWidget)
+
+        if self.defaultValue is not None:
+
+            topLayout.addWidget(resetToDefaultButton)
+            resetToDefaultButton.setHidden(self.inList == self.defaultValue)
+
+        self.inputLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.inputLayout.addWidget(topWidget)
+
+    def _updateUIVariableSize(self):
+        """Updates the UI to match the size of the variable"""
+        # Clear list
+        self.listInputWidget.clear()
+
+        # Add items to list
+        for i, item in enumerate(self.inList):
+            self.listInputWidget.addItem(item)
+            flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            self.listInputWidget.item(i).setFlags(flags)
+            self.listInputWidget.item(i).setSizeHint(QtCore.QSize(200, 25))
+
+    def _updateInObject(self, var, newValue, *args):
+        """Updates self.inObject with the provided var and value"""
+        if getattr(self.inObject, var) is None:
+            logger.error(f"The variable {var} is not set on the object {self.inObject}")
+            return
+
+        setattr(self.inObject, var, newValue)
+
+    def _updateInObjectList(self, var, index, newValue, *args):
+        """Update self.inObject with the provided var and value at the given index."""
+        if getattr(self.inObject, var) is None:
+            logger.error(f"The variable {var} is not set on the object {self.inObject}")
+            return
+
+        if isinstance(getattr(self.inObject, var)[index], int):
+            try:
+                newValue = int(newValue)
+            except Exception:
+                newValue = str(newValue)
+        elif isinstance(getattr(self.inObject, var)[index], float):
+            try:
+                newValue = float(newValue)
+            except Exception:
+                newValue = str(newValue)
+
+        getattr(self.inObject, var)[index] = newValue
+
+    def _updateInObjectVariableSize(self, listItem):
+        """Special wrapper function from the variable size list widget"""
+        row = self.listInputWidget.row(listItem)
+
+        if self.var.isMultiVar:
+            self._updateInObject(self.var.inVars[row], listItem.text())
+        else:
+            self._updateInObjectList(self.varName, row, listItem.text())

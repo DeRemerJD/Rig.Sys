@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardi
 import inspect
 import logging
 
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets
 
 from proceduralSettingsWidget import parameters
 from proceduralSettingsWidget import inputWidgets
@@ -93,8 +93,12 @@ class SettingsWidget(QtWidgets.QWidget):
             self.main_layout.addWidget(number_input_widget)
 
         elif isinstance(value, list):
-            # TODO
-            pass
+            list_input_widget = inputWidgets.ListInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(list_input_widget)
 
         elif isinstance(value, dict):
             # TODO
@@ -158,8 +162,12 @@ class SettingsWidget(QtWidgets.QWidget):
             self.main_layout.addWidget(number_input_widget)
 
         elif isinstance(variable, parameters._listUIParameter):
-            # TODO
-            pass
+            list_input_widget = inputWidgets.ListInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(list_input_widget)
 
         elif isinstance(variable, parameters._dictUIParameter):
             # TODO
@@ -182,6 +190,8 @@ class SettingsWidget(QtWidgets.QWidget):
 
 
 if __name__ == "__main__":
+    # TODO: Test other list functionalities and types
+    # I'm removing the ListSettingsWidget because the use case was very specific to Zubio
     app = QtWidgets.QApplication([])
 
     class TestObject:
@@ -191,10 +201,11 @@ if __name__ == "__main__":
             self.str_variable = "test"
             self.file_variable = ""
             self.combo_box_var = "test_1"
+            self.list_var = [1, 1, 1]
 
             self.repetitions = 1
 
-        def editables(self) -> list:
+        def editable_vars(self) -> list:
             return [
                 parameters.uiParam(self, "int_variable"),
                 parameters.uiParam(self, "bool_variable"),
@@ -203,6 +214,7 @@ if __name__ == "__main__":
                 parameters.uiParam(self, "file_variable", isFile=True),
                 parameters.uiParam(self, "combo_box_var", isComboBox=True,
                                    comboBoxItems=["test_1", "test_2", "test_3"]),
+                parameters.uiParam(self, "list_var"),
             ]
 
         def print_members(self):
@@ -222,7 +234,7 @@ if __name__ == "__main__":
     widget.setLayout(widget.main_layout)
     mainWindow.setCentralWidget(widget)
 
-    settings_widget = SettingsWidget(inObject=testObject, variables=testObject.editables(), parent=mainWindow)
+    settings_widget = SettingsWidget(inObject=testObject, variables=testObject.editable_vars(), parent=mainWindow)
     widget.main_layout.addWidget(settings_widget)
 
     print_button = QtWidgets.QPushButton("Print Object Info")

@@ -91,13 +91,11 @@ class _strUIParameter(_baseUIParam):
 
 class _listUIParameter(_baseUIParam):
     def __init__(self, name, displayName=None, defaultValue=None, isVariableSize=False, hasListSettings=False,
-                 objType=None, minItemsToDisplay=3, addSelected=False, isMultiVar=False, inVars=None):
+                 objType=None, minItemsToDisplay=3, isMultiVar=False, inVars=None):
         super(_listUIParameter, self).__init__(name, displayName, defaultValue)
         self.isVariableSize = isVariableSize
-        self.hasListSettings = hasListSettings
         self.objType = objType
         self.minItemsToDisplay = minItemsToDisplay
-        self.addSelected = addSelected
         self.isMultiVar = isMultiVar
         self.inVars = inVars
 

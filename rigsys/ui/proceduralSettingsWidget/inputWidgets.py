@@ -7,6 +7,8 @@ import logging
 import os
 import re
 
+from . import settingsWidget
+
 logger = logging.getLogger(__name__)
 
 
@@ -435,3 +437,58 @@ class FileInputWidget(LargeInputWidget):
         self.valLabel.setText(selectedFile)
         self.valLabel.setToolTip(selectedFile)
         self.abbreviateValLabel()
+
+
+class FunctionInputWidget(LargeInputWidget):
+    """A widget that lets the user run a function and edit the function's arguments."""
+
+    def __init__(self, parent=None, inObject=None, var=None):
+        """Initialize the widget."""
+        super().__init__(parent, isVertical=True)
+
+        self.inObject = inObject
+        self.var = var
+
+        if isinstance(self.var, str):
+            self.displayName = self.convertDisplayName(self.var)
+            self.function = getattr(self.inObject, self.var)
+            self.args = []
+            self.setupUI()
+            return
+
+        self.displayName = self.var.displayName
+        self.function = getattr(self.inObject, self.var.name)
+        self.args = self.var.args
+
+        self.setupUI()
+
+    def setupUI(self):
+        """Set up the UI."""
+        self.setTitle(self.displayName)
+
+        if self.args != []:
+            # Add another settings widget for the function args
+            print(f"adding args {self.args}")
+            self.funcSettingsWidget = settingsWidget.SettingsWidget(inObject=self.inObject, variables=self.args)
+            self.inputLayout.addWidget(self.funcSettingsWidget)
+
+        self.runLayout = QtWidgets.QHBoxLayout()
+        self.runLayout.setAlignment(QtCore.Qt.AlignLeft)
+        self.runLayout.setSpacing(0)
+        self.inputLayout.addLayout(self.runLayout)
+
+        self.spacer = QtWidgets.QWidget()
+        self.spacer.setFixedWidth(50)
+        self.runLayout.addWidget(self.spacer)
+
+        self.runButton = QtWidgets.QPushButton("Run")
+        self.runButton.setFixedWidth(75)
+        self.runButton.clicked.connect(self.function)
+        # TODO: Currently, the function is run but the arguments are not actually passed to it - the "arguments" are
+        # actually other variables in the inObject. Should figure out whether we should keep this functionality or
+        # not.
+        self.runLayout.addWidget(self.runButton)
+
+        self.bottomSpacer = QtWidgets.QWidget()
+        self.bottomSpacer.setFixedHeight(10)
+        self.inputLayout.addWidget(self.bottomSpacer)

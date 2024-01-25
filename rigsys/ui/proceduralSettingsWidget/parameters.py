@@ -1,5 +1,6 @@
 """Variables for the settings widget."""
 
+import inspect
 import re
 
 
@@ -25,6 +26,8 @@ def uiParam(obj, name, *args, **kwargs):
         return _tupleUIParameter(name, *args, **kwargs)
     elif isinstance(var, dict):
         return _dictUIParameter(name, *args, **kwargs)
+    elif inspect.ismethod(var):
+        return _methodUIParameter(name, *args, **kwargs)
 
 
 class _baseUIParam:
@@ -33,9 +36,9 @@ class _baseUIParam:
     def __init__(self, name, label=None, defaultValue=None) -> None:
         self.name = name
         if label is None:
-            self.label = " ".join([word.capitalize() for word in re.split(r"[\W_]+", name)])
+            self.displayName = " ".join([word.capitalize() for word in re.split(r"[\W_]+", name)])
         else:
-            self.label = label
+            self.displayName = label
 
         self.defaultValue = defaultValue
 

@@ -1,11 +1,19 @@
 """Widget to display and edit procedural settings."""
 
+# TESTING CODE ONLY - REMOVE BEFORE MERGING
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+# TESTING CODE ONLY - REMOVE BEFORE MERGING
+
+import inspect
 import logging
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide2 import QtWidgets, QtCore
 
-from . import parameters
-from . import inputWidgets
+from proceduralSettingsWidget import parameters
+from proceduralSettingsWidget import inputWidgets
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +46,9 @@ class SettingsWidget(QtWidgets.QWidget):
 
     def setupVariables(self):
         """Set up the variables."""
-        self.layout = QtWidgets.QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.main_layout)
 
         for variable in self.variables:
             self.add_variable(variable)
@@ -65,7 +73,7 @@ class SettingsWidget(QtWidgets.QWidget):
                 var=variable,
                 parent=self
             )
-            self.layout.addWidget(bool_input_widget)
+            self.main_layout.addWidget(bool_input_widget)
 
         elif isinstance(value, str):
             str_input_widget = inputWidgets.TextInputWidget(
@@ -73,7 +81,7 @@ class SettingsWidget(QtWidgets.QWidget):
                 var=variable,
                 parent=self
             )
-            self.layout.addWidget(str_input_widget)
+            self.main_layout.addWidget(str_input_widget)
 
         elif isinstance(value, int) or isinstance(value, float):
             number_input_widget = inputWidgets.NumberInputWidget(
@@ -81,7 +89,27 @@ class SettingsWidget(QtWidgets.QWidget):
                 var=variable,
                 parent=self
             )
-            self.layout.addWidget(number_input_widget)
+            self.main_layout.addWidget(number_input_widget)
+
+        elif isinstance(value, list):
+            # TODO
+            pass
+
+        elif isinstance(value, dict):
+            # TODO
+            pass
+
+        elif isinstance(value, tuple):
+            # TODO
+            pass
+
+        elif isinstance(value, QtCore.QObject):
+            # TODO
+            pass
+
+        elif inspect.ismethod(value):
+            # TODO
+            pass
 
         else:
             logger.error(f"Unsupported variable type {type(value)} for variable {variable}")
@@ -94,7 +122,7 @@ class SettingsWidget(QtWidgets.QWidget):
                 var=variable.name,
                 parent=self
             )
-            self.layout.addWidget(bool_input_widget)
+            self.main_layout.addWidget(bool_input_widget)
 
         elif isinstance(variable, parameters._strUIParameter) and (variable.isFile or variable.isDir):
             file_input_widget = inputWidgets.FileInputWidget(
@@ -102,4 +130,94 @@ class SettingsWidget(QtWidgets.QWidget):
                 var=variable,
                 parent=self
             )
-            self.layout.addWidget(file_input_widget)
+            self.main_layout.addWidget(file_input_widget)
+
+        elif isinstance(variable, parameters._strUIParameter) and variable.isComboBox:
+            # TODO
+            pass
+
+        elif isinstance(variable, parameters._strUIParameter):
+            str_input_widget = inputWidgets.TextInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(str_input_widget)
+
+        elif isinstance(variable, parameters._intUIParameter) or isinstance(variable, parameters._floatUIParameter):
+            number_input_widget = inputWidgets.NumberInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(number_input_widget)
+
+        elif isinstance(variable, parameters._listUIParameter):
+            # TODO
+            pass
+
+        elif isinstance(variable, parameters._dictUIParameter):
+            # TODO
+            pass
+
+        elif isinstance(variable, parameters._tupleUIParameter):
+            # TODO
+            pass
+
+        elif isinstance(variable, parameters._methodUIParameter):
+            function_input_widget = inputWidgets.FunctionInputWidget(
+                inObject=self.inObject,
+                var=variable,
+                parent=self
+            )
+            self.main_layout.addWidget(function_input_widget)
+
+        else:
+            logger.error(f"Unsupported variable type {type(variable)} for variable {variable}")
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+
+    class TestObject:
+        def __init__(self) -> None:
+            self.int_variable = 1
+            self.bool_variable = True
+            self.str_variable = "test"
+
+            self.repetitions = 1
+
+        def editables(self) -> list:
+            return [
+                parameters.uiParam(self, "int_variable"),
+                parameters.uiParam(self, "bool_variable"),
+                parameters.uiParam(self, "str_variable"),
+                parameters.uiParam(self, "print_members", args=["repetitions"]),
+            ]
+
+        def print_members(self):
+            for _ in range(self.repetitions):
+                print(f"int_variable: {self.int_variable}")
+                print(f"bool_variable: {self.bool_variable}")
+                print(f"str_variable: {self.str_variable}")
+
+    mainWindow = QtWidgets.QMainWindow()
+    mainWindow.setWindowTitle("Test Window")
+    mainWindow.resize(400, 300)
+
+    testObject = TestObject()
+
+    widget = QtWidgets.QWidget()
+    widget.main_layout = QtWidgets.QVBoxLayout()
+    widget.setLayout(widget.main_layout)
+    mainWindow.setCentralWidget(widget)
+
+    settings_widget = SettingsWidget(inObject=testObject, variables=testObject.editables(), parent=mainWindow)
+    widget.main_layout.addWidget(settings_widget)
+
+    print_button = QtWidgets.QPushButton("Print Object Info")
+    print_button.clicked.connect(lambda: pprint(vars(testObject)))
+    widget.main_layout.addWidget(print_button)
+
+    mainWindow.show()
+    app.exec_()

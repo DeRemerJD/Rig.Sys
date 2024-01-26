@@ -207,14 +207,14 @@ if __name__ == "__main__":
 
         def editable_vars(self) -> list:
             return [
-                parameters.uiParam(self, "int_variable"),
+                parameters.uiParam(self, "int_variable", defaultValue=1),
                 parameters.uiParam(self, "bool_variable"),
                 parameters.uiParam(self, "str_variable"),
                 parameters.uiParam(self, "print_members", args=["repetitions"]),
                 parameters.uiParam(self, "file_variable", isFile=True),
                 parameters.uiParam(self, "combo_box_var", isComboBox=True,
                                    comboBoxItems=["test_1", "test_2", "test_3"]),
-                parameters.uiParam(self, "list_var"),
+                parameters.uiParam(self, "list_var", defaultValue=[1, 1, 1]),
             ]
 
         def print_members(self):

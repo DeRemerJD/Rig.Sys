@@ -89,10 +89,9 @@ class LargeInputWidget(InputWidget):
 def createResetToDefaultButton(parent=None) -> QtWidgets.QPushButton:
     """Return a button that resets the value to the default value."""
     resetToDefaultButton = QtWidgets.QPushButton(parent)
-    # resetToDefaultButton.setIcon(QtGui.QIcon(os.path.join(getIconPath(), "reload.png")))
-    # TODO: Icon
-    resetToDefaultButton.setMaximumHeight(15)
-    resetToDefaultButton.setMaximumWidth(15)
+    resetToDefaultButton.setIcon(QtGui.QIcon(os.path.join(os.path.dirname(__file__), "resources", "reset.png")))
+    resetToDefaultButton.setMaximumHeight(24)
+    resetToDefaultButton.setMaximumWidth(24)
     resetToDefaultButton.setToolTip("Reset to default")
 
     return resetToDefaultButton
@@ -392,14 +391,25 @@ class NumberInputWidget(SmallInputWidget):
         self.inputLayout.addWidget(self.slider)
 
         if self.defaultValue is not None:
-            resetToDefaultButton = createResetToDefaultButton()
-            self.inputLayout.addWidget(resetToDefaultButton)
+            self.resetToDefaultButton = createResetToDefaultButton()
+            self.inputLayout.addWidget(self.resetToDefaultButton)
 
             def resetToDefault():
-                self.slider.setValue(self.defaultValue)
-                self._updateInObject()
+                """Reset the value to default."""
+                print(f"Resetting {self.val} to default {self.defaultValue}")
+                self.val = self.defaultValue
 
-            resetToDefaultButton.clicked.connect(resetToDefault)
+                self._text_changed(str(self.val))
+                self._slider_changed(self.val)
+
+                self._updateInObject()
+                self.changeNumberInputTextColor()
+
+            self.resetToDefaultButton.clicked.connect(resetToDefault)
+
+            if self.val == self.defaultValue:
+                self.lineEdit.setStyleSheet("color: #FFFFFF")
+                self.resetToDefaultButton.setHidden(True)
 
     def _updateInObject(self, *args):
         """Update the inObject when the text is edited."""
@@ -416,6 +426,7 @@ class NumberInputWidget(SmallInputWidget):
 
         self.isFloat = "." in text
 
+        # FIXME
         if self.isFloat:
             self.val = float(text)
 
@@ -430,6 +441,7 @@ class NumberInputWidget(SmallInputWidget):
 
         else:
             self.val = int(text)
+            print(f"Setting val to {self.val}")
 
             if self.val > self.slider.maximum():
                 self.slider.setMaximum(self.val)
@@ -452,6 +464,14 @@ class NumberInputWidget(SmallInputWidget):
         if self.defaultValue is not None:
             self.changeNumberInputTextColor()
         self._updateInObject()
+
+    def changeNumberInputTextColor(self):
+        if self.val == self.defaultValue:
+            self.lineEdit.setStyleSheet("color: #FFFFFF")
+            self.resetToDefaultButton.setHidden(True)
+        else:
+            self.lineEdit.setStyleSheet("color: #dad8a7")
+            self.resetToDefaultButton.setHidden(False)
 
 
 class FileInputWidget(LargeInputWidget):

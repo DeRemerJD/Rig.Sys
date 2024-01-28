@@ -459,7 +459,7 @@ class Limb(motionBase.MotionModuleBase):
         cmds.xform(tempCurve, ws=True, t=[0, 0.5, 0])
         cmds.xform(tempCurve2, ws=True, t=[0, -0.5, 0])
 
-        ribbon = cmds.loft([tempCurve2, tempCurve], n=f"{self.label}_{self.label}_Bendy_rbn", ch=False)[0]
+        ribbon = cmds.loft([tempCurve2, tempCurve], n=f"{self.side}_{self.label}_Bendy_rbn", ch=False)[0]
         cmds.reverseSurface(ribbon, d=3, ch=False, rpo=1)
         cmds.rebuildSurface(
             ribbon, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0, 

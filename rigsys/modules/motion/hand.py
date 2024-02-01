@@ -207,6 +207,10 @@ class Hand(motionBase.MotionModuleBase):
         cmds.xform(globalGrp, ws=True, t=cmds.xform(
             f"{self.side}_{self.label}_{self.proxies['Global'].name}_proxy", q=True, ws=True, t=True
         ))
+        cmds.xform(globalGrp, ws=True, ro=cmds.xform(
+            root, q=True, ws=True, ro=True
+        ))
+
         globalCtrlObject = ctrlCrv.Ctrl(
             node=globalCtrl,
             shape="sphere",
@@ -270,6 +274,8 @@ class Hand(motionBase.MotionModuleBase):
                 if grp != fingerGrp[0]:
                     index = fingerGrp.index(grp)
                     cmds.parent(grp, fingerCtrls[index - 1])
+                else:
+                    cmds.parent(grp, self.plugParent)
 
                 # Connect Attrs and MD
             

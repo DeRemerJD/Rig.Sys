@@ -97,6 +97,9 @@ def createResetToDefaultButton(parent=None) -> QtWidgets.QPushButton:
     return resetToDefaultButton
 
 
+RESET_TO_DEFAULT_BUTTON_ENABLED = False
+
+
 def createAddRemoveButtons(bulkAdd=False, addSelected=False):
     """Creates a set of buttons for adding and removing items from a list or dict.
     Also has a flag for creating a button for adding multiple items at once."""
@@ -201,7 +204,7 @@ class TextInputWidget(SmallInputWidget):
         self.lineEdit.editingFinished.connect(partial(self._updateInObject, True))
         self.inputLayout.addWidget(self.lineEdit)
 
-        if self.defaultValue is not None:
+        if self.defaultValue is not None and RESET_TO_DEFAULT_BUTTON_ENABLED:
             resetToDefaultButton = createResetToDefaultButton()
             self.inputLayout.addWidget(resetToDefaultButton)
 
@@ -318,7 +321,7 @@ class BoolInputWidget(SmallInputWidget):
         self.checkBox.stateChanged.connect(self._updateInObject)
         self.inputLayout.addWidget(self.checkBox)
 
-        if self.defaultValue is not None:
+        if self.defaultValue is not None and RESET_TO_DEFAULT_BUTTON_ENABLED:
             resetToDefaultButton = createResetToDefaultButton()
             self.inputLayout.addWidget(resetToDefaultButton)
 
@@ -390,7 +393,7 @@ class NumberInputWidget(SmallInputWidget):
         self.slider.sliderMoved.connect(self._slider_changed)
         self.inputLayout.addWidget(self.slider)
 
-        if self.defaultValue is not None:
+        if self.defaultValue is not None and RESET_TO_DEFAULT_BUTTON_ENABLED:
             self.resetToDefaultButton = createResetToDefaultButton()
             self.inputLayout.addWidget(self.resetToDefaultButton)
 
@@ -759,7 +762,7 @@ class ListInputWidget(LargeInputWidget):
         spacerWidget.setMaximumWidth(10)
         gridLayout.addWidget(spacerWidget, 0, 0)
 
-        if self.defaultValue is not None:
+        if self.defaultValue is not None and RESET_TO_DEFAULT_BUTTON_ENABLED:
             resetToDefaultButton = createResetToDefaultButton(parent=self)
 
             def changeListWidgetColor(lineEdit, defaultValue, *args):
@@ -812,7 +815,7 @@ class ListInputWidget(LargeInputWidget):
         topLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         topWidget.setLayout(topLayout)
 
-        if self.defaultValue is not None:
+        if self.defaultValue is not None and RESET_TO_DEFAULT_BUTTON_ENABLED:
             resetToDefaultButton = createResetToDefaultButton()
 
             def resetToDefault():

@@ -163,6 +163,18 @@ class Hand(motionBase.MotionModuleBase):
         
                 cmds.xform(jnt, ws=True, t=val.position)
                 Joints.append(jnt)
+
+        for jnt in Joints:
+            if self.proxies["Root"].name in jnt:
+                ac = cmds.aimConstraint(
+                                        f"{self.side}_{self.label}_{self.proxies['End'].name}_proxy",
+                                        jnt,
+                                        n=f"{jnt}_ac", aim=[1, 0, 0], u=[0, 1, 0], wut="object",
+                                        wuo=f"{self.side}_{self.label}_{self.proxies['UpVector'].name}_proxy", 
+                                        wu=[0, 1, 0], mo=0)[0]
+                cmds.delete(ac)
+                cmds.makeIdentity(jnt, a=True)
+                root = jnt
         
         for key, val in parentDict.items():
             cmds.parent(key, val)
@@ -189,16 +201,6 @@ class Hand(motionBase.MotionModuleBase):
             cmds.makeIdentity(targets, a=True)
             fingerDict["Thumb"] = targets
             targets = []
-        
-        for jnt in Joints:
-            if self.proxies["Root"].name in jnt:
-                ac = cmds.aimConstraint(jnt, 
-                                        f"{self.side}_{self.label}_{self.proxies['End'].name}_proxy",
-                                        n=f"{jnt}_ac", aim=[1, 0, 0], u=[0, 1, 0], wut="vector",
-                                        wu=[0, 1, 0])[0]
-                cmds.delete(ac)
-                cmds.makeIdentity(jnt, a=True)
-                root = jnt
 
         globalGrp = cmds.createNode("transform", 
                                     n=f"{self.side}_{self.label}_{self.proxies['Global'].name}_grp")
@@ -267,7 +269,7 @@ class Hand(motionBase.MotionModuleBase):
                     shape="circle",
                     scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
                     offset=[0, 0, 0],
-                    orient=[0, 0, 90]
+                    orient=[0, 90, 0]
                 )
                 ctrl.giveCtrlShape()
             for grp in fingerGrp:
@@ -295,58 +297,7 @@ class Hand(motionBase.MotionModuleBase):
                 cmds.connectAttr(f"{md}.output.outputZ", f"{nSplay}.rotateZ")
             rate-=ratio     
 
-            count+=1  
+            count+=1
 
-
-
-                
-
-        # ALL BELOW IS REFERENCE
-        # index = 0
-        # for fJnt in FKJoints:
-        #     if fJnt != FKJoints[-1]:
-        #         cmds.parent(FKJoints[index + 1], fJnt)
-        #     index += 1
-
-        # jointTools.aimSequence(
-        #     FKJoints, aimAxis="+x", upAxis="-z",
-        #     upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
-        
-        # FKGrps = []
-        # FKCtrls = []
-        # for fJnt in FKJoints:
-        #     grp = cmds.createNode("transform", n=f"{fJnt}_grp")
-        #     ctrl = cmds.createNode("transform", n=f"{fJnt}_CTRL")
-        #     cmds.parent(ctrl, grp)
-
-        #     cmds.xform(grp, ws=True, t=cmds.xform(
-        #         fJnt, q=True, ws=True, t=True
-        #     ))
-        #     cmds.xform(grp, ws=True, ro=cmds.xform(
-        #         fJnt, q=True, ws=True, ro=True
-        #     ))
-
-        #     FKGrps.append(grp)
-        #     FKCtrls.append(ctrl)
-
-        #     if self.addOffset:
-        #         oGrp = cmds.createNode("transform", n=f"{fJnt}_grp")
-        #         oCtrl = cmds.createNode("transform", n=f"{fJnt}_CTRL")
-        #         cmds.parent(oCtrl, oGrp)
-
-        #         cmds.xform(grp, ws=True, t=cmds.xform(
-        #             fJnt, q=True, ws=True, t=True
-        #         ))
-        #         cmds.xform(grp, ws=True, ro=cmds.xform(
-        #             fJnt, q=True, ws=True, ro=True
-        #         ))
-
-        #         cmds.parent(oGrp, ctrl)
-
-        #         ptc = cmds.parentConstraint(ctrl, fJnt, n=f"{fJnt}_ptc", mo=0)[0]
-        #         cmds.setAttr(f"{ptc}.interpType", 2)
-        #         sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
-        #     else:
-        #         ptc = cmds.parentConstraint(ctrl, fJnt, n=f"{fJnt}_ptc", mo=0)[0]
-        #         cmds.setAttr(f"{ptc}.interpType", 2)
-        #         sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
+        cmds.parent(root, self.moduleUtilities)
+        cmds.parent(globalGrp, self.plugParent)

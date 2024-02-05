@@ -490,11 +490,14 @@ class FileInputWidget(LargeInputWidget):
         self.inObject = inObject
         self.var = var
 
+        self.val = getattr(self.inObject, self.var.name)
+        self.name = self.var.name
         self.displayName = self.var.displayName
+        self.defaultValue = self.var.defaultValue
         self.fileMode = "dir" if var.isDir else "file"
         self.startDirectory = var.startDirectory
-        self.setupStartDir()
 
+        self.setupStartDir()
         self.setupUI()
 
     def setupUI(self):

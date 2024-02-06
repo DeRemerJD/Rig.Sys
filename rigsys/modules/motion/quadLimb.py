@@ -13,7 +13,7 @@ class QuadLimb(motionBase.MotionModuleBase):
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
                  mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "",
-                 pvMultiplier: float = 1.0, curvedCalf: bool = True, ikCtrlToFloor: bool = True,
+                 pvMultiplier: float = 1.0, curvedCalf: bool = True, ikCtrlToFloor: bool = True, foot: bool = False,
                  nameSet: dict = {"Root":"Root", "Start":"Start", "UpMid":"UpMid", "LoMid":"LoMid", "End":"End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
@@ -29,7 +29,8 @@ class QuadLimb(motionBase.MotionModuleBase):
         self.pvMultiplier = pvMultiplier
         self.curvedCalf = curvedCalf
         self.nameSet = nameSet
-        self.ikCtrlToFloor = ikCtrlToFloor
+        self.ikCtrlToFloor = ikCtrlToFloor,
+        self.foot = foot
 
         self.proxies = {
             self.nameSet["Root"]: proxy.Proxy(
@@ -96,6 +97,65 @@ class QuadLimb(motionBase.MotionModuleBase):
                 label=self.label,
                 name=self.nameSet["End"],
                 parent=self.nameSet['LoMid'])
+            
+        if self.foot:
+            self.proxies["Pivot"] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="Pivot",
+                parent=self.nameSet["End"])
+            
+            self.proxies["Heel"] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="Heel",
+                parent=self.nameSet["End"])
+            
+            self.proxies["OutBank"] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="OutBank",
+                parent=self.nameSet["End"])
+            
+            self.proxies["InBank"] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="InBank",
+                parent=self.nameSet["End"])
+            
+            self.proxies['Ball'] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="Ball",
+                parent="Pivot")
+            
+            self.proxies["Toe"] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="Toe",
+                parent="Ball")
+            
+            self.proxies["Global"] = proxy.Proxy(
+                position=[5, 1, 0],
+                rotation=[0, 0, 0],
+                side=self.side,
+                label=self.label,
+                name="Global",
+                parent=self.nameSet["End"])
+            
+
 
         # Module Based Variables
         self.poleVector = None
@@ -123,7 +183,9 @@ class QuadLimb(motionBase.MotionModuleBase):
         self.worldParent = self.createWorldParent()
 
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
-        IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)        
+        IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK, guideIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)
+        if self.foot:
+            self.buildFoot(baseJoints, IKJoints, FKJoints, IKControls, FKControls, upIK, guideIK)    
         # IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)
         # self.buildRibbon(baseJoints, upRollJoints, loRollJoints, midCtrl, endCtrl)
 
@@ -136,13 +198,15 @@ class QuadLimb(motionBase.MotionModuleBase):
     that drives the orientation of the lower leg.
     '''
     def buildSkeleton(self):
+        omit = ["Ball", "Toe", "Pivot", "Heel", "InBank", "OutBank", "Global"]
         baseJoints = []
         IKJoints = []
         FKJoints = []
         for key, val in self.proxies.items():
-            jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
-            cmds.xform(jnt, ws=True, t=val.position)
-            baseJoints.append(jnt)
+            if key not in omit:
+                jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
+                cmds.xform(jnt, ws=True, t=val.position)
+                baseJoints.append(jnt)
 
         if self.poleVector is None:
             poleVector = cmds.createNode("locator", n=f"{self.side}_{self.label}_PoleVectorShape")
@@ -620,7 +684,7 @@ class QuadLimb(motionBase.MotionModuleBase):
         cmds.parent(upGrps, self.plugParent)
             
 
-        return IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK 
+        return IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK, guideIKHandle
 
     def buildCounterJoints(self, baseJoints, socketConnector):
         upRollStart = cmds.createNode("joint", n=f"{baseJoints[1]}_Roll")
@@ -692,6 +756,75 @@ class QuadLimb(motionBase.MotionModuleBase):
     
         return [upRollStart, upRollEnd], [loRollStart, loRollEnd], upIK, loIK
     
+    def buildFoot(self, baseJoints, IKJoints, FKJoints, IKControls, FKControls, upIK, guideIK):
+        # for key, val in self.proxies.items():
+        #     if key in omit:
+        #         jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
+        label = f"{self.side}_{self.label}"
+        base = []
+        ik = []
+        fk = []
+        index = 0
+        for i in ["", "_IK", "_FK"]:
+            ball = cmds.createNode("joint", n=f"{label}_{self.proxies['Ball'].name}{i}")
+            toe = cmds.createNode("joint", n=f"{label}_{self.proxies['Toe'].name}{i}", p=ball)
+            cmds.xform(ball, ws=True, t=self.proxies["Ball"].position)
+            cmds.xform(toe, ws=True, t=self.proxies["Toe"].position)
+            if index == 0:
+                cmds.parent(ball, baseJoints[-1])
+                base.append(ball)
+                base.append(toe)
+            if index == 1:
+                cmds.parent(ball, IKJoints[-1])
+                ik.append(ball)
+                ik.append(toe)
+            if index == 2:
+                cmds.parent(ball, FKJoints[-1])
+                fk.append(ball)
+                fk.append(toe)
+            jointTools.aimSequence(base, upObj=baseJoints[-1])
+            index += 1
+        
+        
+        
+
+        inverse = ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
+        iJnts = []
+        index = 0
+        for i in inverse:
+            jnt = cmds.createNode("joint", n=f"{label}_{i}_INV")
+            
+            if len(iJnts) > 0:
+                cmds.parent(jnt, iJnts[index-1])
+
+            cmds.xform(jnt, ws=True, t=self.proxies[i].position)
+            iJnts.append(jnt)
+            index += 1
+        
+        ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")
+        ballEFF = ballIK[1]
+        ballIK = ballIK[0]
+        toeIK = cmds.ikHandle(sj=ik[0], ee=ik[1], n=f"{ik[1]}_IK", sol="ikSCsolver")
+        toeEFF = toeIK[1]
+        toeIK = toeIK[0]
+
+        globalGrp = cmds.createNode("transform", f"{label}_{self.proxies['Global'].name}_grp")
+        globalCtrl = cmds.createNode("transform", f"{label}_{self.proxies['Global'].name}_CTRL", p=globalGrp)
+
+        globalCtrlObject = ctrlCrv.Ctrl(
+            node=globalCtrl,
+            shape="sphere",
+            scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+            offset=[0, 0, 0]
+        )
+        globalCtrlObject.giveCtrlShape()
+
+        cmds.xform(globalGrp, ws=True, t=cmds.xform(
+            f"{label}_{self.proxies['Global'].name}_proxy", q=True, ws=True, t=True
+        ))
+
+
+
     # def buildRibbon(self, baseJoints, upRollJoints, loRollJoints, midOffset, endOffset):
     #     follicles = []
     #     follicleJoints = []

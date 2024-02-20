@@ -1,4 +1,13 @@
-"""UI for rigsys."""
+"""UI for rigsys.
+
+TODO: Let user reorder modules
+
+TODO: Let user save/load rigs (how are we going to do that?)
+
+TODO: Let user save/load proxy positions
+
+TODO: Grey out modules that won't be built at the current build level
+"""
 
 
 from PySide2 import QtWidgets, QtCore
@@ -32,7 +41,9 @@ class RigUI(QtWidgets.QWidget):
     def setup_ui(self):
         """Set up the UI."""
         self.setWindowTitle("RigSys UI")
-        self.resize(500, 500)
+        self.resize(800, 500)
+        self.setMinimumHeight(400)
+        self.setMinimumWidth(600)
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
 
         self.main_layout = QtWidgets.QVBoxLayout()

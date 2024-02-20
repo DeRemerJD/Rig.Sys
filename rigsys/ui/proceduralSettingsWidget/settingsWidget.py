@@ -13,8 +13,8 @@ import logging
 
 from PySide2 import QtWidgets
 
-from proceduralSettingsWidget import parameters
-from proceduralSettingsWidget import inputWidgets
+from rigsys.ui.proceduralSettingsWidget import parameters
+from rigsys.ui.proceduralSettingsWidget import inputWidgets
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,6 @@ class SettingsWidget(QtWidgets.QWidget):
         self.variables = variables
         if self.variables is None:
             self.variables = vars(self.inObject).keys()
-
-        testParam = parameters._boolUIParam("testParam")
-        testParam2 = parameters.uiParam(self.inObject, "testFile", isFile=True)
-        # Hitting problems because we have a pip-installed version of proceduralSettingsWidget and a local version
-        # Probably want to remove the pip-installed version
 
         self.setupVariables()
 

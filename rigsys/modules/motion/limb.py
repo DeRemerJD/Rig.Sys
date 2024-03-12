@@ -443,8 +443,9 @@ class Limb(motionBase.MotionModuleBase):
         upEff = cmds.rename(upEff, upIK[0].replace("IK", "EFF"))
         upIK = upIK[0]
         pc = cmds.pointConstraint(baseJoints[2], upIK, n=f"{upIK}_pc", mo=0)
-        oc = cmds.orientConstraint(
-            baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
+
+        oc = cmds.orientConstraint(baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
+        cmds.parent(upIK, socketConnector)
 
         loRollStart = cmds.createNode("joint", n=f"{baseJoints[3]}_Roll")
         loRollEnd = cmds.createNode(
@@ -466,11 +467,12 @@ class Limb(motionBase.MotionModuleBase):
         loEff = cmds.rename(loEff, loIK[0].replace("IK", "EFF"))
         loIK = loIK[0]
         pc = cmds.pointConstraint(baseJoints[2], loIK, n=f"{loIK}_pc", mo=0)
-        oc = cmds.orientConstraint(
-            baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
 
-        # Cleanup
-        cmds.parent([upIK, loIK], self.moduleUtilities)
+        oc = cmds.orientConstraint(baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
+        cmds.parent(loIK, baseJoints[3])
+        
+        #Cleanup
+        # cmds.parent([upIK, loIK], self.moduleUtilities)
 
         return [upRollStart, upRollEnd], [loRollStart, loRollEnd], upIK, loIK
 
@@ -490,8 +492,8 @@ class Limb(motionBase.MotionModuleBase):
         cmds.xform(tempCurve, ws=True, t=[0, 0.5, 0])
         cmds.xform(tempCurve2, ws=True, t=[0, -0.5, 0])
 
-        ribbon = cmds.loft([tempCurve2, tempCurve],
-                           n=f"{self.label}_{self.label}_Bendy_rbn", ch=False)[0]
+        ribbon = cmds.loft([tempCurve2, tempCurve], n=f"{self.side}_{self.label}_Bendy_rbn", ch=False)[0]
+
         cmds.reverseSurface(ribbon, d=3, ch=False, rpo=1)
         cmds.rebuildSurface(
             ribbon, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0,

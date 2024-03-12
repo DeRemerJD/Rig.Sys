@@ -105,7 +105,7 @@ class MotionModuleBase(moduleBase.ModuleBase):
         worldParent = cmds.createNode("transform", n="{}_{}_worldParent".format(self.side, self.label))
         cmds.parent(worldParent, self.moduleNode)
         return worldParent
-    
+
     def socketPlugParenting(self):
         ptc = cmds.parentConstraint(self.selectedPlug, self.selectedSocket)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)

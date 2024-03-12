@@ -782,11 +782,11 @@ class QuadLimb(motionBase.MotionModuleBase):
                 cmds.parent(ball, FKJoints[-1])
                 fk.append(ball)
                 fk.append(toe)
-            jointTools.aimSequence(base, upObj=baseJoints[-1])
+            jointTools.aimSequence(base, upObj=self.poleVector)
+            jointTools.aimSequence(ik, upObj=self.poleVector)
+            jointTools.aimSequence(fk, upObj=self.poleVector)
             index += 1
-        
-        
-        
+            cmds.makeIdentity([ball, toe], a=True)   
 
         inverse = ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
         iJnts = []
@@ -800,6 +800,7 @@ class QuadLimb(motionBase.MotionModuleBase):
             cmds.xform(jnt, ws=True, t=self.proxies[i].position)
             iJnts.append(jnt)
             index += 1
+
         
         ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")
         ballEFF = ballIK[1]
@@ -808,8 +809,8 @@ class QuadLimb(motionBase.MotionModuleBase):
         toeEFF = toeIK[1]
         toeIK = toeIK[0]
 
-        globalGrp = cmds.createNode("transform", f"{label}_{self.proxies['Global'].name}_grp")
-        globalCtrl = cmds.createNode("transform", f"{label}_{self.proxies['Global'].name}_CTRL", p=globalGrp)
+        globalGrp = cmds.createNode("transform", n=f"{label}_{self.proxies['Global'].name}_grp")
+        globalCtrl = cmds.createNode("transform", n=f"{label}_{self.proxies['Global'].name}_CTRL", p=globalGrp)
 
         globalCtrlObject = ctrlCrv.Ctrl(
             node=globalCtrl,
@@ -822,6 +823,88 @@ class QuadLimb(motionBase.MotionModuleBase):
         cmds.xform(globalGrp, ws=True, t=cmds.xform(
             f"{label}_{self.proxies['Global'].name}_proxy", q=True, ws=True, t=True
         ))
+
+        rollMD = cmds.createNode("multiplyDivide", n=f"{label}_InvToe_md")
+        raiseCD = cmds.createNode("condition", n=f"{label}_InvRaise_cd")
+        bankCD = cmds.createNode("condition", n=f"{label}_InvBank_cd")
+
+        for i in [raiseCD, bankCD]:
+            cmds.setAttr(f"{i}.colorIfFalseR", 0)
+            cmds.setAttr(f"{i}.colorIfFalseG", 0)
+            cmds.setAttr(f"{i}.colorIfFalseB", 0)
+        
+        for i in ["X", "Y", "Z"]:
+            if i != "X":
+                cmds.setAttr(f"{rollMD}.input2{i}", -1)
+            else:
+                cmds.setAttr(f"{rollMD}.input2{i}", 1)
+
+        cmds.setAttr(f"{bankCD}.operation", 2)
+        cmds.setAttr(f"{raiseCD}.operation", 4)
+
+        cmds.connectAttr(f"{globalCtrl}.translateZ", f"{rollMD}.input1X")
+        cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{bankCD}.colorIfTrueR")
+        cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{bankCD}.colorIfFalseG")
+        cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{bankCD}.firstTerm")
+        cmds.connectAttr(f"{globalCtrl}.rotateX", f"{raiseCD}.colorIfTrueR") 
+        cmds.connectAttr(f"{globalCtrl}.rotateX", f"{raiseCD}.colorIfFalseG")
+        cmds.connectAttr(f"{globalCtrl}.rotateX", f"{raiseCD}.firstTerm")
+# ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
+        cmds.connectAttr(f"{bankCD}.outColorR", f"{iJnts[0]}.rotateZ")
+        cmds.connectAttr(f"{bankCD}.outColorG", f"{iJnts[1]}.rotateZ")
+        cmds.connectAttr(f"{raiseCD}.outColorR", f"{iJnts[2]}.rotateX")
+        cmds.connectAttr(f"{raiseCD}.outColorG", f"{iJnts[5]}.rotateX")
+        cmds.connectAttr(f'{rollMD}.outputX', f"{iJnts[4]}.rotateX")
+        cmds.connectAttr(f"{globalCtrl}.rotateY", f"{iJnts[3]}.rotateY")
+
+        cmds.addAttr(globalCtrl, ln="heelPivot", at="float", dv=0, k=True)
+        cmds.connectAttr(f"{globalCtrl}.heelPivot", f"{iJnts[2]}.rotateY")
+        fkGrps = []
+        fkCtrls = []
+        # FK Jazz
+        for jnt in fk:
+            if jnt == fk[0]:
+                grp = cmds.createNode("transform", n=f"{jnt}_FK_grp", p=FKControls[-1])
+                ctrl = cmds.createNode("transform", n=f"{jnt}_FK_CTRL", p=grp)
+            else:
+                grp = cmds.createNode("transform", n=f"{jnt}_FK_grp", p=FKControls[-1])
+                ctrl = cmds.createNode("transform", n=f"{jnt}_FK_CTRL", p=fkGrps[0])
+            cmds.xform(grp, ws=True, m=cmds.xform(
+                jnt, q=True, ws=True, m=True
+            ))
+            fkGrps.append(grp)
+            fkCtrls.append(ctrl)
+            fkCtrlObject = ctrlCrv.Ctrl(
+                node=ctrl,
+                shape="square",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 0, 90]
+            )
+            fkCtrlObject.giveCtrlShape()
+            ptc = cmds.parentConstraint(ctrl, jnt, n=f"{jnt}_ptc", mo=0)
+
+        # Parent inverse and IKs
+        cmds.parent(f"{iJnts[0]}", f"{IKControls[0]}")
+        cmds.parent(f"{guideIK}", f"{iJnts[-1]}")
+        cmds.parent(f"{ballIK}", f"{iJnts[-2]}")
+        cmds.parent(f"{toeIK}", f"{iJnts[-3]}")
+        cmds.parent(globalGrp, IKControls[0])
+
+        pc = cmds.pointConstraint(iJnts[-1], cmds.listRelatives(IKControls[1], p=True)[0])
+
+        for index in range(2):
+            bc = cmds.createNode("blendColors", n=f"{base[index]}_bc")
+            cmds.connectAttr(f"{IKControls[0]}.IK_FK_Switch", f"{bc}.blender")
+            cmds.connectAttr(f"{fk[index]}.rotate", f"{bc}.color1")
+            cmds.connectAttr(f"{ik[index]}.rotate", f"{bc}.color2")
+            cmds.connectAttr(f"{bc}.output", f"{base[index]}.rotate")
+
+        cmds.setAttr(f"{iJnts[0]}.visibility", False)
+
+
+        
+
 
 
 

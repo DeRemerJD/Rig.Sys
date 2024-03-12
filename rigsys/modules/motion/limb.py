@@ -342,7 +342,6 @@ class Limb(motionBase.MotionModuleBase):
         cmds.xform(loT, ws=True, ro=cmds.xform(
             ikCtrl, q=True, ws=True, ro=True
         ))
-        pc = cmds.pointConstraint([upT, loT], pvPar, n=f"{pvPar}_pc", mo=1)
 
         # Connections.
         cmds.addAttr(ikCtrl, ln="IK_FK_Switch",
@@ -419,6 +418,7 @@ class Limb(motionBase.MotionModuleBase):
         # Cleanup
         cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(
             FKControls[0], p=True)[0], endGrp, midGrp], self.plugParent)
+        pc = cmds.pointConstraint([upT, loT], pvPar, n=f"{pvPar}_pc", mo=1)
 
         return IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK
 

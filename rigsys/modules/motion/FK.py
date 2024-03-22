@@ -75,8 +75,8 @@ class FK(motionBase.MotionModuleBase):
                 self.sockets[f"Segment_{i}"] = None
 
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
 
     def buildProxies(self):
@@ -96,6 +96,8 @@ class FK(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         FKJoints = []
         # Make joints

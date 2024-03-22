@@ -34,7 +34,11 @@ class MotionModuleParenting(UtilityModuleBase):
                 logger.error(f"Parent socket not found: {module.selectedSocket}")
                 continue
 
+            if module.selectedPlug is None or module.selectedPlug == "":
+                module.selectedPlug = "Local"
+
             plugNode = module.plugs[module.selectedPlug]
             socketNode = module._parentObject.sockets[module.selectedSocket]
             logger.info(f"Parenting {module.getFullName()} at {plugNode} to {module.parent} at {socketNode}")
             # TODO: Jacob, do the actual parenting here
+            module.socketPlugParenting()

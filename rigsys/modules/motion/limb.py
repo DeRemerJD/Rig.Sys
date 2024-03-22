@@ -72,6 +72,10 @@ class Limb(motionBase.MotionModuleBase):
 
         # Module Based Variables
         self.poleVector = None
+        self.plugs = {
+            "Local": None,
+            "World": None
+        }
         # for key in self.nameSet.keys():
         #     self.sockets[key] = None
 
@@ -124,6 +128,8 @@ class Limb(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
         IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(

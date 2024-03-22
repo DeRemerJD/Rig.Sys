@@ -161,8 +161,8 @@ class QuadLimb(motionBase.MotionModuleBase):
         self.poleVector = None
         self.sockets = {}
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
 
     def buildProxies(self):
@@ -186,6 +186,8 @@ class QuadLimb(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
         IKControls, FKControls, upRollJoints, loRollJoints, upIK, loIK, guideIK = self.buildBaseControls(baseJoints, IKJoints, FKJoints, upConnector)

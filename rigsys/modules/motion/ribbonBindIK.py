@@ -71,8 +71,8 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             self.proxies["End"].parent = str(self.spans - 1)
         
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
         # if self.segments > 1:
         #     for i in range(1, self.segments):
@@ -100,6 +100,8 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
         
         self.buildRibbons()
 

@@ -38,8 +38,8 @@ class Root(motionBase.MotionModuleBase):
             "Base": None
         }
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
 
     def buildProxies(self):
@@ -61,6 +61,8 @@ class Root(motionBase.MotionModuleBase):
             position=proxyPosition, rotation=proxyRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         # Structure
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
@@ -105,6 +107,9 @@ class Root(motionBase.MotionModuleBase):
 
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)
-        cmds.parent(rootPar, self.worldParent)
+        if self.parent == "" or self.parent is None:
+            cmds.parent(rootPar, self.worldParent)
+        else:
+            cmds.parent(rootPar, self.plugParent)
 
         self.addSocketMetaData()

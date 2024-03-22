@@ -73,8 +73,8 @@ class FKSegment(motionBase.MotionModuleBase):
         self.sockets = {
         }
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
         # if self.segments > 1:
         #     for i in range(1, self.segments):
@@ -96,6 +96,8 @@ class FKSegment(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         # CREATING NODES
         FKCtrls = []

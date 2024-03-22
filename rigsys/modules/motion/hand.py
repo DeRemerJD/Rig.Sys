@@ -121,6 +121,10 @@ class Hand(motionBase.MotionModuleBase):
             "Start": None,
             "End": None
         }
+        self.plugs = {
+            "Local": None,
+            "World": None
+        }
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -139,6 +143,8 @@ class Hand(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         excluded = []
         for key in self.proxies.keys():

@@ -70,16 +70,15 @@ class FKSegment(motionBase.MotionModuleBase):
 
             self.proxies["End"].parent = str(segments - 1)
 
-        self.socket = {
-            "Start": None
+        self.sockets = {
         }
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
-        if self.segments > 1:
-            for i in range(1, self.segments):
-                self.socket[str(i)] = None
+        # if self.segments > 1:
+        #     for i in range(1, self.segments):
+        #         self.sockets[str(i)] = None
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -97,6 +96,8 @@ class FKSegment(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         # CREATING NODES
         FKCtrls = []
@@ -423,8 +424,10 @@ class FKSegment(motionBase.MotionModuleBase):
 
         index = 0
         for i in railJoints:
-            self.socket[f"Rail_{index}"] = i
+            self.sockets[f"Rail_{index}"] = i
             index += 1
+
+        self.addSocketMetaData()
         # TODO:
         '''
         Hierarchy of Rig / Components

@@ -121,6 +121,10 @@ class Hand(motionBase.MotionModuleBase):
             "Start": None,
             "End": None
         }
+        self.plugs = {
+            "Local": None,
+            "World": None
+        }
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -139,6 +143,8 @@ class Hand(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         excluded = []
         for key in self.proxies.keys():
@@ -163,6 +169,7 @@ class Hand(motionBase.MotionModuleBase):
         
                 cmds.xform(jnt, ws=True, t=val.position)
                 Joints.append(jnt)
+                self.sockets[key] = jnt
 
         for jnt in Joints:
             if self.proxies["Root"].name in jnt:
@@ -301,3 +308,4 @@ class Hand(motionBase.MotionModuleBase):
 
         cmds.parent(root, self.moduleUtilities)
         cmds.parent(globalGrp, self.plugParent)
+        self.addSocketMetaData()

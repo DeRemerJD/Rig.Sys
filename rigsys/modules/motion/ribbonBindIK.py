@@ -69,10 +69,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             self.proxies["End"] = self.proxies.pop("End")
 
             self.proxies["End"].parent = str(self.spans - 1)
-
-        self.socket = {
-            "Start": None
-        }
+        
         self.plugs = {
             "Local": self.plugParent,
             "World": self.worldParent
@@ -234,6 +231,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             mFolCtrlGrps.append(grp)
             mFolCtrls.append(ctrl)
             mFolJoints.append(jnt)
+            self.sockets[f"Meta_{i}"] = jnt
 
         jointTools.aimSequence(mFolCtrlGrps, upObj=self.upVector)
         mScls = cmds.skinCluster(mFolJoints, ribbon, n=f"{ribbon}_scls",
@@ -286,6 +284,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             # mFolCtrlGrps.append(grp)
             # mFolCtrls.append(ctrl)
             rFolJoints.append(jnt)
+            self.sockets[f"Region_{i}"] = jnt
 
         jointTools.aimSequence(rFolJoints, upObj=self.upVector)
         cmds.makeIdentity(rFolJoints, a=True)
@@ -294,6 +293,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
         cmds.parent([ribbon, metaRibbon], self.moduleUtilities)
         cmds.parent([metaFollicles, regionFollicles], allFollicles)
         cmds.parent(allFollicles, self.moduleNode)
+        self.addSocketMetaData()
 
         # Create Relative node
     def axesToVector(self, axis="X"):

@@ -27,6 +27,7 @@ class Proxy:
         self.parent = parent
         self.upVector = upVector
         self.plug = plug
+        self.proxyModuleNode = None
 
     def getFullName(self):
         """Return the full name of the proxy."""
@@ -55,12 +56,24 @@ class Proxy:
 
     def build(self):
         """Build the proxy."""
+        if self.proxyModuleNode is None:
+            self.buildProxyModule()
         prx = cmds.createNode("joint", n="{}_{}_{}_proxy".format(self.side, self.label, self.name))
+        cmds.parent(prx, self.proxyModuleNode)
 
         cmds.xform(prx, ws=True, t=self.position, ro=self.rotation)
         if self.parent:
             parent = "{}_{}_{}_proxy".format(self.side, self.label, self.parent)
             cmds.parent(prx, parent)
-        if self.plug:
-            proxyModule = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
-            cmds.parent(proxyModule, "proxies")
+        # if self.plug:
+        #     proxyModule = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
+        #     cmds.parent(proxyModule, "proxies")
+
+    def buildProxyModule(self):
+        if cmds.objExists("{}_{}_proxyMODULE".format(self.side, self.label)):
+             self.proxyModuleNode = "{}_{}_proxyMODULE".format(self.side, self.label)
+        else:
+            self.proxyModuleNode = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
+            cmds.parent(self.proxyModuleNode, "proxies")
+
+            

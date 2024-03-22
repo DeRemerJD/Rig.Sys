@@ -159,6 +159,11 @@ class QuadLimb(motionBase.MotionModuleBase):
 
         # Module Based Variables
         self.poleVector = None
+        self.sockets = {}
+        self.plugs = {
+            "Local": self.plugParent,
+            "World": self.worldParent
+        }
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -191,6 +196,7 @@ class QuadLimb(motionBase.MotionModuleBase):
 
         # Cleanup
         cmds.parent(baseJoints[0], self.moduleUtilities)
+        self.addSocketMetaData()
 
     '''
     TODO: Working on the base skeleton. Should be positioned and built correctly? Will move onto 
@@ -207,6 +213,7 @@ class QuadLimb(motionBase.MotionModuleBase):
                 jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
                 cmds.xform(jnt, ws=True, t=val.position)
                 baseJoints.append(jnt)
+                self.sockets[key] = jnt
 
         if self.poleVector is None:
             poleVector = cmds.createNode("locator", n=f"{self.side}_{self.label}_PoleVectorShape")
@@ -536,6 +543,7 @@ class QuadLimb(motionBase.MotionModuleBase):
 
             upGrps.append(grp)
             upControls.append(ctrl)
+            self.sockets[name] = jnt
 
         loGrps = []
         loControls = []
@@ -558,6 +566,7 @@ class QuadLimb(motionBase.MotionModuleBase):
 
                 loGrps.append(grp)
                 loControls.append(ctrl)
+                self.sockets[name] = jnt
 
                 index+=1
         else:
@@ -578,6 +587,7 @@ class QuadLimb(motionBase.MotionModuleBase):
 
                 loGrps.append(grp)
                 loControls.append(ctrl)
+                self.sockets[name] = jnt
 
         # Constrain up and lo controls 
         ptc = cmds.parentConstraint([upRollJoints[0], upRollJoints[1]], upGrps[0], n=f"{upGrps[0]}_ptc", mo=0)[0]
@@ -618,7 +628,6 @@ class QuadLimb(motionBase.MotionModuleBase):
 
         # Cleanup
         if self.curvedCalf:
-             print(loGrps)
              cmds.parent([clavGrp, ikGrp, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
         else:
             cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
@@ -721,6 +730,7 @@ class QuadLimb(motionBase.MotionModuleBase):
             cmds.xform(jnt, ws=True, t=self.proxies[i].position)
             iJnts.append(jnt)
             index += 1
+            self.sockets[i] = jnt
 
         
         ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")

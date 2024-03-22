@@ -34,9 +34,12 @@ class Root(motionBase.MotionModuleBase):
             )
         }
 
-        self.socket = {
-            "Base": None,
-            "Offset": None
+        self.sockets = {
+            "Base": None
+        }
+        self.plugs = {
+            "Local": self.plugParent,
+            "World": self.worldParent
         }
 
     def buildProxies(self):
@@ -74,6 +77,7 @@ class Root(motionBase.MotionModuleBase):
             "joint", n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name)
         )
         cmds.parent(rootJnt, rootCtrl)
+        self.sockets["Base"] = rootJnt
         if self.addOffset:
             offsetPar = cmds.createNode(
                 "transform", n=self.getFullName() + "Offset_grp"
@@ -97,12 +101,10 @@ class Root(motionBase.MotionModuleBase):
                 orient=[90, 0, 0],
             )
             offsetCtrlObj.giveCtrlShape()
+            self.sockets["Offset"] = offsetJnt
 
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)
         cmds.parent(rootPar, self.worldParent)
 
-        self.socket["Base"] = rootJnt
-        if self.addOffset:
-            self.socket["Offset"] = offsetJnt
-        print(self.socket)
+        self.addSocketMetaData()

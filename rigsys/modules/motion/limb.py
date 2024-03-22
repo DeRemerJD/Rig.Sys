@@ -72,6 +72,8 @@ class Limb(motionBase.MotionModuleBase):
 
         # Module Based Variables
         self.poleVector = None
+        # for key in self.nameSet.keys():
+        #     self.sockets[key] = None
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -141,6 +143,7 @@ class Limb(motionBase.MotionModuleBase):
                 "joint", n=f"{self.side}_{self.label}_{val.name}")
             cmds.xform(jnt, ws=True, t=val.position)
             baseJoints.append(jnt)
+            self.sockets[key] = jnt
 
         if self.poleVector is None:
             poleVector = cmds.createNode(
@@ -538,6 +541,7 @@ class Limb(motionBase.MotionModuleBase):
             ))
             cmds.parent(jnt, fol)
             follicleJoints.append(jnt)
+            self.sockets[f"Follicle_{i}"] = jnt
 
         jointTools.aimSequence(follicleJoints, upObj=self.poleVector)
         cmds.makeIdentity(follicleJoints, a=True)
@@ -562,7 +566,7 @@ class Limb(motionBase.MotionModuleBase):
             ribbonOffsets.append(offset)
             ribbonControls.append(ctrl)
             ribbonJoints.append(jnt)
-
+            self.sockets[f"Ribbon_{i}"] = jnt 
             ctrlObject = ctrlCrv.Ctrl(
                 node=ctrl,
                 shape="circle",
@@ -639,3 +643,4 @@ class Limb(motionBase.MotionModuleBase):
         cmds.parent(ribbon, self.moduleUtilities)
         cmds.parent(folGrp, self.moduleUtilities)
         cmds.parent(bendyCtrlGrp, self.plugParent)
+        self.addSocketMetaData()

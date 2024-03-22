@@ -163,6 +163,7 @@ class Hand(motionBase.MotionModuleBase):
         
                 cmds.xform(jnt, ws=True, t=val.position)
                 Joints.append(jnt)
+                self.sockets[key] = jnt
 
         for jnt in Joints:
             if self.proxies["Root"].name in jnt:
@@ -301,3 +302,4 @@ class Hand(motionBase.MotionModuleBase):
 
         cmds.parent(root, self.moduleUtilities)
         cmds.parent(globalGrp, self.plugParent)
+        self.addSocketMetaData()

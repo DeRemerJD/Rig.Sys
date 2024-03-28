@@ -26,7 +26,6 @@ class BindJoints(utilityBase.UtilityModuleBase):
             #     continue            
 
             for jnt in module.bindJoints.keys():
-                print(jnt)
                 bindJoint = cmds.createNode("joint", n=f"{jnt}_bind")
                 cmds.xform(bindJoint, ws=True, m=cmds.xform(
                     jnt, q=True, ws=True, m=True
@@ -37,6 +36,7 @@ class BindJoints(utilityBase.UtilityModuleBase):
                     pass
                 else:
                     cmds.parent(f"{jnt}_bind", f"{parJnt}_bind")
+
         floatingJoints = []
         for module in motionModules:
             # if not module.isRun:
@@ -60,19 +60,3 @@ class BindJoints(utilityBase.UtilityModuleBase):
                             if parJnt is None:
                                 floatingJoints.append(f"{jnt}_bind")
         cmds.parent(floatingJoints, self.underGroup)
-
-            # if module.parent is None or module.parent == "":
-            #     continue
-
-            # if module.selectedSocket not in module._parentObject.sockets:
-            #     logger.error(f"Parent socket not found: {module.selectedSocket}")
-            #     continue
-
-            # if module.selectedPlug is None or module.selectedPlug == "":
-            #     module.selectedPlug = "Local"
-
-            # plugNode = module.plugs[module.selectedPlug]
-            # socketNode = module._parentObject.sockets[module.selectedSocket]
-            # logger.info(f"Parenting {module.getFullName()} at {plugNode} to {module.parent} at {socketNode}")
-            # # TODO: Jacob, do the actual parenting here
-            # module.socketPlugParenting()

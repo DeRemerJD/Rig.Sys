@@ -83,9 +83,7 @@ class Rig:
 
         # Sort by build order
         allModules.sort(key=lambda x: x.buildOrder)
-        for i in allModules:
-            print(i, i.buildOrder)
-
+        
         return allModules
 
     def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False, usedSavedProxyData: bool = False,

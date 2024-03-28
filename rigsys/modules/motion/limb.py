@@ -153,7 +153,8 @@ class Limb(motionBase.MotionModuleBase):
             if len(baseJoints) == 1:
                 self.bindJoints[jnt] = None
             else:
-                self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
+                if key != self.nameSet["End"]:
+                    self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
 
         if self.poleVector is None:
             poleVector = cmds.createNode(
@@ -387,6 +388,8 @@ class Limb(motionBase.MotionModuleBase):
         endCtrl = cmds.createNode(
             "transform", n=f"{baseJoints[3]}_CTRL", p=endGrp)
         endJnt = cmds.createNode("joint", n=f"{baseJoints[3]}End")
+        self.sockets[self.nameSet["End"]] = endJnt
+        self.bindJoints[endJnt] = baseJoints[2]
         cmds.xform(endJnt, ws=True, m=cmds.xform(
             baseJoints[3], q=True, ws=True, m=True
         ))

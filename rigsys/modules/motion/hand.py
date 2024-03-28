@@ -308,6 +308,6 @@ class Hand(motionBase.MotionModuleBase):
 
             count+=1
 
-        cmds.parent(root, self.moduleUtilities)
+        cmds.parent(root, self.plugParent)
         cmds.parent(globalGrp, self.plugParent)
         self.addSocketMetaData()

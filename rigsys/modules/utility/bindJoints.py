@@ -60,3 +60,8 @@ class BindJoints(utilityBase.UtilityModuleBase):
                             if parJnt is None:
                                 floatingJoints.append(f"{jnt}_bind")
         cmds.parent(floatingJoints, self.underGroup)
+
+        for module in motionModules:
+            for jnt in module.bindJoints.keys():
+                cmds.parentConstraint(jnt, f"{jnt}_bind", mo=0, n=f"{jnt}_bind_ptc")
+                cmds.scaleConstraint(jnt, f"{jnt}_bind", mo=0, n=f"{jnt}_bind_sc")

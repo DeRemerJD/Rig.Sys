@@ -425,6 +425,10 @@ class FKSegment(motionBase.MotionModuleBase):
         index = 0
         for i in railJoints:
             self.sockets[f"Rail_{index}"] = i
+            if index == 0:
+                self.bindJoints[i] = None
+            else:
+                self.bindJoints[i] = railJoints[index - 1]
             index += 1
 
         self.addSocketMetaData()

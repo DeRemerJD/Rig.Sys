@@ -25,6 +25,8 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.plugs: dict = {}
         self.sockets: dict = {}
 
+        self.bindJoints: dict = {}
+
         self.selectedPlug = selectedPlug
         self.selectedSocket = selectedSocket
 

@@ -150,6 +150,10 @@ class Limb(motionBase.MotionModuleBase):
             cmds.xform(jnt, ws=True, t=val.position)
             baseJoints.append(jnt)
             self.sockets[key] = jnt
+            if len(baseJoints) == 0:
+                self.bindJoints[jnt] = None
+            else:
+                self.bindJoints[jnt] = baseJoints[len(baseJoints) - 1]
 
         if self.poleVector is None:
             poleVector = cmds.createNode(
@@ -548,6 +552,10 @@ class Limb(motionBase.MotionModuleBase):
             cmds.parent(jnt, fol)
             follicleJoints.append(jnt)
             self.sockets[f"Follicle_{i}"] = jnt
+            if len(follicleJoints) == 1:
+                self.bindJoints[jnt] = self.bindJoints[baseJoints[1]]
+            else:
+                self.bindJoints[jnt] = follicleJoints[len(follicleJoints) - 1]
 
         jointTools.aimSequence(follicleJoints, upObj=self.poleVector)
         cmds.makeIdentity(follicleJoints, a=True)

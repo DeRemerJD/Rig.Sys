@@ -170,6 +170,7 @@ class Hand(motionBase.MotionModuleBase):
                 cmds.xform(jnt, ws=True, t=val.position)
                 Joints.append(jnt)
                 self.sockets[key] = jnt
+                self.bindJoints[name] = par
 
         for jnt in Joints:
             if self.proxies["Root"].name in jnt:

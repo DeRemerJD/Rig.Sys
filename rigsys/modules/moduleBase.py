@@ -90,6 +90,12 @@ class ModuleBase:
             newModule.side = "R"
         elif self.side == "R":
             newModule.side = "L"
+            
+        # Parents
+        if newModule.parent.startswith("L_"):
+            split = newModule.parent.split("_")
+            split[0] = "R"
+            newModule.parent = "_".join(split)
 
         # Proxies
         for key, proxy in self.proxies.items():

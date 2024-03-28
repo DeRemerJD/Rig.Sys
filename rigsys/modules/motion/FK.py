@@ -111,6 +111,11 @@ class FK(motionBase.MotionModuleBase):
                 else:
                     self.sockets["Start"] = fJnt
 
+                if len(FKJoints) == 1:
+                    self.bindJoints[fJnt] = None
+                else:
+                    self.bindJoints[fJnt] = FKJoints[len(FKJoints) - 2]
+
         index = 0
         for fJnt in FKJoints:
             if fJnt != FKJoints[-1]:

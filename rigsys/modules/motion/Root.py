@@ -80,6 +80,7 @@ class Root(motionBase.MotionModuleBase):
         )
         cmds.parent(rootJnt, rootCtrl)
         self.sockets["Base"] = rootJnt
+        self.bindJoints[rootJnt] = None
         if self.addOffset:
             offsetPar = cmds.createNode(
                 "transform", n=self.getFullName() + "Offset_grp"
@@ -104,6 +105,7 @@ class Root(motionBase.MotionModuleBase):
             )
             offsetCtrlObj.giveCtrlShape()
             self.sockets["Offset"] = offsetJnt
+            self.bindJoints[offsetJnt] = rootJnt
 
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)

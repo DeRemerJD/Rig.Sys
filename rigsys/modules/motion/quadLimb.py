@@ -216,6 +216,10 @@ class QuadLimb(motionBase.MotionModuleBase):
                 cmds.xform(jnt, ws=True, t=val.position)
                 baseJoints.append(jnt)
                 self.sockets[key] = jnt
+                if len(baseJoints) == 1:
+                    self.bindJoints[jnt] = None
+                else:
+                    self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
 
         if self.poleVector is None:
             poleVector = cmds.createNode("locator", n=f"{self.side}_{self.label}_PoleVectorShape")
@@ -546,9 +550,11 @@ class QuadLimb(motionBase.MotionModuleBase):
             upGrps.append(grp)
             upControls.append(ctrl)
             self.sockets[name] = jnt
+            self.bindJoints[jnt] = baseJoints[1]
 
         loGrps = []
         loControls = []
+        loJoints = []
         # Create Up Roll Ctrls / joints
         if self.curvedCalf:
             index = 0
@@ -568,7 +574,12 @@ class QuadLimb(motionBase.MotionModuleBase):
 
                 loGrps.append(grp)
                 loControls.append(ctrl)
+                loJoints.append(jnt)
                 self.sockets[name] = jnt
+                if len(loJoints) == 1:
+                    self.bindJoints[jnt] = baseJoints[3]
+                else:
+                    self.bindJoints[jnt] = loJoints[len(loJoints) - 2]
 
                 index+=1
         else:
@@ -590,6 +601,7 @@ class QuadLimb(motionBase.MotionModuleBase):
                 loGrps.append(grp)
                 loControls.append(ctrl)
                 self.sockets[name] = jnt
+                self.bindJoints[jnt] = baseJoints[3]
 
         # Constrain up and lo controls 
         ptc = cmds.parentConstraint([upRollJoints[0], upRollJoints[1]], upGrps[0], n=f"{upGrps[0]}_ptc", mo=0)[0]
@@ -733,6 +745,10 @@ class QuadLimb(motionBase.MotionModuleBase):
             iJnts.append(jnt)
             index += 1
             self.sockets[i] = jnt
+            if len(iJnts) == 1:
+                self.bindJoints[jnt] = baseJoints[-1]
+            else:
+                self.bindJoints[jnt] = iJnts[len(iJnts) - 2]
 
         
         ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")

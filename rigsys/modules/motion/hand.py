@@ -170,6 +170,7 @@ class Hand(motionBase.MotionModuleBase):
                 cmds.xform(jnt, ws=True, t=val.position)
                 Joints.append(jnt)
                 self.sockets[key] = jnt
+                self.bindJoints[name] = par
 
         for jnt in Joints:
             if self.proxies["Root"].name in jnt:
@@ -182,6 +183,7 @@ class Hand(motionBase.MotionModuleBase):
                 cmds.delete(ac)
                 cmds.makeIdentity(jnt, a=True)
                 root = jnt
+                self.bindJoints[root] = None
         
         for key, val in parentDict.items():
             cmds.parent(key, val)
@@ -306,6 +308,6 @@ class Hand(motionBase.MotionModuleBase):
 
             count+=1
 
-        cmds.parent(root, self.moduleUtilities)
+        cmds.parent(root, self.plugParent)
         cmds.parent(globalGrp, self.plugParent)
         self.addSocketMetaData()

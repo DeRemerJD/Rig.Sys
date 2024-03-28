@@ -83,6 +83,8 @@ class Rig:
 
         # Sort by build order
         allModules.sort(key=lambda x: x.buildOrder)
+        for i in allModules:
+            print(i, i.buildOrder)
 
         return allModules
 

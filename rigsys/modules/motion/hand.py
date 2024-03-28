@@ -183,6 +183,7 @@ class Hand(motionBase.MotionModuleBase):
                 cmds.delete(ac)
                 cmds.makeIdentity(jnt, a=True)
                 root = jnt
+                self.bindJoints[root] = None
         
         for key, val in parentDict.items():
             cmds.parent(key, val)

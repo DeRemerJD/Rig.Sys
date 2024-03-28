@@ -150,10 +150,10 @@ class Limb(motionBase.MotionModuleBase):
             cmds.xform(jnt, ws=True, t=val.position)
             baseJoints.append(jnt)
             self.sockets[key] = jnt
-            if len(baseJoints) == 0:
+            if len(baseJoints) == 1:
                 self.bindJoints[jnt] = None
             else:
-                self.bindJoints[jnt] = baseJoints[len(baseJoints) - 1]
+                self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
 
         if self.poleVector is None:
             poleVector = cmds.createNode(

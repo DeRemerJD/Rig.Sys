@@ -108,10 +108,13 @@ class FK(motionBase.MotionModuleBase):
                 cmds.xform(fJnt, ws=True, t=val.position)
                 if key != "Start":
                     self.sockets[f"Segment_{key}"] = fJnt
-                    self.bindJoints[fJnt] = FKJoints[-1]
                 else:
                     self.sockets["Start"] = fJnt
+
+                if len(FKJoints) == 1:
                     self.bindJoints[fJnt] = None
+                else:
+                    self.bindJoints[fJnt] = FKJoints[len(FKJoints) - 2]
 
         index = 0
         for fJnt in FKJoints:

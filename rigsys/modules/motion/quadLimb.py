@@ -219,7 +219,7 @@ class QuadLimb(motionBase.MotionModuleBase):
                 if len(baseJoints) == 1:
                     self.bindJoints[jnt] = None
                 else:
-                    self.bindJoints[jnt] = baseJoints[len(baseJoints) - 1]
+                    self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
 
         if self.poleVector is None:
             poleVector = cmds.createNode("locator", n=f"{self.side}_{self.label}_PoleVectorShape")
@@ -574,12 +574,12 @@ class QuadLimb(motionBase.MotionModuleBase):
 
                 loGrps.append(grp)
                 loControls.append(ctrl)
-                loJoints.append(ctrl)
+                loJoints.append(jnt)
                 self.sockets[name] = jnt
                 if len(loJoints) == 1:
                     self.bindJoints[jnt] = baseJoints[3]
                 else:
-                    self.bindJoints[jnt] = loJoints[len(loJoints) - 1]
+                    self.bindJoints[jnt] = loJoints[len(loJoints) - 2]
 
                 index+=1
         else:
@@ -748,7 +748,7 @@ class QuadLimb(motionBase.MotionModuleBase):
             if len(iJnts) == 1:
                 self.bindJoints[jnt] = baseJoints[-1]
             else:
-                self.bindJoints[jnt] = iJnts[len(iJnts) - 1]
+                self.bindJoints[jnt] = iJnts[len(iJnts) - 2]
 
         
         ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")

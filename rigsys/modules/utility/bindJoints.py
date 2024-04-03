@@ -31,6 +31,22 @@ class BindJoints(utilityBase.UtilityModuleBase):
                     jnt, q=True, ws=True, m=True
                 ))
                 cmds.makeIdentity(bindJoint, a=True)
+                if bindJoint.startswith("L_"):
+                    side = 1
+                    jlabel = "_".join(bindJoint.split("_")[1:])
+                elif bindJoint.startswith("R_"):
+                    side = 2
+                    jlabel = "_".join(bindJoint.split("_")[1:])
+                elif bindJoint.startswith("M_"):
+                    side = 0
+                    jlabel = "_".join(bindJoint.split("_")[1:])
+                else:
+                    side = 3
+                    jlabel = "_".join(bindJoint.split("_")[1:])
+                cmds.setAttr(f"{bindJoint}.side", side)
+                cmds.setAttr(f"{bindJoint}.type", 18)
+                cmds.setAttr(f"{bindJoint}.otherType", jlabel, type="string")
+
             for jnt, parJnt in module.bindJoints.items():
                 if parJnt is None:
                     pass

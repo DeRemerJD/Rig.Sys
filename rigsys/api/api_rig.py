@@ -8,6 +8,7 @@ import maya.cmds as cmds
 
 import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
+import rigsys.modules.deformer as deformer
 
 logger = logging.getLogger(__name__)
 

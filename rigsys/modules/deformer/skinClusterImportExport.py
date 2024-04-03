@@ -56,11 +56,13 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
         cmds.deformerWeights(f"{self.obj}_scls.xml", 
                              ex=True,
                              p=self.path,
-                             deformer=f"{self.obj}_scls"
+                             deformer=f"{self.obj}_scls",
+                             m="index"
                              )
     def readWeights(self):
         cmds.deformerWeights(f"{self.obj}_scls.xml", 
                              im=True,
                              p=self.path,
-                             deformer=f"{self.obj}_scls"
+                             deformer=f"{self.obj}_scls",
+                             m="index"
                              )

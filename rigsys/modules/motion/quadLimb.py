@@ -12,11 +12,11 @@ class QuadLimb(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
-                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "",
+                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  pvMultiplier: float = 1.0, curvedCalf: bool = True, ikCtrlToFloor: bool = True, foot: bool = False,
                  nameSet: dict = {"Root":"Root", "Start":"Start", "UpMid":"UpMid", "LoMid":"LoMid", "End":"End"}) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
 
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes

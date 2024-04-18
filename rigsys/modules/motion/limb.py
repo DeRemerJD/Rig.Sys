@@ -11,14 +11,15 @@ import maya.cmds as cmds
 class Limb(motionBase.MotionModuleBase):
     """Limb Motion Module."""
 
-    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
+    def __init__(self, rig, side="", label="", 
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "",
-                 pvMultiplier: float = 1.0, numberOfJoints: int = 11,
+                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True, pvMultiplier: float = 1.0, 
+                 numberOfJoints: int = 11, 
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
-                         parent, mirror, selectedPlug, selectedSocket)
+                         parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
 
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes

@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 class ImportModel(utilityBase.UtilityModuleBase):
     """Import model utility module."""
 
-    def __init__(self, rig, label: str = "", buildOrder: int = 3000, isMuted: bool = False,
-                 filePath: str = "", underGroup: str = None, mirror: bool = False) -> None:
+    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 3000, isMuted: bool = False,
+                 mirror: bool = False, bypassProxiesOnly: bool = True, 
+                 filePath: str = "", underGroup: str = None) -> None:
         """Initialize the module."""
-        super().__init__(rig, label, buildOrder, isMuted, mirror)
-
+        super().__init__(rig, side, label, buildOrder, isMuted, mirror, bypassProxiesOnly)
+        self.side = 'M'
         self.filePath = filePath
         self.underGroup = underGroup
 

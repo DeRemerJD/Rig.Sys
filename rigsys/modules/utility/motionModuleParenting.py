@@ -14,9 +14,9 @@ class MotionModuleParenting(UtilityModuleBase):
     """Motion module parenting utility module."""
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 3000, isMuted: bool = False,
-                 mirror: bool = False) -> None:
+                 mirror: bool = False, bypassProxiesOnly: bool = False) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, mirror)
+        super().__init__(rig, side, label, buildOrder, isMuted, mirror, bypassProxiesOnly)
 
     def run(self) -> None:
         """Run the module."""

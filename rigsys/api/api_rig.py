@@ -131,7 +131,11 @@ class Rig:
 
             if module.isMuted:
                 continue
-
+            
+            if buildProxiesOnly:
+                if not module.bypassProxiesOnly and not isinstance(module, motion.MotionModuleBase):
+                    logger.info(f"Skipping module {module.getFullName()} for buildProxiesOnly flag...")
+                    continue
             logger.info(f"Building module {module.getFullName()}...")
 
             if isinstance(module, motion.MotionModuleBase):

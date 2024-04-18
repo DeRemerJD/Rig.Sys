@@ -14,12 +14,13 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
         super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
-                         mirror=mirror)
+                         mirror=mirror, bypassProxiesOnly=bypassProxiesOnly)
 
         self.proxies: dict = {}
+        self.bypassProxiesOnly = bypassProxiesOnly
 
         # Key: label, Value: Node
         self.plugs: dict = {}

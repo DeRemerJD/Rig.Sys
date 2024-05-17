@@ -46,10 +46,14 @@ def writeSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
         cmds.error("Path is empty")
     
     for obj in objects:
-        cmds.deformerWeights(f"{obj}_{suffix}.xml", 
+        cmds.deformerWeights(f"{obj}_{suffix}.json", 
                              ex=True,
                              p=path,
-                             deformer=f"{obj}_{suffix}"
+                             deformer=f"{obj}_{suffix}",
+                             at=["maintainMaxInfluences", "maxInfluences"],
+                             method="index",
+                             format="JSON",
+                             dv=1.0
                              )
 
 def readSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
@@ -61,10 +65,14 @@ def readSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
         cmds.error("Path is empty")
     
     for obj in objects:
-        cmds.deformerWeights(f"{obj}_{suffix}.xml", 
+        cmds.deformerWeights(f"{obj}_{suffix}.json", 
                              im=True,
                              p=path,
-                             deformer=f"{obj}_{suffix}"
+                             deformer=f"{obj}_{suffix}",
+                             at=["maintainMaxInfluences", "maxInfluences"],
+                             method="index",
+                             format="JSON",
+                             dv=1.0
                              )
 
 def createSCLS(object:str = "", joints:list = [], suffix:str = "scls", maxInfluences=4):

@@ -53,16 +53,22 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
                          mi=self.maxInfluences)
 
     def writeWeights(self):
-        cmds.deformerWeights(f"{self.obj}_scls.xml", 
+        cmds.deformerWeights(f"{self.obj}_scls.json", 
                              ex=True,
                              p=self.path,
                              deformer=f"{self.obj}_scls",
-                             m="index"
+                             m="index",
+                             at=["maintainMaxInfluences", "maxInfluences"],
+                             format="JSON",
+                             dv=1.0                             
                              )
     def readWeights(self):
-        cmds.deformerWeights(f"{self.obj}_scls.xml", 
+        cmds.deformerWeights(f"{self.obj}_scls.json", 
                              im=True,
                              p=self.path,
                              deformer=f"{self.obj}_scls",
-                             m="index"
+                             m="index",
+                             at=["maintainMaxInfluences", "maxInfluences"],
+                             format="JSON",
+                             dv=1.0
                              )

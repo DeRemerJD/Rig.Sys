@@ -34,7 +34,7 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
                 if not cmds.objExists(i):
                     gatherMissing.append(i)
             if len(gatherMissing) > 0:
-                cmds.error(f"Missing the following joints {gatherMissing}")
+                cmds.error(f"Missing the following joints {gatherMissing}; for {self.obj}_scls")
         if self.path is None or self.path == "":
             cmds.error(f"Path is incorrect {self.path}")
         
@@ -53,6 +53,7 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
                          mi=self.maxInfluences)
 
     def writeWeights(self):
+        print(f"Exporting {self.obj}_scls. . .")
         cmds.deformerWeights(f"{self.obj}_scls.json", 
                              ex=True,
                              p=self.path,
@@ -63,6 +64,7 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
                              dv=1.0                             
                              )
     def readWeights(self):
+        print(f"Importing {self.obj}_scls. . .")
         cmds.deformerWeights(f"{self.obj}_scls.json", 
                              im=True,
                              p=self.path,

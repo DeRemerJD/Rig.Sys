@@ -8,6 +8,7 @@ import maya.cmds as cmds
 
 import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
+import rigsys.modules.deformer as deformer
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,11 @@ class Rig:
 
             if module.isMuted:
                 continue
-
+            
+            if buildProxiesOnly:
+                if not module.bypassProxiesOnly and not isinstance(module, motion.MotionModuleBase):
+                    logger.info(f"Skipping module {module.getFullName()} for buildProxiesOnly flag...")
+                    continue
             logger.info(f"Building module {module.getFullName()}...")
 
             if isinstance(module, motion.MotionModuleBase):

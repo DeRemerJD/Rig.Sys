@@ -11,10 +11,10 @@ class RibbonBindIK(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="sphere", ctrlScale=None, addOffset=True, spans=5,
                  reverse=True, meta=True, numberOfJoints=10, localAxisTranslate = "X", buildOrder: int = 2000, 
-                 isMuted: bool = False, parent: str = None, mirror: bool = False, selectedPlug: str = "",
-                 selectedSocket: str = "") -> None:
+                 isMuted: bool = False, parent: str = None, mirror: bool = False, bypassProxiesOnly: bool = True, 
+                 selectedPlug: str = "", selectedSocket: str = "") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]

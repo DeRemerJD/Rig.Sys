@@ -14,7 +14,7 @@ class ModuleBase:
     """Base class for all modules."""
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 0,
-                 isMuted: bool = False, mirror: bool = False) -> None:
+                 isMuted: bool = False, mirror: bool = False, bypassProxiesOnly: bool = False) -> None:
         """Initialize the module."""
         self.side = side
         self.label = label
@@ -26,6 +26,7 @@ class ModuleBase:
         self.isMuted: bool = isMuted
         self.isRun: bool = False
         self.mirror = mirror
+        self.bypassProxiesOnly = bypassProxiesOnly
 
         self._rig = rig
 

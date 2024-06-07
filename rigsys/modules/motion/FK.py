@@ -13,9 +13,12 @@ class FK(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffsets=True, segments=5,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, 
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         self.addOffsets = addOffsets
         self.ctrlShapes = ctrlShapes

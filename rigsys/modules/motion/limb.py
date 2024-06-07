@@ -14,12 +14,13 @@ class Limb(motionBase.MotionModuleBase):
     def __init__(self, rig, side="", label="", 
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True, pvMultiplier: float = 1.0, 
-                 numberOfJoints: int = 11, 
+                 aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True, 
+                 clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
-                         parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
@@ -178,7 +179,8 @@ class Limb(motionBase.MotionModuleBase):
 
         # jointTools.aim([baseJoints[0]], [baseJoints[1]])
         jointTools.aimSequence(
-            [baseJoints[1], baseJoints[2], baseJoints[3]], upObj=self.poleVector)
+            [baseJoints[1], baseJoints[2], baseJoints[3]], upObj=self.poleVector,
+            aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.makeIdentity(baseJoints[0], a=True)
 
         index = 1
@@ -561,7 +563,8 @@ class Limb(motionBase.MotionModuleBase):
             else:
                 self.bindJoints[jnt] = follicleJoints[len(follicleJoints) - 1]
 
-        jointTools.aimSequence(follicleJoints, upObj=self.poleVector)
+        jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.makeIdentity(follicleJoints, a=True)
         setRange = 0
         rangeDist = (1 / 6) * 10
@@ -596,7 +599,8 @@ class Limb(motionBase.MotionModuleBase):
 
             cmds.xform(grp, ws=True, t=[setRange, 0, 0])
             setRange += rangeDist
-        jointTools.aimSequence(ribbonGroups, upObj=tempUpSpace)
+        jointTools.aimSequence(ribbonGroups, upObj=tempUpSpace,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.delete(tempUpSpace)
 
         # Bind Ribbon
@@ -643,19 +647,30 @@ class Limb(motionBase.MotionModuleBase):
 
         ptc = cmds.parentConstraint(
             midOffset, ribbonGroups[3], n=f"{ribbonGroups[3]}_ptc", mo=0)
+        
+        
+        posAim = self.aimAxis
+        negAim = jointTools.axisFlip(self.aimAxis)
+        posAimVec = jointTools.axisToVector(posAim)
+        negAimVec = jointTools.axisToVector(negAim)
+
+        # posUp = self.upAxis     
+        # posUpVec = jointTools.axisToVector(posUp)
+        crossAxis = jointTools.getCrossAxis(self.aimAxis, self.upAxis)
+        crossVec = jointTools.axisToVector(crossAxis)
 
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[1], n=f"{ribbonOffsets[1]}_ac",
-                                aim=[1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=posAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[2], n=f"{ribbonOffsets[2]}_ac",
-                                aim=[1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=posAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[5], n=f"{ribbonOffsets[5]}_ac",
-                                aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=negAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[4], n=f"{ribbonOffsets[4]}_ac",
-                                aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=negAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
 
         # Cleanup
         cmds.parent(ribbon, self.moduleUtilities)

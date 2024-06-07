@@ -14,7 +14,8 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
         super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
                          mirror=mirror, bypassProxiesOnly=bypassProxiesOnly)
@@ -39,6 +40,8 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.moduleUtilities = None
         self.plugParent = None
         self.worldParent = None
+        self.aimAxis = aimAxis
+        self.upAxis = upAxis
 
     def run(self, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True, proxyData: dict = {}) -> None:
         """Run the module."""

@@ -173,7 +173,16 @@ class Limb(motionBase.MotionModuleBase):
             for i in ["X", "Y", "Z"]:
                 cmds.setAttr(f"{self.poleVector}.localScale{i}", 0, l=True)
 
-        cmds.parent(baseJoints[1], baseJoints[0])
+        aimVec = jointTools.axisToVector(self.aimAxis)
+        upVec = jointTools.axisToVector(self.upAxis)
+        # Orienting in this order;
+        # Create aim constraint for clav joint, then parent shoulder, elbow, wrist
+        # and aim those joints. Finally with the shoulder rotations set the clav will
+        # be aimed and we can remove the constraint, parent the shoulder to the clavicle
+        # and then freeze xforms
+        ac = cmds.aimConstraint(baseJoints[1], baseJoints[0], aim=aimVec, 
+                        u=upVec, wut="objectrotation", wu=upVec, wuo=baseJoints[1])[0]        
+        
         cmds.parent(baseJoints[2], baseJoints[1])
         cmds.parent(baseJoints[3], baseJoints[2])
 
@@ -181,6 +190,8 @@ class Limb(motionBase.MotionModuleBase):
         jointTools.aimSequence(
             [baseJoints[1], baseJoints[2], baseJoints[3]], upObj=self.poleVector,
             aimAxis=self.aimAxis, upAxis=self.upAxis)
+        cmds.delete(ac)
+        cmds.parent(baseJoints[1], baseJoints[0])
         cmds.makeIdentity(baseJoints[0], a=True)
 
         index = 1
@@ -400,11 +411,20 @@ class Limb(motionBase.MotionModuleBase):
         ptc = cmds.parentConstraint(
             baseJoints[3], endGrp, n=f"{baseJoints[3]}_End_ptc", mo=0)
         ptc = cmds.parentConstraint(endCtrl, endJnt, n=f"{endJnt}_ptc", mo=0)
+        # Construct offset
+        axisMultOffset = self.ctrlScale[0] * 1.25
+        offsetArrayFromAim = jointTools.axisToVector(self.aimAxis)
+        offsetArray = []
+        for xyz in offsetArrayFromAim:
+            offsetVal = axisMultOffset * xyz
+            offsetArray.append(offsetVal)
+
+
         endCtrlObject = ctrlCrv.Ctrl(
             node=endCtrl,
             shape="box",
             scale=[self.ctrlScale[0] * 1.15, self.ctrlScale[1] * 1.15, self.ctrlScale[2] * 1.15],
-            offset=[self.ctrlScale[0] * 1.25, 0, 0]
+            offset=offsetArray
         )
         endCtrlObject.giveCtrlShape()
 
@@ -601,6 +621,9 @@ class Limb(motionBase.MotionModuleBase):
             setRange += rangeDist
         jointTools.aimSequence(ribbonGroups, upObj=tempUpSpace,
                                aimAxis=self.aimAxis, upAxis=self.upAxis)
+        jointTools.aimSequence(ribbonOffsets, upObj=tempUpSpace,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+        cmds.makeIdentity(ribbonControls, a=True)
         cmds.delete(tempUpSpace)
 
         # Bind Ribbon

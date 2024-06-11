@@ -126,7 +126,7 @@ class FK(motionBase.MotionModuleBase):
             index += 1
 
         jointTools.aimSequence(
-            FKJoints, aimAxis="+x", upAxis="-z",
+            FKJoints, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
 
         FKGrps = []

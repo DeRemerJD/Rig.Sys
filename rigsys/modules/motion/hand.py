@@ -174,13 +174,20 @@ class Hand(motionBase.MotionModuleBase):
                 Joints.append(jnt)
                 self.sockets[key] = jnt
                 self.bindJoints[name] = par
+        posAim = self.aimAxis
+        aimVec = jointTools.axisToVector(posAim)
+
+        # posUp = self.upAxis     
+        # posUpVec = jointTools.axisToVector(posUp)
+        crossAxis = jointTools.getCrossAxis(self.aimAxis, self.upAxis)
+        crossVec = jointTools.axisToVector(crossAxis)
 
         for jnt in Joints:
             if self.proxies["Root"].name in jnt:
                 ac = cmds.aimConstraint(
                                         f"{self.side}_{self.label}_{self.proxies['End'].name}_proxy",
                                         jnt,
-                                        n=f"{jnt}_ac", aim=[1, 0, 0], u=[0, 1, 0], wut="object",
+                                        n=f"{jnt}_ac", aim=aimVec, u=crossVec, wut="object",
                                         wuo=f"{self.side}_{self.label}_{self.proxies['UpVector'].name}_proxy", 
                                         wu=[0, 1, 0], mo=0)[0]
                 cmds.delete(ac)
@@ -198,7 +205,8 @@ class Hand(motionBase.MotionModuleBase):
             for jnt in Joints:
                 if name in jnt:
                     targets.append(jnt)
-            jointTools.aimSequence(targets=targets, upObj=upVectorTarget)
+            jointTools.aimSequence(targets=targets, upObj=upVectorTarget,
+                                   aimAxis=self.aimAxis, upAxis=self.upAxis)
             cmds.makeIdentity(targets, a=True)
             fingerDict[name] = targets
             targets = []
@@ -209,7 +217,8 @@ class Hand(motionBase.MotionModuleBase):
             for jnt in Joints:
                 if "Thumb" in jnt:
                     targets.append(jnt)
-            jointTools.aimSequence(targets=targets, upObj=upVectorTarget)
+            jointTools.aimSequence(targets=targets, upObj=upVectorTarget,
+                                   aimAxis=self.aimAxis, upAxis=self.upAxis)
             cmds.makeIdentity(targets, a=True)
             fingerDict["Thumb"] = targets
             targets = []
@@ -241,7 +250,8 @@ class Hand(motionBase.MotionModuleBase):
             # We Know the order of fingers, and finger joints.
             #
             
-            md = cmds.createNode("multiplyDivide", n=f"{key}_md")
+            tsMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{key}_twistSplay_md")
+            udMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{key}_upDn_md")
             
             fingerGrp = []
             upDnList = []
@@ -291,22 +301,30 @@ class Hand(motionBase.MotionModuleBase):
                 else:
                     cmds.parent(grp, self.plugParent)
 
-                # Connect Attrs and MD
+            # Connect Attrs and MD
+            # Get aim vec target
+            aimVec = jointTools.axisToVector(self.aimAxis)
+            aimDirection = 0
+            for xyz in aimVec:
+                if xyz != 0:
+                    aimDirection = xyz
             
-            cmds.setAttr(f"{md}.input2.input2X", 1+rate)
-            cmds.setAttr(f"{md}.input2.input2Y", 1+rate)
-            cmds.setAttr(f"{md}.input2.input2Z", (1+rate)*.1)
-            cmds.connectAttr(f"{globalCtrl}.rotateX", f"{md}.input1.input1X")
-            cmds.connectAttr(f"{globalCtrl}.rotateY", f"{md}.input1.input1Y")
-            cmds.connectAttr(f"{globalCtrl}.translateX", f"{md}.input1.input1Z")
+            cmds.setAttr(f"{tsMD}.input2.input2X", (1+rate)*-1)
+            cmds.setAttr(f"{tsMD}.input2.input2Y", (1+rate))
+            cmds.setAttr(f"{tsMD}.input2.input2Z", ((1+rate)*-1.5)*aimDirection)
+            cmds.setAttr(f"{udMD}.input2.input2X", (1) * aimDirection)
+            cmds.connectAttr(f"{globalCtrl}.rotateX", f"{tsMD}.input1.input1X")
+            cmds.connectAttr(f"{globalCtrl}.rotateY", f"{tsMD}.input1.input1Y")
+            cmds.connectAttr(f"{globalCtrl}.translateX", f"{tsMD}.input1.input1Z")
+            cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{udMD}.input1.input1X")
             for upDn in upDnList:
-                cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{upDn}.rotateY")
+                cmds.connectAttr(f"{udMD}.output.outputX", f"{upDn}.rotateY")
             for twist in twistList:          
-                cmds.connectAttr(f"{md}.output.outputX", f"{twist}.rotateY")
+                cmds.connectAttr(f"{tsMD}.output.outputX", f"{twist}.rotateY")
             for splay in splayList:
-                cmds.connectAttr(f"{md}.output.outputZ", f"{splay}.rotateZ")
+                cmds.connectAttr(f"{tsMD}.output.outputZ", f"{splay}.rotateZ")
             for nSplay in nSplayList:
-                cmds.connectAttr(f"{md}.output.outputZ", f"{nSplay}.rotateZ")
+                cmds.connectAttr(f"{tsMD}.output.outputZ", f"{nSplay}.rotateZ")
             rate-=ratio     
 
             count+=1

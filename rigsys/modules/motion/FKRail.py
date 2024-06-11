@@ -153,29 +153,29 @@ class FKSegment(motionBase.MotionModuleBase):
 
         # Orient FK
         jointTools.aimSequence(
-            targets=FKGrps, aimAxis="+x", upAxis="-z",
+            targets=FKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         jointTools.aimSequence(
-            targets=FKCtrls, aimAxis="+x", upAxis="-z",
+            targets=FKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         if self.reverse:
             jointTools.aimSequence(
-                targets=RFKGrps, aimAxis="+x", upAxis="-z",
+                targets=RFKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=RFKOffsets, aimAxis="+x", upAxis="-z",
+                targets=RFKOffsets, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=RFKCtrls, aimAxis="+x", upAxis="-z",
+                targets=RFKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             for rOff in RFKOffsets:
                 cmds.setAttr(f"{rOff}.rotateOrder", 5)
         if self.addOffset:
             jointTools.aimSequence(
-                targets=OffsetGrps, aimAxis="+x", upAxis="-z",
+                targets=OffsetGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=OffsetCtrls, aimAxis="+x", upAxis="-z",
+                targets=OffsetCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
 
         # Parenting

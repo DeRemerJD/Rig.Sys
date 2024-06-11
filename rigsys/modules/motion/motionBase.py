@@ -120,6 +120,12 @@ class MotionModuleBase(moduleBase.ModuleBase):
         ptc = cmds.parentConstraint(socket, self.selectedPlug, mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
         sc = cmds.scaleConstraint(socket, self.selectedPlug, mo=1)
+        
+        # # Get world
+        # if self.parent is None:
+        #     worldSocket = list(self.sockets.values())[-1]
+        #     ptc = cmds.parentConstraint(worldSocket, self.)
+
 
     def addSocketMetaData(self):
         cmds.addAttr(self.moduleNode, ln="SocketData", at="enum", en="--------")

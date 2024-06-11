@@ -455,8 +455,9 @@ class Limb(motionBase.MotionModuleBase):
         cmds.setAttr(f"{oc}.interpType", 2)
 
         # Cleanup
-        cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(
+        cmds.parent([clavGrp, cmds.listRelatives(
             FKControls[0], p=True)[0], endGrp, midGrp], self.plugParent)
+        cmds.parent([ikGrp, pvPar], self.worldParent)
         pc = cmds.pointConstraint([upT, loT], pvPar, n=f"{pvPar}_pc", mo=1)
 
         return IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK

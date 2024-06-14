@@ -248,7 +248,8 @@ class QuadLimb(motionBase.MotionModuleBase):
         # cmds.parent(baseJoints[4], baseJoints[3])
 
         # jointTools.aim([baseJoints[0]], [baseJoints[1]])
-        jointTools.aimSequence(baseJoints[1::], upObj=self.poleVector)
+        jointTools.aimSequence(baseJoints[1::], upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.makeIdentity(baseJoints[0], a=True)
 
         index = 1
@@ -645,9 +646,10 @@ class QuadLimb(motionBase.MotionModuleBase):
 
         # Cleanup
         if self.curvedCalf:
-             cmds.parent([clavGrp, ikGrp, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+             cmds.parent([clavGrp, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
         else:
-            cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+            cmds.parent([clavGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+        cmds.parent(ikGrp, self.worldParent)
         
         cmds.parent(loGrps, self.plugParent)
         cmds.parent(upGrps, self.plugParent)
@@ -729,9 +731,12 @@ class QuadLimb(motionBase.MotionModuleBase):
                 cmds.parent(ball, FKJoints[-1])
                 fk.append(ball)
                 fk.append(toe)
-            jointTools.aimSequence(base, upObj=self.poleVector)
-            jointTools.aimSequence(ik, upObj=self.poleVector)
-            jointTools.aimSequence(fk, upObj=self.poleVector)
+            jointTools.aimSequence(base, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            jointTools.aimSequence(ik, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            jointTools.aimSequence(fk, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
             index += 1
             cmds.makeIdentity([ball, toe], a=True)   
 

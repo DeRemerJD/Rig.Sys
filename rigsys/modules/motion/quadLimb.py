@@ -236,22 +236,28 @@ class QuadLimb(motionBase.MotionModuleBase):
             for i in ["X", "Y", "Z"]:
                 cmds.setAttr(f"{self.poleVector}.localScale{i}", 0, l=True)
 
-        index = 0
+        index = 1
         for j in baseJoints:
-            if j is not baseJoints[0]:
+            if j is not baseJoints[0] and j is not baseJoints[1]:
                 cmds.parent(j, baseJoints[index])
                 index+=1
-
+        
         # cmds.parent(baseJoints[1], baseJoints[0])
         # cmds.parent(baseJoints[2], baseJoints[1])
         # cmds.parent(baseJoints[3], baseJoints[2])
         # cmds.parent(baseJoints[4], baseJoints[3])
 
         # jointTools.aim([baseJoints[0]], [baseJoints[1]])
+        aimVec = jointTools.axisToVector(self.aimAxis)
+        upVec = jointTools.axisToVector(self.upAxis)
         jointTools.aimSequence(baseJoints[1::], upObj=self.poleVector,
                                aimAxis=self.aimAxis, upAxis=self.upAxis)
+        ac = cmds.aimConstraint(baseJoints[1], baseJoints[0], aim=aimVec, 
+                        u=upVec, wut="objectrotation", wu=upVec, wuo=baseJoints[1])[0]
+        cmds.delete(ac)
+        cmds.parent(baseJoints[1], baseJoints[0])
         cmds.makeIdentity(baseJoints[0], a=True)
-
+        
         index = 1
         for jnt in baseJoints[1::]:
             fkJnt = cmds.createNode("joint", n=f"{jnt}_FK")

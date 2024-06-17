@@ -13,9 +13,12 @@ class Root(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, 
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -34,9 +37,12 @@ class Root(motionBase.MotionModuleBase):
             )
         }
 
-        self.socket = {
-            "Base": None,
-            "Offset": None
+        self.sockets = {
+            "Base": None
+        }
+        self.plugs = {
+            "Local": None,
+            "World": None
         }
 
     def buildProxies(self):
@@ -58,6 +64,8 @@ class Root(motionBase.MotionModuleBase):
             position=proxyPosition, rotation=proxyRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         # Structure
         rootPar = cmds.createNode("transform", n=self.getFullName() + "_grp")
@@ -74,6 +82,8 @@ class Root(motionBase.MotionModuleBase):
             "joint", n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name)
         )
         cmds.parent(rootJnt, rootCtrl)
+        self.sockets["Base"] = rootJnt
+        self.bindJoints[rootJnt] = None
         if self.addOffset:
             offsetPar = cmds.createNode(
                 "transform", n=self.getFullName() + "Offset_grp"
@@ -97,12 +107,14 @@ class Root(motionBase.MotionModuleBase):
                 orient=[90, 0, 0],
             )
             offsetCtrlObj.giveCtrlShape()
+            self.sockets["Offset"] = offsetJnt
+            self.bindJoints[offsetJnt] = rootJnt
 
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)
-        cmds.parent(rootPar, self.worldParent)
+        if self.parent == "" or self.parent is None:
+            cmds.parent(rootPar, self.worldParent)
+        else:
+            cmds.parent(rootPar, self.plugParent)
 
-        self.socket["Base"] = rootJnt
-        if self.addOffset:
-            self.socket["Offset"] = offsetJnt
-        print(self.socket)
+        self.addSocketMetaData()

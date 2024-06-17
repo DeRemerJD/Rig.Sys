@@ -200,6 +200,43 @@ def axisToVector(axis):
         vec = [0, 0, -1]
     return vec
 
+# Function that takes a string vector and returns the proper numerical vector.
+def axisFlip(axis):
+    newAxis = None
+    if axis == "+x":
+        newAxis = "-x"
+    elif axis == "-x":
+        newAxis = "+x"
+    elif axis == "+y":
+        newAxis = "-y"
+    elif axis == "-y":
+        newAxis = "+y"
+    elif axis == "+z":
+        newAxis = "-z"
+    elif axis == "-z":
+        newAxis = "+z"
+    return newAxis
+
+def getCrossAxis(aim, up):
+    axies = [aim, up]
+    crossAxis = "+y"
+    if "x" not in axies:
+        if "+" in up:
+            crossAxis = "+x"
+        elif "-" in up:
+            crossAxis = "-x"
+    elif "y" not in axies:
+        if "+" in up:
+            crossAxis = "+y"
+        elif "-" in up:
+            crossAxis = "-y"
+    elif "z" not in axies:
+        if "+" in up:
+            crossAxis = "+z"
+        elif "-" in up:
+            crossAxis = "-z"
+    return crossAxis
+
 
 # Function that finds the axis that needs to be matched.
 def getMatchAxis(axis):

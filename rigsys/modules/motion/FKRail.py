@@ -14,9 +14,12 @@ class FKSegment(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
                  reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, 
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -70,16 +73,15 @@ class FKSegment(motionBase.MotionModuleBase):
 
             self.proxies["End"].parent = str(segments - 1)
 
-        self.socket = {
-            "Start": None
+        self.sockets = {
         }
         self.plugs = {
-            "Local": self.plugParent,
-            "World": self.worldParent
+            "Local": None,
+            "World": None
         }
-        if self.segments > 1:
-            for i in range(1, self.segments):
-                self.socket[str(i)] = None
+        # if self.segments > 1:
+        #     for i in range(1, self.segments):
+        #         self.sockets[str(i)] = None
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -97,6 +99,8 @@ class FKSegment(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         # CREATING NODES
         FKCtrls = []
@@ -149,29 +153,29 @@ class FKSegment(motionBase.MotionModuleBase):
 
         # Orient FK
         jointTools.aimSequence(
-            targets=FKGrps, aimAxis="+x", upAxis="-z",
+            targets=FKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         jointTools.aimSequence(
-            targets=FKCtrls, aimAxis="+x", upAxis="-z",
+            targets=FKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         if self.reverse:
             jointTools.aimSequence(
-                targets=RFKGrps, aimAxis="+x", upAxis="-z",
+                targets=RFKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=RFKOffsets, aimAxis="+x", upAxis="-z",
+                targets=RFKOffsets, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=RFKCtrls, aimAxis="+x", upAxis="-z",
+                targets=RFKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             for rOff in RFKOffsets:
                 cmds.setAttr(f"{rOff}.rotateOrder", 5)
         if self.addOffset:
             jointTools.aimSequence(
-                targets=OffsetGrps, aimAxis="+x", upAxis="-z",
+                targets=OffsetGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=OffsetCtrls, aimAxis="+x", upAxis="-z",
+                targets=OffsetCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
 
         # Parenting
@@ -423,8 +427,14 @@ class FKSegment(motionBase.MotionModuleBase):
 
         index = 0
         for i in railJoints:
-            self.socket[f"Rail_{index}"] = i
+            self.sockets[f"Rail_{index}"] = i
+            if index == 0:
+                self.bindJoints[i] = None
+            else:
+                self.bindJoints[i] = railJoints[index - 1]
             index += 1
+
+        self.addSocketMetaData()
         # TODO:
         '''
         Hierarchy of Rig / Components

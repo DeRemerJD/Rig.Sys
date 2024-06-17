@@ -4,6 +4,7 @@ import copy
 import logging
 
 import rigsys.utils.stringUtils as stringUtils
+import rigsys.lib.joint as jointTools
 
 import maya.cmds as cmds
 
@@ -14,7 +15,8 @@ class ModuleBase:
     """Base class for all modules."""
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 0,
-                 isMuted: bool = False, mirror: bool = False) -> None:
+                 isMuted: bool = False, mirror: bool = False, mirrored: bool = False,
+                 bypassProxiesOnly: bool = False) -> None:
         """Initialize the module."""
         self.side = side
         self.label = label
@@ -26,6 +28,8 @@ class ModuleBase:
         self.isMuted: bool = isMuted
         self.isRun: bool = False
         self.mirror = mirror
+        self.mirrored = mirrored
+        self.bypassProxiesOnly = bypassProxiesOnly
 
         self._rig = rig
 
@@ -90,6 +94,23 @@ class ModuleBase:
             newModule.side = "R"
         elif self.side == "R":
             newModule.side = "L"
+        if hasattr(newModule, "aimAxis"):
+            # print("######")
+            # print(newModule.label)
+            # print(f"{newModule.aimAxis} converted to {jointTools.axisFlip(newModule.aimAxis)}")
+            # cmds.error("@@")
+            newModule.aimAxis = jointTools.axisFlip(newModule.aimAxis)
+        if hasattr(newModule, "upAxis"):
+            # print("######")
+            # print(newModule.label)
+            # print(f"{newModule.aimAxis} converted to {jointTools.axisFlip(newModule.aimAxis)}")
+            # cmds.error("@@")
+            newModule.upAxis = jointTools.axisFlip(newModule.upAxis)
+        # Parents
+        if newModule.parent.startswith("L_"):
+            split = newModule.parent.split("_")
+            split[0] = "R"
+            newModule.parent = "_".join(split)
 
         # Proxies
         for key, proxy in self.proxies.items():

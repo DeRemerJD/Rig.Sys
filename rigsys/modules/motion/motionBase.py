@@ -14,16 +14,20 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
                  isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
         super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
-                         mirror=mirror)
+                         mirror=mirror, bypassProxiesOnly=bypassProxiesOnly)
 
         self.proxies: dict = {}
+        self.bypassProxiesOnly = bypassProxiesOnly
 
         # Key: label, Value: Node
         self.plugs: dict = {}
         self.sockets: dict = {}
+
+        self.bindJoints: dict = {}
 
         self.selectedPlug = selectedPlug
         self.selectedSocket = selectedSocket
@@ -36,6 +40,8 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.moduleUtilities = None
         self.plugParent = None
         self.worldParent = None
+        self.aimAxis = aimAxis
+        self.upAxis = upAxis
 
     def run(self, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True, proxyData: dict = {}) -> None:
         """Run the module."""
@@ -107,6 +113,21 @@ class MotionModuleBase(moduleBase.ModuleBase):
         return worldParent
 
     def socketPlugParenting(self):
-        ptc = cmds.parentConstraint(self.selectedPlug, self.selectedSocket)[0]
+        if self.parent is not None:
+            socket = cmds.getAttr(f"{self.parent}_MODULE.{self.selectedSocket}", asString=True)
+        self.selectedPlug = self.plugParent
+
+        ptc = cmds.parentConstraint(socket, self.selectedPlug, mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
-        sc = cmds.scaleConstraint(self.selectedPlug, self.selectedSocket)
+        sc = cmds.scaleConstraint(socket, self.selectedPlug, mo=1)
+        
+        # # Get world
+        # if self.parent is None:
+        #     worldSocket = list(self.sockets.values())[-1]
+        #     ptc = cmds.parentConstraint(worldSocket, self.)
+
+
+    def addSocketMetaData(self):
+        cmds.addAttr(self.moduleNode, ln="SocketData", at="enum", en="--------")
+        for key, val in self.sockets.items():
+            cmds.addAttr(self.moduleNode, ln=key, at="enum", en=str(val))

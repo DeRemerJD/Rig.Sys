@@ -11,14 +11,16 @@ import maya.cmds as cmds
 class Limb(motionBase.MotionModuleBase):
     """Limb Motion Module."""
 
-    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
+    def __init__(self, rig, side="", label="", 
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, selectedPlug: str = "", selectedSocket: str = "",
-                 pvMultiplier: float = 1.0, numberOfJoints: int = 11,
+                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True, 
+                 clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
-                         parent, mirror, selectedPlug, selectedSocket)
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
@@ -72,6 +74,12 @@ class Limb(motionBase.MotionModuleBase):
 
         # Module Based Variables
         self.poleVector = None
+        self.plugs = {
+            "Local": None,
+            "World": None
+        }
+        # for key in self.nameSet.keys():
+        #     self.sockets[key] = None
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -122,6 +130,8 @@ class Limb(motionBase.MotionModuleBase):
             position=plugPosition, rotation=plugRotation
         )
         self.worldParent = self.createWorldParent()
+        self.plugs["Local"] = self.plugParent
+        self.plugs["World"] = self.worldParent
 
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
         IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(
@@ -141,6 +151,12 @@ class Limb(motionBase.MotionModuleBase):
                 "joint", n=f"{self.side}_{self.label}_{val.name}")
             cmds.xform(jnt, ws=True, t=val.position)
             baseJoints.append(jnt)
+            self.sockets[key] = jnt
+            if len(baseJoints) == 1:
+                self.bindJoints[jnt] = None
+            else:
+                if key != self.nameSet["End"]:
+                    self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
 
         if self.poleVector is None:
             poleVector = cmds.createNode(
@@ -157,13 +173,25 @@ class Limb(motionBase.MotionModuleBase):
             for i in ["X", "Y", "Z"]:
                 cmds.setAttr(f"{self.poleVector}.localScale{i}", 0, l=True)
 
-        cmds.parent(baseJoints[1], baseJoints[0])
+        aimVec = jointTools.axisToVector(self.aimAxis)
+        upVec = jointTools.axisToVector(self.upAxis)
+        # Orienting in this order;
+        # Create aim constraint for clav joint, then parent shoulder, elbow, wrist
+        # and aim those joints. Finally with the shoulder rotations set the clav will
+        # be aimed and we can remove the constraint, parent the shoulder to the clavicle
+        # and then freeze xforms
+        ac = cmds.aimConstraint(baseJoints[1], baseJoints[0], aim=aimVec, 
+                        u=upVec, wut="objectrotation", wu=upVec, wuo=baseJoints[1])[0]        
+        
         cmds.parent(baseJoints[2], baseJoints[1])
         cmds.parent(baseJoints[3], baseJoints[2])
 
         # jointTools.aim([baseJoints[0]], [baseJoints[1]])
         jointTools.aimSequence(
-            [baseJoints[1], baseJoints[2], baseJoints[3]], upObj=self.poleVector)
+            [baseJoints[1], baseJoints[2], baseJoints[3]], upObj=self.poleVector,
+            aimAxis=self.aimAxis, upAxis=self.upAxis)
+        cmds.delete(ac)
+        cmds.parent(baseJoints[1], baseJoints[0])
         cmds.makeIdentity(baseJoints[0], a=True)
 
         index = 1
@@ -342,7 +370,6 @@ class Limb(motionBase.MotionModuleBase):
         cmds.xform(loT, ws=True, ro=cmds.xform(
             ikCtrl, q=True, ws=True, ro=True
         ))
-        pc = cmds.pointConstraint([upT, loT], pvPar, n=f"{pvPar}_pc", mo=1)
 
         # Connections.
         cmds.addAttr(ikCtrl, ln="IK_FK_Switch",
@@ -375,6 +402,8 @@ class Limb(motionBase.MotionModuleBase):
         endCtrl = cmds.createNode(
             "transform", n=f"{baseJoints[3]}_CTRL", p=endGrp)
         endJnt = cmds.createNode("joint", n=f"{baseJoints[3]}End")
+        self.sockets[self.nameSet["End"]] = endJnt
+        self.bindJoints[endJnt] = baseJoints[2]
         cmds.xform(endJnt, ws=True, m=cmds.xform(
             baseJoints[3], q=True, ws=True, m=True
         ))
@@ -382,11 +411,20 @@ class Limb(motionBase.MotionModuleBase):
         ptc = cmds.parentConstraint(
             baseJoints[3], endGrp, n=f"{baseJoints[3]}_End_ptc", mo=0)
         ptc = cmds.parentConstraint(endCtrl, endJnt, n=f"{endJnt}_ptc", mo=0)
+        # Construct offset
+        axisMultOffset = self.ctrlScale[0] * 1.25
+        offsetArrayFromAim = jointTools.axisToVector(self.aimAxis)
+        offsetArray = []
+        for xyz in offsetArrayFromAim:
+            offsetVal = axisMultOffset * xyz
+            offsetArray.append(offsetVal)
+
+
         endCtrlObject = ctrlCrv.Ctrl(
             node=endCtrl,
             shape="box",
             scale=[self.ctrlScale[0] * 1.15, self.ctrlScale[1] * 1.15, self.ctrlScale[2] * 1.15],
-            offset=[self.ctrlScale[0] * 1.25, 0, 0]
+            offset=offsetArray
         )
         endCtrlObject.giveCtrlShape()
 
@@ -417,8 +455,10 @@ class Limb(motionBase.MotionModuleBase):
         cmds.setAttr(f"{oc}.interpType", 2)
 
         # Cleanup
-        cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(
+        cmds.parent([clavGrp, cmds.listRelatives(
             FKControls[0], p=True)[0], endGrp, midGrp], self.plugParent)
+        cmds.parent([ikGrp, pvPar], self.worldParent)
+        pc = cmds.pointConstraint([upT, loT], pvPar, n=f"{pvPar}_pc", mo=1)
 
         return IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK
 
@@ -443,8 +483,9 @@ class Limb(motionBase.MotionModuleBase):
         upEff = cmds.rename(upEff, upIK[0].replace("IK", "EFF"))
         upIK = upIK[0]
         pc = cmds.pointConstraint(baseJoints[2], upIK, n=f"{upIK}_pc", mo=0)
-        oc = cmds.orientConstraint(
-            baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
+
+        oc = cmds.orientConstraint(baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
+        cmds.parent(upIK, socketConnector)
 
         loRollStart = cmds.createNode("joint", n=f"{baseJoints[3]}_Roll")
         loRollEnd = cmds.createNode(
@@ -466,11 +507,12 @@ class Limb(motionBase.MotionModuleBase):
         loEff = cmds.rename(loEff, loIK[0].replace("IK", "EFF"))
         loIK = loIK[0]
         pc = cmds.pointConstraint(baseJoints[2], loIK, n=f"{loIK}_pc", mo=0)
-        oc = cmds.orientConstraint(
-            baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
 
-        # Cleanup
-        cmds.parent([upIK, loIK], self.moduleUtilities)
+        oc = cmds.orientConstraint(baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
+        cmds.parent(loIK, baseJoints[3])
+        
+        #Cleanup
+        # cmds.parent([upIK, loIK], self.moduleUtilities)
 
         return [upRollStart, upRollEnd], [loRollStart, loRollEnd], upIK, loIK
 
@@ -490,8 +532,8 @@ class Limb(motionBase.MotionModuleBase):
         cmds.xform(tempCurve, ws=True, t=[0, 0.5, 0])
         cmds.xform(tempCurve2, ws=True, t=[0, -0.5, 0])
 
-        ribbon = cmds.loft([tempCurve2, tempCurve],
-                           n=f"{self.label}_{self.label}_Bendy_rbn", ch=False)[0]
+        ribbon = cmds.loft([tempCurve2, tempCurve], n=f"{self.side}_{self.label}_Bendy_rbn", ch=False)[0]
+
         cmds.reverseSurface(ribbon, d=3, ch=False, rpo=1)
         cmds.rebuildSurface(
             ribbon, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0,
@@ -536,8 +578,14 @@ class Limb(motionBase.MotionModuleBase):
             ))
             cmds.parent(jnt, fol)
             follicleJoints.append(jnt)
+            self.sockets[f"Follicle_{i}"] = jnt
+            if len(follicleJoints) == 1:
+                self.bindJoints[jnt] = self.bindJoints[baseJoints[1]]
+            else:
+                self.bindJoints[jnt] = follicleJoints[len(follicleJoints) - 1]
 
-        jointTools.aimSequence(follicleJoints, upObj=self.poleVector)
+        jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.makeIdentity(follicleJoints, a=True)
         setRange = 0
         rangeDist = (1 / 6) * 10
@@ -560,7 +608,7 @@ class Limb(motionBase.MotionModuleBase):
             ribbonOffsets.append(offset)
             ribbonControls.append(ctrl)
             ribbonJoints.append(jnt)
-
+            self.sockets[f"Ribbon_{i}"] = jnt 
             ctrlObject = ctrlCrv.Ctrl(
                 node=ctrl,
                 shape="circle",
@@ -572,7 +620,11 @@ class Limb(motionBase.MotionModuleBase):
 
             cmds.xform(grp, ws=True, t=[setRange, 0, 0])
             setRange += rangeDist
-        jointTools.aimSequence(ribbonGroups, upObj=tempUpSpace)
+        jointTools.aimSequence(ribbonGroups, upObj=tempUpSpace,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+        jointTools.aimSequence(ribbonOffsets, upObj=tempUpSpace,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+        cmds.makeIdentity(ribbonControls, a=True)
         cmds.delete(tempUpSpace)
 
         # Bind Ribbon
@@ -619,21 +671,33 @@ class Limb(motionBase.MotionModuleBase):
 
         ptc = cmds.parentConstraint(
             midOffset, ribbonGroups[3], n=f"{ribbonGroups[3]}_ptc", mo=0)
+        
+        
+        posAim = self.aimAxis
+        negAim = jointTools.axisFlip(self.aimAxis)
+        posAimVec = jointTools.axisToVector(posAim)
+        negAimVec = jointTools.axisToVector(negAim)
+
+        # posUp = self.upAxis     
+        # posUpVec = jointTools.axisToVector(posUp)
+        crossAxis = jointTools.getCrossAxis(self.aimAxis, self.upAxis)
+        crossVec = jointTools.axisToVector(crossAxis)
 
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[1], n=f"{ribbonOffsets[1]}_ac",
-                                aim=[1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=posAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[2], n=f"{ribbonOffsets[2]}_ac",
-                                aim=[1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=posAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[5], n=f"{ribbonOffsets[5]}_ac",
-                                aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=negAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
         ac = cmds.aimConstraint(midOffset, ribbonOffsets[4], n=f"{ribbonOffsets[4]}_ac",
-                                aim=[-1, 0, 0], u=[0, 1, 0], wut="objectRotation",
-                                wuo=midOffset, wu=[0, 1, 0], sk="x", mo=0)
+                                aim=negAimVec, u=crossVec, wut="objectRotation",
+                                wuo=midOffset, wu=crossVec, sk="x", mo=0)
 
         # Cleanup
         cmds.parent(ribbon, self.moduleUtilities)
         cmds.parent(folGrp, self.moduleUtilities)
         cmds.parent(bendyCtrlGrp, self.plugParent)
+        self.addSocketMetaData()

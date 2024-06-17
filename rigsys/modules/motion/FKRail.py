@@ -186,9 +186,10 @@ class FKSegment(motionBase.MotionModuleBase):
             index += 1
             fkCtrlObject = ctrlCrv.Ctrl(
                 node=fCtrl,
-                shape="sphere",
+                shape="circle",
                 scale=[self.ctrlScale[0] * .75, self.ctrlScale[1] * .75, self.ctrlScale[2] * .75],
-                offset=[0, 0, -10]
+                offset=[0, 0, 0],
+                orient=[90, 90, 90]
             )
             fkCtrlObject.giveCtrlShape()
 
@@ -212,9 +213,9 @@ class FKSegment(motionBase.MotionModuleBase):
             for rCtrl in RFKCtrls:
                 reverseCtrlObject = ctrlCrv.Ctrl(
                     node=rCtrl,
-                    shape="box",
+                    shape="square",
                     scale=[self.ctrlScale[0] * .5, self.ctrlScale[1] * .5, self.ctrlScale[2] * .5],
-                    offset=[0, 0, -10]
+                    orient=[0, 90, 90]
                 )
                 reverseCtrlObject.giveCtrlShape()
             cmds.parent(RFKGrps[0], FKCtrls[-1])
@@ -236,7 +237,7 @@ class FKSegment(motionBase.MotionModuleBase):
                 offsetCtrlObject = ctrlCrv.Ctrl(
                     node=oCtrl,
                     shape="circle",
-                    orient=[0, 90, 0],
+                    orient=[0, 0, 0],
                     scale=self.ctrlScale
                 )
                 offsetCtrlObject.giveCtrlShape()

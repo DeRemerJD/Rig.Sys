@@ -242,6 +242,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
                 self.bindJoints[jnt] = mFolJoints[len(mFolJoints) - 1]
 
         jointTools.aimSequence(mFolCtrlGrps, upObj=self.upVector)
+        jointTools.aimSequence(mFolCtrls, upObj=self.upVector)
         mScls = cmds.skinCluster(mFolJoints, ribbon, n=f"{ribbon}_scls",
                                  sm=0, omi=True, mi=4, tsb=True)
         param = 0

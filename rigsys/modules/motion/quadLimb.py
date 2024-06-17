@@ -13,10 +13,13 @@ class QuadLimb(motionBase.MotionModuleBase):
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, clavicle=True,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, 
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 pvMultiplier: float = 1.0, curvedCalf: bool = True, ikCtrlToFloor: bool = True, foot: bool = False,
+                 aimAxis: str = "+x", upAxis: str = "-z", pvMultiplier: float = 1.0, 
+                 curvedCalf: bool = True, ikCtrlToFloor: bool = True, foot: bool = False,
                  nameSet: dict = {"Root":"Root", "Start":"Start", "UpMid":"UpMid", "LoMid":"LoMid", "End":"End"}) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, 
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         self.addOffset = addOffset
         self.ctrlShapes = ctrlShapes
@@ -233,21 +236,28 @@ class QuadLimb(motionBase.MotionModuleBase):
             for i in ["X", "Y", "Z"]:
                 cmds.setAttr(f"{self.poleVector}.localScale{i}", 0, l=True)
 
-        index = 0
+        index = 1
         for j in baseJoints:
-            if j is not baseJoints[0]:
+            if j is not baseJoints[0] and j is not baseJoints[1]:
                 cmds.parent(j, baseJoints[index])
                 index+=1
-
+        
         # cmds.parent(baseJoints[1], baseJoints[0])
         # cmds.parent(baseJoints[2], baseJoints[1])
         # cmds.parent(baseJoints[3], baseJoints[2])
         # cmds.parent(baseJoints[4], baseJoints[3])
 
         # jointTools.aim([baseJoints[0]], [baseJoints[1]])
-        jointTools.aimSequence(baseJoints[1::], upObj=self.poleVector)
+        aimVec = jointTools.axisToVector(self.aimAxis)
+        upVec = jointTools.axisToVector(self.upAxis)
+        jointTools.aimSequence(baseJoints[1::], upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+        ac = cmds.aimConstraint(baseJoints[1], baseJoints[0], aim=aimVec, 
+                        u=upVec, wut="objectrotation", wu=upVec, wuo=baseJoints[1])[0]
+        cmds.delete(ac)
+        cmds.parent(baseJoints[1], baseJoints[0])
         cmds.makeIdentity(baseJoints[0], a=True)
-
+        
         index = 1
         for jnt in baseJoints[1::]:
             fkJnt = cmds.createNode("joint", n=f"{jnt}_FK")
@@ -642,9 +652,10 @@ class QuadLimb(motionBase.MotionModuleBase):
 
         # Cleanup
         if self.curvedCalf:
-             cmds.parent([clavGrp, ikGrp, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+             cmds.parent([clavGrp, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
         else:
-            cmds.parent([clavGrp, ikGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+            cmds.parent([clavGrp, pvPar, cmds.listRelatives(FKControls[0], p=True)[0]], self.plugParent)
+        cmds.parent(ikGrp, self.worldParent)
         
         cmds.parent(loGrps, self.plugParent)
         cmds.parent(upGrps, self.plugParent)
@@ -726,9 +737,12 @@ class QuadLimb(motionBase.MotionModuleBase):
                 cmds.parent(ball, FKJoints[-1])
                 fk.append(ball)
                 fk.append(toe)
-            jointTools.aimSequence(base, upObj=self.poleVector)
-            jointTools.aimSequence(ik, upObj=self.poleVector)
-            jointTools.aimSequence(fk, upObj=self.poleVector)
+            jointTools.aimSequence(base, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            jointTools.aimSequence(ik, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            jointTools.aimSequence(fk, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
             index += 1
             cmds.makeIdentity([ball, toe], a=True)   
 

@@ -14,9 +14,12 @@ class FKSegment(motionBase.MotionModuleBase):
 
     def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
                  reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "") -> None:
+                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
+                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, parent, mirror, bypassProxiesOnly, selectedPlug, selectedSocket)
+        super().__init__(rig, side, label, buildOrder, isMuted, 
+                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         selectedSocket, aimAxis, upAxis)
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -150,29 +153,29 @@ class FKSegment(motionBase.MotionModuleBase):
 
         # Orient FK
         jointTools.aimSequence(
-            targets=FKGrps, aimAxis="+x", upAxis="-z",
+            targets=FKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         jointTools.aimSequence(
-            targets=FKCtrls, aimAxis="+x", upAxis="-z",
+            targets=FKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
             upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
         if self.reverse:
             jointTools.aimSequence(
-                targets=RFKGrps, aimAxis="+x", upAxis="-z",
+                targets=RFKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=RFKOffsets, aimAxis="+x", upAxis="-z",
+                targets=RFKOffsets, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=RFKCtrls, aimAxis="+x", upAxis="-z",
+                targets=RFKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             for rOff in RFKOffsets:
                 cmds.setAttr(f"{rOff}.rotateOrder", 5)
         if self.addOffset:
             jointTools.aimSequence(
-                targets=OffsetGrps, aimAxis="+x", upAxis="-z",
+                targets=OffsetGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
             jointTools.aimSequence(
-                targets=OffsetCtrls, aimAxis="+x", upAxis="-z",
+                targets=OffsetCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
                 upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
 
         # Parenting

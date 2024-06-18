@@ -192,6 +192,7 @@ class FKSegment(motionBase.MotionModuleBase):
                 orient=[90, 90, 90]
             )
             fkCtrlObject.giveCtrlShape()
+            cmds.setAttr(f"{fCtrl}.visibility", l=True, k=False)
 
         if self.reverse:
             RFKGrps.reverse()
@@ -218,6 +219,8 @@ class FKSegment(motionBase.MotionModuleBase):
                     orient=[0, 90, 90]
                 )
                 reverseCtrlObject.giveCtrlShape()
+                cmds.setAttr(f"{rCtrl}.visibility", l=True, k=False)
+
             cmds.parent(RFKGrps[0], FKCtrls[-1])
 
         if self.addOffset:
@@ -240,6 +243,7 @@ class FKSegment(motionBase.MotionModuleBase):
                     orient=[0, 0, 0],
                     scale=self.ctrlScale
                 )
+                cmds.setAttr(f"{oCtrl}.visibility", l=True, k=False)
                 offsetCtrlObject.giveCtrlShape()
 
         FKJoints = []
@@ -263,12 +267,14 @@ class FKSegment(motionBase.MotionModuleBase):
 
             index = 0
             for ikJnt in IKJoints:
+                cmds.setAttr(f"{ikJnt}.drawStyle", 2)
                 if ikJnt != IKJoints[-1]:
                     cmds.parent(IKJoints[index + 1], ikJnt)
                 index += 1
 
             # Get coords
             for fkJnt in FKJoints:
+                cmds.setAttr(f"{fkJnt}.drawStyle", 2)
                 t = cmds.xform(fkJnt, q=True, ws=True, t=True)
                 coords.append(t)
             spans = len(coords) - 1
@@ -292,6 +298,7 @@ class FKSegment(motionBase.MotionModuleBase):
 
             tempCrv1 = cmds.duplicate(ikCurve, n=ikCurve + "TEMP_1")[0]
             tempCrv2 = cmds.duplicate(ikCurve, n=ikCurve + "TEMP_2")[0]
+            cmds.setAttr(f"{ikHandle}.visibility", 0, l=True)
 
             cmds.xform(tempCrv1, ws=True, t=[-1, 0, 0])
             cmds.xform(tempCrv2, ws=True, t=[1, 0, 0])
@@ -314,6 +321,7 @@ class FKSegment(motionBase.MotionModuleBase):
             for fkJnt in FKJoints:
                 folPar = cmds.createNode("transform", n=f"{self.getFullName()}_{name}_fol")
                 fol = cmds.createNode("follicle", n=f"{self.getFullName()}_{name}_folShape", p=folPar)
+                cmds.setAttr(f"{fol}.visibility", 0, l=True, k=False)
                 follicles.append(folPar)
                 follicleShapes.append(fol)
                 cmds.parent(folPar, follicleGrp)
@@ -360,6 +368,7 @@ class FKSegment(motionBase.MotionModuleBase):
 
                 railJoints.append(rJnt)
                 railOffsets.append(rJntOffset)
+                cmds.setAttr(f"{rJnt}.drawStyle", 2)
 
             # Add Stretching
             cmds.addAttr(FKCtrls[0], ln="stretch", dv=0, min=0, max=1, at="float", k=True)

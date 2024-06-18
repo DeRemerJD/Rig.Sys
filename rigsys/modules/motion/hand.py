@@ -183,6 +183,7 @@ class Hand(motionBase.MotionModuleBase):
         crossVec = jointTools.axisToVector(crossAxis)
 
         for jnt in Joints:
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
             if self.proxies["Root"].name in jnt:
                 ac = cmds.aimConstraint(
                                         f"{self.side}_{self.label}_{self.proxies['End'].name}_proxy",
@@ -227,6 +228,7 @@ class Hand(motionBase.MotionModuleBase):
                                     n=f"{self.side}_{self.label}_{self.proxies['Global'].name}_grp")
         globalCtrl = cmds.createNode("transform", 
                                     n=f"{self.side}_{self.label}_{self.proxies['Global'].name}_CTRL", p=globalGrp)
+        cmds.setAttr(f"{globalCtrl}.visibility", l=True, k=False)
         cmds.xform(globalGrp, ws=True, t=cmds.xform(
             f"{self.side}_{self.label}_{self.proxies['Global'].name}_proxy", q=True, ws=True, t=True
         ))
@@ -280,6 +282,7 @@ class Hand(motionBase.MotionModuleBase):
                     ctrl = cmds.createNode("transform", n=f"{jnt}_CTRL", p=upDn)
                 fingerGrp.append(grp)
                 fingerCtrls.append(ctrl)
+                cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
 
                 cmds.xform(grp, ws=True, m=cmds.xform(
                     jnt, q=True, ws=True, m=True

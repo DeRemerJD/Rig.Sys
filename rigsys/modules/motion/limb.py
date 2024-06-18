@@ -149,6 +149,7 @@ class Limb(motionBase.MotionModuleBase):
         for key, val in self.proxies.items():
             jnt = cmds.createNode(
                 "joint", n=f"{self.side}_{self.label}_{val.name}")
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
             cmds.xform(jnt, ws=True, t=val.position)
             baseJoints.append(jnt)
             self.sockets[key] = jnt
@@ -198,6 +199,8 @@ class Limb(motionBase.MotionModuleBase):
         for jnt in baseJoints[1::]:
             fkJnt = cmds.createNode("joint", n=f"{jnt}_FK")
             ikJnt = cmds.createNode("joint", n=f"{jnt}_IK")
+            cmds.setAttr(f"{fkJnt}.drawStyle", 2)
+            cmds.setAttr(f"{ikJnt}.drawStyle", 2)
 
             FKJoints.append(fkJnt)
             IKJoints.append(ikJnt)
@@ -250,9 +253,11 @@ class Limb(motionBase.MotionModuleBase):
         )
         ikCtrlObject.giveCtrlShape()
         IKControls.append(ikCtrl)
+        cmds.setAttr(f"{ikCtrl}.visibility", l=True, k=False)
 
         # Pole Vector Control
         pvCtrl = cmds.createNode('transform', n=f"{self.poleVector}_CTRL")
+        cmds.setAttr(f"{pvCtrl}.visibility", l=True, k=False)
         cmds.xform(pvCtrl, ws=True, t=cmds.xform(
             self.poleVector, q=True, ws=True, t=True
         ))
@@ -274,6 +279,7 @@ class Limb(motionBase.MotionModuleBase):
         eff = cmds.rename(ik[1], f"{self.side}_{self.label}_EFF")
         ik = ik[0]
         cmds.parent(ik, ikCtrl)
+        cmds.setAttr(f"{ik}.visibility", 0, l=True, k=False)
         oc = cmds.orientConstraint(
             ikCtrl, IKJoints[2], n=f"{IKJoints}_oc", mo=1)
         pvc = cmds.poleVectorConstraint(self.poleVector, ik, n=f"{ik}_pvc")
@@ -282,6 +288,7 @@ class Limb(motionBase.MotionModuleBase):
         for jnt in FKJoints:
             grp = cmds.createNode("transform", n=f"{jnt}_grp")
             ctrl = cmds.createNode("transform", n=f"{jnt}_CTRL", p=grp)
+            cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
             cmds.xform(grp, ws=True, t=cmds.xform(
                 jnt, q=True, ws=True, t=True
             ))
@@ -306,6 +313,7 @@ class Limb(motionBase.MotionModuleBase):
         clavGrp = cmds.createNode("transform", n=f"{baseJoints[0]}_grp")
         clavCtrl = cmds.createNode(
             "transform", n=f"{baseJoints[0]}_CTRL", p=clavGrp)
+        cmds.setAttr(f"{clavCtrl}.visibility", l=True, k=False)
         clavCtrlObject = ctrlCrv.Ctrl(
             node=clavCtrl,
             shape="sphere",
@@ -401,7 +409,9 @@ class Limb(motionBase.MotionModuleBase):
         endGrp = cmds.createNode("transform", n=f"{baseJoints[3]}_grp")
         endCtrl = cmds.createNode(
             "transform", n=f"{baseJoints[3]}_CTRL", p=endGrp)
+        cmds.setAttr(f"{endCtrl}.visibility", l=True, k=False)
         endJnt = cmds.createNode("joint", n=f"{baseJoints[3]}End")
+        cmds.setAttr(f"{endJnt}.drawStyle", 2)
         self.sockets[self.nameSet["End"]] = endJnt
         self.bindJoints[endJnt] = baseJoints[2]
         cmds.xform(endJnt, ws=True, m=cmds.xform(
@@ -431,6 +441,7 @@ class Limb(motionBase.MotionModuleBase):
         midGrp = cmds.createNode("transform", n=f"{baseJoints[2]}_Offset_grp")
         midCtrl = cmds.createNode(
             "transform", n=f"{baseJoints[2]}_Offset_CTRL", p=midGrp)
+        cmds.setAttr(f"{midCtrl}.visibility", l=True, k=False)
         midCtrlObject = ctrlCrv.Ctrl(
             node=midCtrl,
             shape="circle",
@@ -466,6 +477,8 @@ class Limb(motionBase.MotionModuleBase):
         upRollStart = cmds.createNode("joint", n=f"{baseJoints[1]}_Roll")
         upRollEnd = cmds.createNode(
             "joint", n=f"{baseJoints[1]}_End", p=upRollStart)
+        cmds.setAttr(f"{upRollStart}.drawStyle", 2)
+        cmds.setAttr(f"{upRollEnd}.drawStyle", 2)
         cmds.xform(upRollStart, ws=True, t=cmds.xform(
             baseJoints[1], q=True, ws=True, t=True
         ))
@@ -482,6 +495,7 @@ class Limb(motionBase.MotionModuleBase):
         upEff = upIK[1]
         upEff = cmds.rename(upEff, upIK[0].replace("IK", "EFF"))
         upIK = upIK[0]
+        cmds.setAttr(f"{upIK}.visibility", 0, l=True, k=False)
         pc = cmds.pointConstraint(baseJoints[2], upIK, n=f"{upIK}_pc", mo=0)
 
         oc = cmds.orientConstraint(baseJoints[1], upRollEnd, n=f"{upRollEnd}_oc", mo=0)
@@ -490,6 +504,8 @@ class Limb(motionBase.MotionModuleBase):
         loRollStart = cmds.createNode("joint", n=f"{baseJoints[3]}_Roll")
         loRollEnd = cmds.createNode(
             "joint", n=f"{baseJoints[3]}_End", p=loRollStart)
+        cmds.setAttr(f"{loRollStart}.drawStyle", 2)
+        cmds.setAttr(f"{loRollEnd}.drawStyle", 2)
         cmds.xform(loRollStart, ws=True, t=cmds.xform(
             baseJoints[3], q=True, ws=True, t=True
         ))
@@ -506,6 +522,7 @@ class Limb(motionBase.MotionModuleBase):
         loEff = loIK[1]
         loEff = cmds.rename(loEff, loIK[0].replace("IK", "EFF"))
         loIK = loIK[0]
+        cmds.setAttr(f"{loIK}.visibility", 0, l=True, k=False)
         pc = cmds.pointConstraint(baseJoints[2], loIK, n=f"{loIK}_pc", mo=0)
 
         oc = cmds.orientConstraint(baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
@@ -549,6 +566,7 @@ class Limb(motionBase.MotionModuleBase):
                 "transform", n=f"{self.side}_{self.label}_{i}_fol")
             folShape = cmds.createNode(
                 "follicle", n=f"{self.side}_{self.label}_{i}_folShape", p=fol)
+            cmds.setAttr(f"{folShape}.visibility", 0, l=True, k=False)
 
             cmds.connectAttr(
                 f"{ribbon}.worldMatrix[0]", f"{folShape}.inputWorldMatrix", f=True)
@@ -578,6 +596,7 @@ class Limb(motionBase.MotionModuleBase):
             ))
             cmds.parent(jnt, fol)
             follicleJoints.append(jnt)
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
             self.sockets[f"Follicle_{i}"] = jnt
             if len(follicleJoints) == 1:
                 self.bindJoints[jnt] = self.bindJoints[baseJoints[1]]
@@ -608,6 +627,8 @@ class Limb(motionBase.MotionModuleBase):
             ribbonOffsets.append(offset)
             ribbonControls.append(ctrl)
             ribbonJoints.append(jnt)
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
+            cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
             self.sockets[f"Ribbon_{i}"] = jnt 
             ctrlObject = ctrlCrv.Ctrl(
                 node=ctrl,

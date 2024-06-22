@@ -187,7 +187,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
                 "transform", n=f"{self.side}_{self.label}_{i}_fol")
             folShape = cmds.createNode(
                 "follicle", n=f"{self.side}_{self.label}_{i}_folShape", p=fol)
-
+            cmds.setAttr(f"{folShape}.visibility", 0, l=True, k=False)
             cmds.connectAttr(
                 f"{metaRibbon}.worldMatrix[0]", f"{folShape}.inputWorldMatrix", f=True)
             cmds.connectAttr(f"{metaRibbon}.local",
@@ -219,6 +219,8 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             grp = cmds.createNode("transform", n=f"{self.side}_{self.label}_{i}_Meta_grp", p=fol)
             ctrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_{i}_Meta_CTRL", p=grp)
             jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{i}_Meta", p=ctrl)
+            cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
             ctrlObject = ctrlCrv.Ctrl(
                 node=ctrl,
                 shape="sphere",
@@ -242,6 +244,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
                 self.bindJoints[jnt] = mFolJoints[len(mFolJoints) - 1]
 
         jointTools.aimSequence(mFolCtrlGrps, upObj=self.upVector)
+        jointTools.aimSequence(mFolCtrls, upObj=self.upVector)
         mScls = cmds.skinCluster(mFolJoints, ribbon, n=f"{ribbon}_scls",
                                  sm=0, omi=True, mi=4, tsb=True)
         param = 0
@@ -253,7 +256,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
                 "transform", n=f"{self.side}_{self.label}_{i}_Meta_fol")
             folShape = cmds.createNode(
                 "follicle", n=f"{self.side}_{self.label}_{i}_Meta_folShape", p=fol)
-
+            cmds.setAttr(f"{folShape}.visibility", 0, l=True, k=False)
             cmds.connectAttr(
                 f"{ribbon}.worldMatrix[0]", f"{folShape}.inputWorldMatrix", f=True)
             cmds.connectAttr(f"{ribbon}.local",
@@ -276,6 +279,7 @@ class RibbonBindIK(motionBase.MotionModuleBase):
             # grp = cmds.createNode("transform", n=f"{self.side}_{self.label}_{i}_Region_grp")
             # ctrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_{i}_Region_CTRL", p=grp)
             jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{i}", p=fol)
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
             # ctrlObject = ctrlCrv.Ctrl(
             #     node=ctrl,
             #     shape="circle",

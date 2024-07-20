@@ -3,13 +3,12 @@
 import os
 import unittest
 
+import maya.cmds as cmds
+
 import rigsys.api.api_rig as api_rig
 import rigsys.modules.export as export
-import rigsys.modules.utility as utility
 import rigsys.modules.export.fbxExport as fbxExportModule
-
-
-import maya.cmds as cmds
+import rigsys.modules.utility as utility
 
 
 class TestFBXExport(unittest.TestCase):
@@ -20,8 +19,12 @@ class TestFBXExport(unittest.TestCase):
 
         self.rig = api_rig.Rig()
 
-        self.resourcesFolder = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "resources")
-        self.exportFilePath = os.path.abspath(os.path.join(self.resourcesFolder, "test.fbx"))
+        self.resourcesFolder = os.path.join(
+            os.path.dirname(__file__), os.pardir, os.pardir, "resources"
+        )
+        self.exportFilePath = os.path.abspath(
+            os.path.join(self.resourcesFolder, "test.fbx")
+        )
 
         if os.path.exists(self.exportFilePath):
             os.remove(self.exportFilePath)

@@ -6,8 +6,8 @@ import unittest
 
 import maya.cmds as cmds
 
-from rigsys import Rig
 import rigsys.modules.utility as utility
+from rigsys import Rig
 
 
 class TestPythonCode(unittest.TestCase):
@@ -18,7 +18,9 @@ class TestPythonCode(unittest.TestCase):
 
         self.rig = Rig()
 
-        self.resourcesFolder = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "resources")
+        self.resourcesFolder = os.path.join(
+            os.path.dirname(__file__), os.pardir, os.pardir, "resources"
+        )
 
         return super().setUp()
 

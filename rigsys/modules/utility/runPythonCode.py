@@ -5,7 +5,6 @@ import os
 
 from rigsys.modules.utility.utilityBase import UtilityModuleBase
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -14,7 +13,14 @@ class PythonCode(UtilityModuleBase):
 
     Takes in a path to a python file and executes it."""
 
-    def __init__(self, rig, pythonFile: str, label: str = "", buildOrder: int = 3000, isMuted: bool = False) -> None:
+    def __init__(
+        self,
+        rig,
+        pythonFile: str,
+        label: str = "",
+        buildOrder: int = 3000,
+        isMuted: bool = False,
+    ) -> None:
         side = "M"
         mirror = False
         super().__init__(rig, side, label, buildOrder, isMuted, mirror)
@@ -28,7 +34,7 @@ class PythonCode(UtilityModuleBase):
 
         with open(self.pythonFile) as f:
             try:
-                code = compile(f.read(), self.pythonFile, 'exec')
+                code = compile(f.read(), self.pythonFile, "exec")
                 exec(code, globals(), locals())
             except Exception as e:
                 logger.error(f"Error executing python file: {self.pythonFile}")

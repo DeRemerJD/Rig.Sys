@@ -8,7 +8,6 @@ import maya.cmds as cmds
 import rigsys.api.api_rig as api_rig
 import rigsys.modules.utility as utility
 
-
 """Things to test:
 - Single model import
 - Multiple in same rig with same group
@@ -27,7 +26,9 @@ class TestImportModel(unittest.TestCase):
 
         self.rig = api_rig.Rig()
 
-        self.resourcesFolder = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "resources")
+        self.resourcesFolder = os.path.join(
+            os.path.dirname(__file__), os.pardir, os.pardir, "resources"
+        )
 
         return super().setUp()
 

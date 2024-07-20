@@ -2,9 +2,9 @@
 
 import logging
 
-import rigsys.modules.moduleBase as moduleBase
-
 import maya.cmds as cmds
+
+import rigsys.modules.moduleBase as moduleBase
 
 logger = logging.getLogger(__name__)
 
@@ -12,13 +12,31 @@ logger = logging.getLogger(__name__)
 class MotionModuleBase(moduleBase.ModuleBase):
     """Base class for motion modules."""
 
-    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 2000,
-                 isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
+    def __init__(
+        self,
+        rig,
+        side: str = "",
+        label: str = "",
+        buildOrder: int = 2000,
+        isMuted: bool = False,
+        parent: str = None,
+        mirror: bool = False,
+        bypassProxiesOnly: bool = True,
+        selectedPlug: str = "",
+        selectedSocket: str = "",
+        aimAxis: str = "+x",
+        upAxis: str = "-z",
+    ) -> None:
         """Initialize the module."""
-        super().__init__(rig=rig, side=side, label=label, buildOrder=buildOrder, isMuted=isMuted,
-                         mirror=mirror, bypassProxiesOnly=bypassProxiesOnly)
+        super().__init__(
+            rig=rig,
+            side=side,
+            label=label,
+            buildOrder=buildOrder,
+            isMuted=isMuted,
+            mirror=mirror,
+            bypassProxiesOnly=bypassProxiesOnly,
+        )
 
         self.proxies: dict = {}
         self.bypassProxiesOnly = bypassProxiesOnly
@@ -43,15 +61,24 @@ class MotionModuleBase(moduleBase.ModuleBase):
         self.aimAxis = aimAxis
         self.upAxis = upAxis
 
-    def run(self, buildProxiesOnly: bool = False, usedSavedProxyData: bool = True, proxyData: dict = {}) -> None:
+    def run(
+        self,
+        buildProxiesOnly: bool = False,
+        usedSavedProxyData: bool = True,
+        proxyData: dict = {},
+    ) -> None:
         """Run the module."""
         if usedSavedProxyData:
             try:
                 moduleProxyData = proxyData[self.getFullName()]
 
                 for proxyKey, proxyTransformationData in moduleProxyData.items():
-                    self.proxies[proxyKey].position = proxyTransformationData["position"]
-                    self.proxies[proxyKey].rotation = proxyTransformationData["rotation"]
+                    self.proxies[proxyKey].position = proxyTransformationData[
+                        "position"
+                    ]
+                    self.proxies[proxyKey].rotation = proxyTransformationData[
+                        "rotation"
+                    ]
 
             except KeyError:
                 logger.error(f"Proxy data for module {self.getFullName()} not found.")
@@ -85,8 +112,12 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def moduleHierarchy(self):
         """Create the module hierarchy."""
-        self.moduleNode = cmds.createNode("transform", n="{}_{}_MODULE".format(self.side, self.label))
-        self.moduleUtilities = cmds.createNode("transform", n="{}_{}_utilities".format(self.side, self.label))
+        self.moduleNode = cmds.createNode(
+            "transform", n="{}_{}_MODULE".format(self.side, self.label)
+        )
+        self.moduleUtilities = cmds.createNode(
+            "transform", n="{}_{}_utilities".format(self.side, self.label)
+        )
         # self.moduleRig = cmds.createNode("transform", "{}_{}_rig".format(self.side, self.label))
         cmds.parent(self.moduleUtilities, self.moduleNode)
         cmds.parent(self.moduleNode, "modules")
@@ -94,10 +125,14 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def createPlugParent(self, plug=None, position=None, rotation=None):
         """Create a plug parent for the module."""
-        plugParent = cmds.createNode("transform", n="{}_{}_plugParent".format(self.side, self.label))
+        plugParent = cmds.createNode(
+            "transform", n="{}_{}_plugParent".format(self.side, self.label)
+        )
         if plug:
             cmds.xform(plugParent, ws=True, t=cmds.xform(plug, q=True, ws=True, t=True))
-            cmds.xform(plugParent, ws=True, ro=cmds.xform(plug, q=True, ws=True, ro=True))
+            cmds.xform(
+                plugParent, ws=True, ro=cmds.xform(plug, q=True, ws=True, ro=True)
+            )
         if position:
             cmds.xform(plugParent, ws=True, t=position)
         if rotation:
@@ -108,24 +143,27 @@ class MotionModuleBase(moduleBase.ModuleBase):
 
     def createWorldParent(self):
         """Create a world parent for the module."""
-        worldParent = cmds.createNode("transform", n="{}_{}_worldParent".format(self.side, self.label))
+        worldParent = cmds.createNode(
+            "transform", n="{}_{}_worldParent".format(self.side, self.label)
+        )
         cmds.parent(worldParent, self.moduleNode)
         return worldParent
 
     def socketPlugParenting(self):
         if self.parent is not None:
-            socket = cmds.getAttr(f"{self.parent}_MODULE.{self.selectedSocket}", asString=True)
+            socket = cmds.getAttr(
+                f"{self.parent}_MODULE.{self.selectedSocket}", asString=True
+            )
         self.selectedPlug = self.plugParent
 
         ptc = cmds.parentConstraint(socket, self.selectedPlug, mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
         sc = cmds.scaleConstraint(socket, self.selectedPlug, mo=1)
-        
+
         # # Get world
         # if self.parent is None:
         #     worldSocket = list(self.sockets.values())[-1]
         #     ptc = cmds.parentConstraint(worldSocket, self.)
-
 
     def addSocketMetaData(self):
         cmds.addAttr(self.moduleNode, ln="SocketData", at="enum", en="--------")

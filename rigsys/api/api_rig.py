@@ -6,9 +6,9 @@ import os
 
 import maya.cmds as cmds
 
+import rigsys.modules.deformer as deformer
 import rigsys.modules.motion as motion
 import rigsys.modules.utility as utility
-import rigsys.modules.deformer as deformer
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +41,14 @@ class Rig:
         """
         # Add a motionModuleParenting module if one doesn't already exist
         motionModuleParentingAdded = any(
-            isinstance(module, utility.MotionModuleParenting) for module in self.utilityModules.values()
+            isinstance(module, utility.MotionModuleParenting)
+            for module in self.utilityModules.values()
         )
 
         if not motionModuleParentingAdded:
-            self.utilityModules["MotionModuleParenting"] = utility.MotionModuleParenting(self)
+            self.utilityModules[
+                "MotionModuleParenting"
+            ] = utility.MotionModuleParenting(self)
 
         allModules: list = []
         allModules.extend(self.motionModules.values())
@@ -84,11 +87,16 @@ class Rig:
 
         # Sort by build order
         allModules.sort(key=lambda x: x.buildOrder)
-        
+
         return allModules
 
-    def build(self, buildLevel: int = -1, buildProxiesOnly: bool = False, usedSavedProxyData: bool = False,
-              proxyDataFile: str = "") -> bool:
+    def build(
+        self,
+        buildLevel: int = -1,
+        buildProxiesOnly: bool = False,
+        usedSavedProxyData: bool = False,
+        proxyDataFile: str = "",
+    ) -> bool:
         """Build the rig up to the specified level.
 
         Args:
@@ -131,16 +139,23 @@ class Rig:
 
             if module.isMuted:
                 continue
-            
+
             if buildProxiesOnly:
-                if not module.bypassProxiesOnly and not isinstance(module, motion.MotionModuleBase):
-                    logger.info(f"Skipping module {module.getFullName()} for buildProxiesOnly flag...")
+                if not module.bypassProxiesOnly and not isinstance(
+                    module, motion.MotionModuleBase
+                ):
+                    logger.info(
+                        f"Skipping module {module.getFullName()} for buildProxiesOnly flag..."
+                    )
                     continue
             logger.info(f"Building module {module.getFullName()}...")
 
             if isinstance(module, motion.MotionModuleBase):
-                module.run(buildProxiesOnly=buildProxiesOnly, usedSavedProxyData=usedSavedProxyData,
-                           proxyData=proxyData)
+                module.run(
+                    buildProxiesOnly=buildProxiesOnly,
+                    usedSavedProxyData=usedSavedProxyData,
+                    proxyData=proxyData,
+                )
 
             else:
                 module.run()
@@ -174,9 +189,14 @@ class Rig:
         self.utilityNodes = cmds.createNode("transform", n="utilities")
         self.proxyNodes = cmds.createNode("transform", n="proxies")
 
-        coreNodes = [self.motionNodes, self.geometryNodes,
-                     self.skeletonNodes, self.deformerNodes,
-                     self.utilityNodes, self.proxyNodes]
+        coreNodes = [
+            self.motionNodes,
+            self.geometryNodes,
+            self.skeletonNodes,
+            self.deformerNodes,
+            self.utilityNodes,
+            self.proxyNodes,
+        ]
 
         cmds.parent(coreNodes, self.rigNode)
 
@@ -196,8 +216,12 @@ class Rig:
                     logger.warning(f"Proxy {sceneName} does not exist.")
                     continue
 
-                proxyPosition = cmds.xform(sceneName, query=True, ws=True, translation=True)
-                proxyRotation = cmds.xform(sceneName, query=True, ws=True, rotation=True)
+                proxyPosition = cmds.xform(
+                    sceneName, query=True, ws=True, translation=True
+                )
+                proxyRotation = cmds.xform(
+                    sceneName, query=True, ws=True, rotation=True
+                )
 
                 proxyData[module.getFullName()][proxyKey] = {
                     "position": proxyPosition,

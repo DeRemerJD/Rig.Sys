@@ -113,7 +113,7 @@ def pipInstallPackage(packageName) -> bool:
     else:
         print(result.stderr)
         return False
-        
+
 pipInstallPackage("pytest")
 ```
 

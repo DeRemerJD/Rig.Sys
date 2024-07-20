@@ -3,10 +3,9 @@
 import logging
 import os
 
-import rigsys.modules.utility.utilityBase as utilityBase
-
 import maya.cmds as cmds
 
+import rigsys.modules.utility.utilityBase as utilityBase
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +13,23 @@ logger = logging.getLogger(__name__)
 class ImportModel(utilityBase.UtilityModuleBase):
     """Import model utility module."""
 
-    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 3000, isMuted: bool = False,
-                 mirror: bool = False, bypassProxiesOnly: bool = True, 
-                 filePath: str = "", underGroup: str = None) -> None:
+    def __init__(
+        self,
+        rig,
+        side: str = "",
+        label: str = "",
+        buildOrder: int = 3000,
+        isMuted: bool = False,
+        mirror: bool = False,
+        bypassProxiesOnly: bool = True,
+        filePath: str = "",
+        underGroup: str = None,
+    ) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, mirror, bypassProxiesOnly)
-        self.side = 'M'
+        super().__init__(
+            rig, side, label, buildOrder, isMuted, mirror, bypassProxiesOnly
+        )
+        self.side = "M"
         self.filePath = filePath
         self.underGroup = underGroup
 

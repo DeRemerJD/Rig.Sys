@@ -1,9 +1,9 @@
 """Utility function to unload modules for use in Maya."""
 
 
+import logging
 import os
 import shutil
-import logging
 import sys
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def unloadPackages(silent=True, packages=None):
     for moduleToReload in reloadList:
         try:
             if sys.modules[moduleToReload] is not None:
-                del (sys.modules[moduleToReload])
+                del sys.modules[moduleToReload]
                 if not silent:
                     logger.debug(f"Unloaded: {moduleToReload}")
 
@@ -65,4 +65,6 @@ def nukePycFiles(folderPath=None, verbose=False):
             if dirName.startswith("__pycache__") or dirName.startswith(".pytest_cache"):
                 shutil.rmtree(os.path.join(root, dirName))
                 if verbose:
-                    logger.info(f"Removed {os.path.abspath(os.path.join(root, dirName))}")
+                    logger.info(
+                        f"Removed {os.path.abspath(os.path.join(root, dirName))}"
+                    )

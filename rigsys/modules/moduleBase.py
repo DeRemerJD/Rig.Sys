@@ -3,10 +3,10 @@
 import copy
 import logging
 
-import rigsys.utils.stringUtils as stringUtils
-import rigsys.lib.joint as jointTools
-
 import maya.cmds as cmds
+
+import rigsys.lib.joint as jointTools
+import rigsys.utils.stringUtils as stringUtils
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,17 @@ logger = logging.getLogger(__name__)
 class ModuleBase:
     """Base class for all modules."""
 
-    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 0,
-                 isMuted: bool = False, mirror: bool = False, mirrored: bool = False,
-                 bypassProxiesOnly: bool = False) -> None:
+    def __init__(
+        self,
+        rig,
+        side: str = "",
+        label: str = "",
+        buildOrder: int = 0,
+        isMuted: bool = False,
+        mirror: bool = False,
+        mirrored: bool = False,
+        bypassProxiesOnly: bool = False,
+    ) -> None:
         """Initialize the module."""
         self.side = side
         self.label = label
@@ -77,7 +85,9 @@ class ModuleBase:
             if isinstance(value, dict):
                 newValue = {}
                 for key, item in value.items():
-                    newValue[stringUtils.mirrorString(key)] = stringUtils.mirrorString(item)
+                    newValue[stringUtils.mirrorString(key)] = stringUtils.mirrorString(
+                        item
+                    )
                 setattr(newModule, var, newValue)
 
             else:

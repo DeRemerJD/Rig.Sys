@@ -2,13 +2,12 @@
 
 import logging
 import os
-import pytest
 import sys
 
 import maya.cmds as cmds
+import pytest
 
-from rigsys.utils.unload import unloadPackages, nukePycFiles
-
+from rigsys.utils.unload import nukePycFiles, unloadPackages
 
 logger = logging.getLogger(__name__)
 

@@ -10,9 +10,18 @@ import rigsys.modules.export.exportBase as exportBase
 class FBXExport(exportBase.ExportModuleBase):
     """FBX Export Module."""
 
-    def __init__(self, rig, exportPath: str, label: str = "", buildOrder: int = 5000,
-                 isMuted: bool = False, exportAll: bool = False, exportSelected: bool = False,
-                 nodesToExport: list = None, mirror: bool = False) -> None:
+    def __init__(
+        self,
+        rig,
+        exportPath: str,
+        label: str = "",
+        buildOrder: int = 5000,
+        isMuted: bool = False,
+        exportAll: bool = False,
+        exportSelected: bool = False,
+        nodesToExport: list = None,
+        mirror: bool = False,
+    ) -> None:
         """Initialize the module.
 
         Arguments:

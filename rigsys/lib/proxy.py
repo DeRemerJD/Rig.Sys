@@ -11,8 +11,17 @@ logger = logging.getLogger(__name__)
 class Proxy:
     """Proxy class for rigsys modules."""
 
-    def __init__(self, side="M", label="", name="", parent=None, upVector=False, position=None, rotation=None,
-                 plug=False) -> None:
+    def __init__(
+        self,
+        side="M",
+        label="",
+        name="",
+        parent=None,
+        upVector=False,
+        position=None,
+        rotation=None,
+        plug=False,
+    ) -> None:
         """Initialize the proxy."""
         if position is None:
             position = [0.0, 0.0, 0.0]
@@ -58,7 +67,9 @@ class Proxy:
         """Build the proxy."""
         if self.proxyModuleNode is None:
             self.buildProxyModule()
-        prx = cmds.createNode("joint", n="{}_{}_{}_proxy".format(self.side, self.label, self.name))
+        prx = cmds.createNode(
+            "joint", n="{}_{}_{}_proxy".format(self.side, self.label, self.name)
+        )
         cmds.parent(prx, self.proxyModuleNode)
 
         cmds.xform(prx, ws=True, t=self.position, ro=self.rotation)
@@ -71,9 +82,9 @@ class Proxy:
 
     def buildProxyModule(self):
         if cmds.objExists("{}_{}_proxyMODULE".format(self.side, self.label)):
-             self.proxyModuleNode = "{}_{}_proxyMODULE".format(self.side, self.label)
+            self.proxyModuleNode = "{}_{}_proxyMODULE".format(self.side, self.label)
         else:
-            self.proxyModuleNode = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
+            self.proxyModuleNode = cmds.createNode(
+                "transform", n="{}_{}_proxyMODULE".format(self.side, self.label)
+            )
             cmds.parent(self.proxyModuleNode, "proxies")
-
-            

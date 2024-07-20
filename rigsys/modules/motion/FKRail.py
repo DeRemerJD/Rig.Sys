@@ -1,25 +1,53 @@
 """FK / Reverse FK Motion Module."""
 
 
-import rigsys.modules.motion.motionBase as motionBase
-import rigsys.lib.ctrl as ctrlCrv
-import rigsys.lib.proxy as proxy
-import rigsys.lib.joint as jointTools
-
 import maya.cmds as cmds
+
+import rigsys.lib.ctrl as ctrlCrv
+import rigsys.lib.joint as jointTools
+import rigsys.lib.proxy as proxy
+import rigsys.modules.motion.motionBase as motionBase
 
 
 class FKSegment(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True, segments=5,
-                 reverse=True, IKRail=True, buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
+    def __init__(
+        self,
+        rig,
+        side="",
+        label="",
+        ctrlShapes="circle",
+        ctrlScale=None,
+        addOffset=True,
+        segments=5,
+        reverse=True,
+        IKRail=True,
+        buildOrder: int = 2000,
+        isMuted: bool = False,
+        parent: str = None,
+        mirror: bool = False,
+        bypassProxiesOnly: bool = True,
+        selectedPlug: str = "",
+        selectedSocket: str = "",
+        aimAxis: str = "+x",
+        upAxis: str = "-z",
+    ) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, 
-                         parent, mirror, bypassProxiesOnly, selectedPlug, 
-                         selectedSocket, aimAxis, upAxis)
+        super().__init__(
+            rig,
+            side,
+            label,
+            buildOrder,
+            isMuted,
+            parent,
+            mirror,
+            bypassProxiesOnly,
+            selectedPlug,
+            selectedSocket,
+            aimAxis,
+            upAxis,
+        )
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -38,7 +66,7 @@ class FKSegment(motionBase.MotionModuleBase):
                 side=self.side,
                 label=self.label,
                 name="Start",
-                plug=True
+                plug=True,
             ),
             "End": proxy.Proxy(
                 position=[0, 10, 0],
@@ -46,7 +74,7 @@ class FKSegment(motionBase.MotionModuleBase):
                 side=self.side,
                 label=self.label,
                 name="End",
-                parent="Start"
+                parent="Start",
             ),
             "UpVector": proxy.Proxy(
                 position=[0, 0, -10],
@@ -54,8 +82,8 @@ class FKSegment(motionBase.MotionModuleBase):
                 side=self.side,
                 label=self.label,
                 name="UpVector",
-                parent="Start"
-            )
+                parent="Start",
+            ),
         }
         if self.segments > 1:
             par = "Start"
@@ -66,19 +94,15 @@ class FKSegment(motionBase.MotionModuleBase):
                     side=self.side,
                     label=self.label,
                     name=str(i),
-                    parent=par
+                    parent=par,
                 )
                 par = str(i)
             self.proxies["End"] = self.proxies.pop("End")
 
             self.proxies["End"].parent = str(segments - 1)
 
-        self.sockets = {
-        }
-        self.plugs = {
-            "Local": None,
-            "World": None
-        }
+        self.sockets = {}
+        self.plugs = {"Local": None, "World": None}
         # if self.segments > 1:
         #     for i in range(1, self.segments):
         #         self.sockets[str(i)] = None
@@ -113,10 +137,14 @@ class FKSegment(motionBase.MotionModuleBase):
         # MODULE STRUCTURE #
         for key, proxy in self.proxies.items():
             if key != "UpVector":
-                fGrp = cmds.createNode("transform", n="{}_{}_grp".format(
-                    self.getFullName(), self.proxies[key].name))
-                fCtrl = cmds.createNode("transform", n="{}_{}_CTRL".format(
-                    self.getFullName(), self.proxies[key].name))
+                fGrp = cmds.createNode(
+                    "transform",
+                    n="{}_{}_grp".format(self.getFullName(), self.proxies[key].name),
+                )
+                fCtrl = cmds.createNode(
+                    "transform",
+                    n="{}_{}_CTRL".format(self.getFullName(), self.proxies[key].name),
+                )
 
                 cmds.parent(fCtrl, fGrp)
                 FKCtrls.append(fCtrl)
@@ -125,10 +153,18 @@ class FKSegment(motionBase.MotionModuleBase):
                 cmds.xform(fGrp, ws=True, t=self.proxies[key].position)
 
                 if self.addOffset:
-                    oGrp = cmds.createNode("transform", n="{}_{}Local_grp".format(
-                        self.getFullName(), self.proxies[key].name))
-                    oCtrl = cmds.createNode("transform", n="{}_{}Local_CTRL".format(
-                        self.getFullName(), self.proxies[key].name))
+                    oGrp = cmds.createNode(
+                        "transform",
+                        n="{}_{}Local_grp".format(
+                            self.getFullName(), self.proxies[key].name
+                        ),
+                    )
+                    oCtrl = cmds.createNode(
+                        "transform",
+                        n="{}_{}Local_CTRL".format(
+                            self.getFullName(), self.proxies[key].name
+                        ),
+                    )
 
                 cmds.parent(oCtrl, oGrp)
                 OffsetCtrls.append(oCtrl)
@@ -136,12 +172,24 @@ class FKSegment(motionBase.MotionModuleBase):
                 cmds.xform(oGrp, ws=True, t=self.proxies[key].position)
 
                 if self.reverse:
-                    rGrp = cmds.createNode("transform", n="{}_{}_Rev_grp".format(
-                        self.getFullName(), self.proxies[key].name))
-                    rCtrl = cmds.createNode("transform", n="{}_{}_Rev_CTRL".format(
-                        self.getFullName(), self.proxies[key].name))
-                    rOff = cmds.createNode("transform", n="{}_{}_Rev_offset".format(
-                        self.getFullName(), self.proxies[key].name))
+                    rGrp = cmds.createNode(
+                        "transform",
+                        n="{}_{}_Rev_grp".format(
+                            self.getFullName(), self.proxies[key].name
+                        ),
+                    )
+                    rCtrl = cmds.createNode(
+                        "transform",
+                        n="{}_{}_Rev_CTRL".format(
+                            self.getFullName(), self.proxies[key].name
+                        ),
+                    )
+                    rOff = cmds.createNode(
+                        "transform",
+                        n="{}_{}_Rev_offset".format(
+                            self.getFullName(), self.proxies[key].name
+                        ),
+                    )
 
                     cmds.parent(rCtrl, rGrp)
                     cmds.parent(rOff, rCtrl)
@@ -153,30 +201,51 @@ class FKSegment(motionBase.MotionModuleBase):
 
         # Orient FK
         jointTools.aimSequence(
-            targets=FKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+            targets=FKGrps,
+            aimAxis=self.aimAxis,
+            upAxis=self.upAxis,
+            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+        )
         jointTools.aimSequence(
-            targets=FKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+            targets=FKCtrls,
+            aimAxis=self.aimAxis,
+            upAxis=self.upAxis,
+            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+        )
         if self.reverse:
             jointTools.aimSequence(
-                targets=RFKGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
-                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+                targets=RFKGrps,
+                aimAxis=self.aimAxis,
+                upAxis=self.upAxis,
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+            )
             jointTools.aimSequence(
-                targets=RFKOffsets, aimAxis=self.aimAxis, upAxis=self.upAxis,
-                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+                targets=RFKOffsets,
+                aimAxis=self.aimAxis,
+                upAxis=self.upAxis,
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+            )
             jointTools.aimSequence(
-                targets=RFKCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
-                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+                targets=RFKCtrls,
+                aimAxis=self.aimAxis,
+                upAxis=self.upAxis,
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+            )
             for rOff in RFKOffsets:
                 cmds.setAttr(f"{rOff}.rotateOrder", 5)
         if self.addOffset:
             jointTools.aimSequence(
-                targets=OffsetGrps, aimAxis=self.aimAxis, upAxis=self.upAxis,
-                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+                targets=OffsetGrps,
+                aimAxis=self.aimAxis,
+                upAxis=self.upAxis,
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+            )
             jointTools.aimSequence(
-                targets=OffsetCtrls, aimAxis=self.aimAxis, upAxis=self.upAxis,
-                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+                targets=OffsetCtrls,
+                aimAxis=self.aimAxis,
+                upAxis=self.upAxis,
+                upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+            )
 
         # Parenting
         index = 1
@@ -187,8 +256,12 @@ class FKSegment(motionBase.MotionModuleBase):
             fkCtrlObject = ctrlCrv.Ctrl(
                 node=fCtrl,
                 shape="sphere",
-                scale=[self.ctrlScale[0] * .75, self.ctrlScale[1] * .75, self.ctrlScale[2] * .75],
-                offset=[0, 0, -10]
+                scale=[
+                    self.ctrlScale[0] * 0.75,
+                    self.ctrlScale[1] * 0.75,
+                    self.ctrlScale[2] * 0.75,
+                ],
+                offset=[0, 0, -10],
             )
             fkCtrlObject.giveCtrlShape()
 
@@ -213,8 +286,12 @@ class FKSegment(motionBase.MotionModuleBase):
                 reverseCtrlObject = ctrlCrv.Ctrl(
                     node=rCtrl,
                     shape="box",
-                    scale=[self.ctrlScale[0] * .5, self.ctrlScale[1] * .5, self.ctrlScale[2] * .5],
-                    offset=[0, 0, -10]
+                    scale=[
+                        self.ctrlScale[0] * 0.5,
+                        self.ctrlScale[1] * 0.5,
+                        self.ctrlScale[2] * 0.5,
+                    ],
+                    offset=[0, 0, -10],
                 )
                 reverseCtrlObject.giveCtrlShape()
             cmds.parent(RFKGrps[0], FKCtrls[-1])
@@ -234,10 +311,7 @@ class FKSegment(motionBase.MotionModuleBase):
             # Add Controls
             for oCtrl in OffsetCtrls:
                 offsetCtrlObject = ctrlCrv.Ctrl(
-                    node=oCtrl,
-                    shape="circle",
-                    orient=[0, 90, 0],
-                    scale=self.ctrlScale
+                    node=oCtrl, shape="circle", orient=[0, 90, 0], scale=self.ctrlScale
                 )
                 offsetCtrlObject.giveCtrlShape()
 
@@ -251,12 +325,16 @@ class FKSegment(motionBase.MotionModuleBase):
                 fkJnt = cmds.createNode("joint", n=fCtrl.replace("_CTRL", "_guide"))
                 ikJnt = cmds.createNode("joint", n=fCtrl.replace("_CTRL", "_ik"))
                 cmds.xform(fkJnt, ws=True, t=cmds.xform(fCtrl, q=True, ws=True, t=True))
-                cmds.xform(fkJnt, ws=True, ro=cmds.xform(fCtrl, q=True, ws=True, ro=True))
+                cmds.xform(
+                    fkJnt, ws=True, ro=cmds.xform(fCtrl, q=True, ws=True, ro=True)
+                )
                 cmds.makeIdentity(fkJnt, a=True)
                 FKJoints.append(fkJnt)
 
                 cmds.xform(ikJnt, ws=True, t=cmds.xform(fCtrl, q=True, ws=True, t=True))
-                cmds.xform(ikJnt, ws=True, ro=cmds.xform(fCtrl, q=True, ws=True, ro=True))
+                cmds.xform(
+                    ikJnt, ws=True, ro=cmds.xform(fCtrl, q=True, ws=True, ro=True)
+                )
                 cmds.makeIdentity(ikJnt, a=True)
                 IKJoints.append(ikJnt)
 
@@ -273,16 +351,31 @@ class FKSegment(motionBase.MotionModuleBase):
             spans = len(coords) - 1
 
             # Make Curves
-            ikCurve = cmds.curve(
-                n=f"{self.getFullName()}_IKCurve", p=coords, d=3)
-            cmds.rebuildCurve(ikCurve, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=1, s=spans, d=1, ch=False)
+            ikCurve = cmds.curve(n=f"{self.getFullName()}_IKCurve", p=coords, d=3)
+            cmds.rebuildCurve(
+                ikCurve,
+                rpo=1,
+                rt=0,
+                end=1,
+                kr=0,
+                kcp=0,
+                kep=1,
+                kt=1,
+                s=spans,
+                d=1,
+                ch=False,
+            )
 
             ikCurveShape = cmds.listRelatives(ikCurve, c=True, s=True)[0]
             ikCurveShape = cmds.rename(ikCurveShape, ikCurve + "Shape")
 
             ik = cmds.ikHandle(
-                n=f"{self.getFullName()}_IKHandle", sj=IKJoints[0], ee=IKJoints[-1],
-                sol="ikSplineSolver", c=ikCurve, ccv=False
+                n=f"{self.getFullName()}_IKHandle",
+                sj=IKJoints[0],
+                ee=IKJoints[-1],
+                sol="ikSplineSolver",
+                c=ikCurve,
+                ccv=False,
             )
 
             ikHandle = ik[0]
@@ -295,10 +388,36 @@ class FKSegment(motionBase.MotionModuleBase):
             cmds.xform(tempCrv1, ws=True, t=[-1, 0, 0])
             cmds.xform(tempCrv2, ws=True, t=[1, 0, 0])
 
-            rbn = cmds.loft(tempCrv1, tempCrv2, d=3, n=f"{self.getFullName()}_rbn",
-                            u=True, c=0, ar=1, ss=1, rn=0, po=0, rsn=True, ch=False)[0]
-            cmds.rebuildSurface(rbn, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0, su=spans, sv=1,
-                                du=3, dv=1, fr=0, dir=2, ch=False)
+            rbn = cmds.loft(
+                tempCrv1,
+                tempCrv2,
+                d=3,
+                n=f"{self.getFullName()}_rbn",
+                u=True,
+                c=0,
+                ar=1,
+                ss=1,
+                rn=0,
+                po=0,
+                rsn=True,
+                ch=False,
+            )[0]
+            cmds.rebuildSurface(
+                rbn,
+                rpo=1,
+                rt=0,
+                end=1,
+                kr=0,
+                kcp=0,
+                kc=0,
+                su=spans,
+                sv=1,
+                du=3,
+                dv=1,
+                fr=0,
+                dir=2,
+                ch=False,
+            )
 
             rbnShape = cmds.listRelatives(rbn, c=True, s=True)[0]
             rbnShape = cmds.rename(rbnShape, rbn + "Shape")
@@ -308,29 +427,43 @@ class FKSegment(motionBase.MotionModuleBase):
             # Make Follicles and Connections
             follicles = []
             follicleShapes = []
-            follicleGrp = cmds.createNode("transform", n=f"{self.getFullName()}_follicles_grp")
+            follicleGrp = cmds.createNode(
+                "transform", n=f"{self.getFullName()}_follicles_grp"
+            )
             name = 0
             for fkJnt in FKJoints:
-                folPar = cmds.createNode("transform", n=f"{self.getFullName()}_{name}_fol")
-                fol = cmds.createNode("follicle", n=f"{self.getFullName()}_{name}_folShape", p=folPar)
+                folPar = cmds.createNode(
+                    "transform", n=f"{self.getFullName()}_{name}_fol"
+                )
+                fol = cmds.createNode(
+                    "follicle", n=f"{self.getFullName()}_{name}_folShape", p=folPar
+                )
                 follicles.append(folPar)
                 follicleShapes.append(fol)
                 cmds.parent(folPar, follicleGrp)
 
                 cmds.connectAttr(f"{rbnShape}.local", f"{fol}.inputSurface")
-                cmds.connectAttr(f"{rbnShape}.worldMatrix[0]", f"{fol}.inputWorldMatrix")
+                cmds.connectAttr(
+                    f"{rbnShape}.worldMatrix[0]", f"{fol}.inputWorldMatrix"
+                )
                 cmds.connectAttr(f"{fol}.outTranslate", f"{folPar}.translate")
                 cmds.connectAttr(f"{fol}.outRotate", f"{folPar}.rotate")
 
-                cpos = cmds.createNode("closestPointOnSurface", n=f"{self.getFullName()}_{name}_cpos")
-                dm = cmds.createNode("decomposeMatrix", n=f"{self.getFullName()}_{name}_dm")
+                cpos = cmds.createNode(
+                    "closestPointOnSurface", n=f"{self.getFullName()}_{name}_cpos"
+                )
+                dm = cmds.createNode(
+                    "decomposeMatrix", n=f"{self.getFullName()}_{name}_dm"
+                )
 
-                cmds.connectAttr(f"{IKJoints[name]}.worldMatrix[0]", f"{dm}.inputMatrix")
+                cmds.connectAttr(
+                    f"{IKJoints[name]}.worldMatrix[0]", f"{dm}.inputMatrix"
+                )
                 cmds.connectAttr(f"{dm}.outputTranslate", f"{cpos}.inPosition")
                 cmds.connectAttr(f"{rbnShape}.worldSpace", f"{cpos}.inputSurface")
                 cmds.connectAttr(f"{cpos}.result.parameterU", f"{fol}.parameterU")
 
-                cmds.setAttr(f"{fol}.parameterV", .5)
+                cmds.setAttr(f"{fol}.parameterV", 0.5)
 
                 name += 1
 
@@ -345,15 +478,17 @@ class FKSegment(motionBase.MotionModuleBase):
             railOffsets = []
             # Make Rail Joints
             for fol, ikJnt in zip(follicles, IKJoints):
-                rJntOffset = cmds.createNode("transform", n=fol.replace("_fol", "railOffset"))
+                rJntOffset = cmds.createNode(
+                    "transform", n=fol.replace("_fol", "railOffset")
+                )
                 rJnt = cmds.createNode("joint", n=fol.replace("_fol", "_rail"))
                 cmds.parent(rJnt, rJntOffset)
-                cmds.xform(rJntOffset, ws=True, t=cmds.xform(
-                    ikJnt, q=True, ws=True, t=True
-                ))
-                cmds.xform(rJntOffset, ws=True, ro=cmds.xform(
-                    ikJnt, q=True, ws=True, ro=True
-                ))
+                cmds.xform(
+                    rJntOffset, ws=True, t=cmds.xform(ikJnt, q=True, ws=True, t=True)
+                )
+                cmds.xform(
+                    rJntOffset, ws=True, ro=cmds.xform(ikJnt, q=True, ws=True, ro=True)
+                )
                 ptc = cmds.parentConstraint(fol, rJntOffset, n=f"{rJnt}_ptc", mo=0)[0]
                 cmds.setAttr(f"{ptc}.interpType", 2)
 
@@ -361,16 +496,42 @@ class FKSegment(motionBase.MotionModuleBase):
                 railOffsets.append(rJntOffset)
 
             # Add Stretching
-            cmds.addAttr(FKCtrls[0], ln="stretch", dv=0, min=0, max=1, at="float", k=True)
+            cmds.addAttr(
+                FKCtrls[0], ln="stretch", dv=0, min=0, max=1, at="float", k=True
+            )
             for fCtrl in FKCtrls:
                 if fCtrl != FKCtrls[0]:
-                    cmds.addAttr(fCtrl, ln="stretch", proxy=f"{FKCtrls[0]}.stretch", at="float", min=0, max=1, k=True)
+                    cmds.addAttr(
+                        fCtrl,
+                        ln="stretch",
+                        proxy=f"{FKCtrls[0]}.stretch",
+                        at="float",
+                        min=0,
+                        max=1,
+                        k=True,
+                    )
             if self.reverse:
                 for rCtrl in RFKCtrls:
-                    cmds.addAttr(rCtrl, ln="stretch", proxy=f"{FKCtrls[0]}.stretch", at="float", min=0, max=1, k=True)
+                    cmds.addAttr(
+                        rCtrl,
+                        ln="stretch",
+                        proxy=f"{FKCtrls[0]}.stretch",
+                        at="float",
+                        min=0,
+                        max=1,
+                        k=True,
+                    )
             if self.addOffset:
                 for oCtrl in OffsetCtrls:
-                    cmds.addAttr(oCtrl, ln="stretch", proxy=f"{FKCtrls[0]}.stretch", at="float", min=0, max=1, k=True)
+                    cmds.addAttr(
+                        oCtrl,
+                        ln="stretch",
+                        proxy=f"{FKCtrls[0]}.stretch",
+                        at="float",
+                        min=0,
+                        max=1,
+                        k=True,
+                    )
 
             ci = cmds.createNode("curveInfo", n=f"{self.getFullName()}_ci")
             stretchMD = cmds.createNode("multiplyDivide", n=f"{self.getFullName()}_md")
@@ -381,7 +542,9 @@ class FKSegment(motionBase.MotionModuleBase):
             ciLen = cmds.getAttr(f"{ci}.arcLength")
             cmds.setAttr(f"{stretchMD}.input2.input2X", ciLen)
             cmds.setAttr(f"{stretchBC}.color2.color2R", 1.0)
-            cmds.connectAttr(f"{stretchMD}.output.outputX", f"{stretchBC}.color1.color1R")
+            cmds.connectAttr(
+                f"{stretchMD}.output.outputX", f"{stretchBC}.color1.color1R"
+            )
             cmds.connectAttr(f"{FKCtrls[0]}.stretch", f"{stretchBC}.blender")
             for ikJnt in IKJoints:
                 if ikJnt != IKJoints[-1]:
@@ -389,18 +552,42 @@ class FKSegment(motionBase.MotionModuleBase):
 
             # If Offsets add vis Toggle
             if self.addOffset:
-                cmds.addAttr(FKCtrls[0], ln="localVisibility", dv=0, min=0, max=1, at="float", k=True)
+                cmds.addAttr(
+                    FKCtrls[0],
+                    ln="localVisibility",
+                    dv=0,
+                    min=0,
+                    max=1,
+                    at="float",
+                    k=True,
+                )
                 for fCtrl in FKCtrls:
                     if fCtrl != FKCtrls[0]:
-                        cmds.addAttr(fCtrl, ln="localVisibility", proxy=f"{FKCtrls[0]}.localVisibility", at="float",
-                                     min=0, max=1, k=True)
+                        cmds.addAttr(
+                            fCtrl,
+                            ln="localVisibility",
+                            proxy=f"{FKCtrls[0]}.localVisibility",
+                            at="float",
+                            min=0,
+                            max=1,
+                            k=True,
+                        )
                 if self.reverse:
                     for rCtrl in RFKCtrls:
-                        cmds.addAttr(rCtrl, ln="localVisibility", proxy=f"{FKCtrls[0]}.localVisibility", at="float",
-                                     min=0, max=1, k=True)
+                        cmds.addAttr(
+                            rCtrl,
+                            ln="localVisibility",
+                            proxy=f"{FKCtrls[0]}.localVisibility",
+                            at="float",
+                            min=0,
+                            max=1,
+                            k=True,
+                        )
 
                 for oGrp in OffsetGrps:
-                    cmds.connectAttr(f"{FKCtrls[0]}.localVisibility", f"{oGrp}.visibility")
+                    cmds.connectAttr(
+                        f"{FKCtrls[0]}.localVisibility", f"{oGrp}.visibility"
+                    )
 
             # Parenting
             cmds.parent([ikHandle, ikCurve, rbn, follicleGrp], self.moduleUtilities)
@@ -436,7 +623,7 @@ class FKSegment(motionBase.MotionModuleBase):
 
         self.addSocketMetaData()
         # TODO:
-        '''
+        """
         Hierarchy of Rig / Components
         N number items
             - FK Skel: Floating Joints.
@@ -470,4 +657,4 @@ class FKSegment(motionBase.MotionModuleBase):
               by plugging directly into the CV / control point of the IK Curve and Ribbon. The Ribbon will
               require offsets to account for a dimension.
 
-        '''
+        """

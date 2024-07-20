@@ -1,24 +1,49 @@
 """World Root Motion Module."""
 
 
-import rigsys.modules.motion.motionBase as motionBase
+import maya.cmds as cmds
+
 import rigsys.lib.ctrl as ctrlCrv
 import rigsys.lib.proxy as proxy
-
-import maya.cmds as cmds
+import rigsys.modules.motion.motionBase as motionBase
 
 
 class Root(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
-    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffset=True,
-                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False,
-                 bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
+    def __init__(
+        self,
+        rig,
+        side="",
+        label="",
+        ctrlShapes="circle",
+        ctrlScale=None,
+        addOffset=True,
+        buildOrder: int = 2000,
+        isMuted: bool = False,
+        parent: str = None,
+        mirror: bool = False,
+        bypassProxiesOnly: bool = True,
+        selectedPlug: str = "",
+        selectedSocket: str = "",
+        aimAxis: str = "+x",
+        upAxis: str = "-z",
+    ) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, 
-                         parent, mirror, bypassProxiesOnly, selectedPlug, 
-                         selectedSocket, aimAxis, upAxis)
+        super().__init__(
+            rig,
+            side,
+            label,
+            buildOrder,
+            isMuted,
+            parent,
+            mirror,
+            bypassProxiesOnly,
+            selectedPlug,
+            selectedSocket,
+            aimAxis,
+            upAxis,
+        )
 
         if ctrlScale is None:
             ctrlScale = [1.0, 1.0, 1.0]
@@ -37,13 +62,8 @@ class Root(motionBase.MotionModuleBase):
             )
         }
 
-        self.sockets = {
-            "Base": None
-        }
-        self.plugs = {
-            "Local": None,
-            "World": None
-        }
+        self.sockets = {"Base": None}
+        self.plugs = {"Local": None, "World": None}
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -79,7 +99,8 @@ class Root(motionBase.MotionModuleBase):
         )
         rootCtrlObj.giveCtrlShape()
         rootJnt = cmds.createNode(
-            "joint", n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name)
+            "joint",
+            n="{}_{}_{}".format(self.side, self.label, self.proxies["Root"].name),
         )
         cmds.parent(rootJnt, rootCtrl)
         self.sockets["Base"] = rootJnt

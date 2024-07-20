@@ -1,10 +1,16 @@
 """Helper classes and functions for building joints."""
-import maya.cmds as cmds
 import maya.api.OpenMaya as om
+import maya.cmds as cmds
 
 
-def createJoint(jointName, position=None, rotation=None, mirrorPosition=False,
-                mirrorRotation=False, freeze=False,):
+def createJoint(
+    jointName,
+    position=None,
+    rotation=None,
+    mirrorPosition=False,
+    mirrorRotation=False,
+    freeze=False,
+):
     """Create a joint with the given name, position, and rotation."""
     if position is None:
         position = [0.0, 0.0, 0.0]
@@ -20,8 +26,18 @@ def createJoint(jointName, position=None, rotation=None, mirrorPosition=False,
     return joint
 
 
-def aim(nodes=[], target=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z", upType="object", objRot=None,
-        match=False, rotateOrder="xyz",):
+def aim(
+    nodes=[],
+    target=[],
+    aimAxis="+x",
+    upAxis="-z",
+    upObj=None,
+    vector="-z",
+    upType="object",
+    objRot=None,
+    match=False,
+    rotateOrder="xyz",
+):
     """Aim a series of nodes at a target."""
     # Check the nodes
     dontExist = []
@@ -93,8 +109,16 @@ def aim(nodes=[], target=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z",
 
 
 # Aim a series of nodes down a chain.
-def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z", upType="object", objRot=None,
-                rotateOrder="xyz",):
+def aimSequence(
+    targets=[],
+    aimAxis="+x",
+    upAxis="-z",
+    upObj=None,
+    vector="-z",
+    upType="object",
+    objRot=None,
+    rotateOrder="xyz",
+):
     dontExist = []
     if targets == []:
         return
@@ -165,7 +189,7 @@ def aimSequence(targets=[], aimAxis="+x", upAxis="-z", upObj=None, vector="-z", 
 
 
 def mirrorJoints(joints, position=True, rotation=True, freeze=False):
-    """Mirror the given joints on the YZ plane."""""
+    """Mirror the given joints on the YZ plane.""" ""
     # TODO: Add other mirroring types
     if type(joints) is not list:
         joints = [joints]
@@ -200,6 +224,7 @@ def axisToVector(axis):
         vec = [0, 0, -1]
     return vec
 
+
 # Function that takes a string vector and returns the proper numerical vector.
 def axisFlip(axis):
     newAxis = None
@@ -216,6 +241,7 @@ def axisFlip(axis):
     elif axis == "-z":
         newAxis = "+z"
     return newAxis
+
 
 def getCrossAxis(aim, up):
     axies = [aim, up]

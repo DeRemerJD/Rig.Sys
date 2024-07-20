@@ -1,18 +1,32 @@
 """Build bind joints utility module."""
 
 import logging
-import rigsys.modules.utility.utilityBase as utilityBase
+
 import maya.cmds as cmds
 
+import rigsys.modules.utility.utilityBase as utilityBase
+
 logger = logging.getLogger(__name__)
+
 
 class BindJoints(utilityBase.UtilityModuleBase):
     """Build bind joints utility module."""
 
-    def __init__(self, rig, side: str = "", label: str = "", buildOrder: int = 3000, isMuted: bool = False,
-                 mirror: bool = False, bypassProxiesOnly: bool = False, underGroup: str = "") -> None:
+    def __init__(
+        self,
+        rig,
+        side: str = "",
+        label: str = "",
+        buildOrder: int = 3000,
+        isMuted: bool = False,
+        mirror: bool = False,
+        bypassProxiesOnly: bool = False,
+        underGroup: str = "",
+    ) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, mirror, bypassProxiesOnly)
+        super().__init__(
+            rig, side, label, buildOrder, isMuted, mirror, bypassProxiesOnly
+        )
         self.underGroup = underGroup
 
     def run(self) -> None:
@@ -23,13 +37,13 @@ class BindJoints(utilityBase.UtilityModuleBase):
         for module in motionModules:
             # if not module.isRun:
             #     logger.error(f"Module not run: {module.getFullName()}. Unable to perform parenting.")
-            #     continue            
+            #     continue
 
             for jnt in module.bindJoints.keys():
                 bindJoint = cmds.createNode("joint", n=f"{jnt}_bind")
-                cmds.xform(bindJoint, ws=True, m=cmds.xform(
-                    jnt, q=True, ws=True, m=True
-                ))
+                cmds.xform(
+                    bindJoint, ws=True, m=cmds.xform(jnt, q=True, ws=True, m=True)
+                )
                 cmds.makeIdentity(bindJoint, a=True)
                 if bindJoint.startswith("L_"):
                     side = 1
@@ -63,14 +77,19 @@ class BindJoints(utilityBase.UtilityModuleBase):
                 for jnt, parJnt in module.bindJoints.items():
                     if parJnt is None:
                         # Check if bind exists
-                        print(f" CURRENT: {module.side}_{module.label} PARENTING TO: {module.parent}_MODULE.{module.selectedSocket}")
-                        constructedBind = cmds.getAttr(f"{module.parent}_MODULE.{module.selectedSocket}", asString=True)
+                        print(
+                            f" CURRENT: {module.side}_{module.label} PARENTING TO: {module.parent}_MODULE.{module.selectedSocket}"
+                        )
+                        constructedBind = cmds.getAttr(
+                            f"{module.parent}_MODULE.{module.selectedSocket}",
+                            asString=True,
+                        )
                         constructedBind = f"{constructedBind}_bind"
                         if cmds.objExists(constructedBind):
                             cmds.parent(f"{jnt}_bind", f"{constructedBind}")
             else:
                 if self.underGroup is not None or self.underGroup != "":
-                    
+
                     if cmds.objExists(self.underGroup):
 
                         for jnt, parJnt in module.bindJoints.items():

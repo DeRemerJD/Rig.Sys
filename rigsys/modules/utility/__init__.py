@@ -4,19 +4,21 @@ The following code dynamically imports all subclasses of UtilityModuleBase prese
 import any module in this directory and it will automatically be available in the rigging system.
 """
 
-from os.path import dirname, basename, isfile, join
 import glob
 import importlib
 import inspect
+from os.path import basename, dirname, isfile, join
 
 # This is the only line that needs to be changed per __init__.py file. Make sure to keep "as baseModule" at the end
 from .utilityBase import UtilityModuleBase as baseModule
 
 # Import all modules in the current directory
 modules = glob.glob(join(dirname(__file__), "*.py"))
-__all__ = [basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('__init__.py')]
+__all__ = [
+    basename(f)[:-3] for f in modules if isfile(f) and not f.endswith("__init__.py")
+]
 for module in __all__:
-    importlib.import_module('.' + module, package=str(__name__))
+    importlib.import_module("." + module, package=str(__name__))
 
 # Get all the classes that inherit from baseModule
 classes = {str(baseModule.__name__): baseModule}

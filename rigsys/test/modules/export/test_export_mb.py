@@ -3,12 +3,11 @@
 import os
 import unittest
 
-import rigsys.api.api_rig as api_rig
-from rigsys.modules.export import MBExport
-import rigsys.modules.utility as utility
-
-
 import maya.cmds as cmds
+
+import rigsys.api.api_rig as api_rig
+import rigsys.modules.utility as utility
+from rigsys.modules.export import MBExport
 
 
 class TestMBExport(unittest.TestCase):
@@ -19,8 +18,12 @@ class TestMBExport(unittest.TestCase):
 
         self.rig = api_rig.Rig()
 
-        self.resourcesFolder = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "resources")
-        self.exportFilePath = os.path.abspath(os.path.join(self.resourcesFolder, "test.mb"))
+        self.resourcesFolder = os.path.join(
+            os.path.dirname(__file__), os.pardir, os.pardir, "resources"
+        )
+        self.exportFilePath = os.path.abspath(
+            os.path.join(self.resourcesFolder, "test.mb")
+        )
 
         if os.path.exists(self.exportFilePath):
             os.remove(self.exportFilePath)

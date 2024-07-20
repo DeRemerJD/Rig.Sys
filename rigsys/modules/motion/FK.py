@@ -1,24 +1,50 @@
 """FK Motion Module."""
 
-import rigsys.modules.motion.motionBase as motionBase
-import rigsys.lib.ctrl as ctrlCrv
-import rigsys.lib.proxy as proxy
-import rigsys.lib.joint as jointTools
-
 import maya.cmds as cmds
+
+import rigsys.lib.ctrl as ctrlCrv
+import rigsys.lib.joint as jointTools
+import rigsys.lib.proxy as proxy
+import rigsys.modules.motion.motionBase as motionBase
 
 
 class FK(motionBase.MotionModuleBase):
     """FK Motion Module."""
 
-    def __init__(self, rig, side="", label="", ctrlShapes="circle", ctrlScale=None, addOffsets=True, segments=5,
-                 buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
-                 mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 aimAxis: str = "+x", upAxis: str = "-z") -> None:
+    def __init__(
+        self,
+        rig,
+        side="",
+        label="",
+        ctrlShapes="circle",
+        ctrlScale=None,
+        addOffsets=True,
+        segments=5,
+        buildOrder: int = 2000,
+        isMuted: bool = False,
+        parent: str = None,
+        mirror: bool = False,
+        bypassProxiesOnly: bool = True,
+        selectedPlug: str = "",
+        selectedSocket: str = "",
+        aimAxis: str = "+x",
+        upAxis: str = "-z",
+    ) -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, 
-                         parent, mirror, bypassProxiesOnly, selectedPlug, 
-                         selectedSocket, aimAxis, upAxis)
+        super().__init__(
+            rig,
+            side,
+            label,
+            buildOrder,
+            isMuted,
+            parent,
+            mirror,
+            bypassProxiesOnly,
+            selectedPlug,
+            selectedSocket,
+            aimAxis,
+            upAxis,
+        )
 
         self.addOffsets = addOffsets
         self.ctrlShapes = ctrlShapes
@@ -34,7 +60,7 @@ class FK(motionBase.MotionModuleBase):
                 side=self.side,
                 label=self.label,
                 name="Start",
-                plug=True
+                plug=True,
             ),
             "End": proxy.Proxy(
                 position=[0, 10, 0],
@@ -42,7 +68,7 @@ class FK(motionBase.MotionModuleBase):
                 side=self.side,
                 label=self.label,
                 name="End",
-                parent="Start"
+                parent="Start",
             ),
             "UpVector": proxy.Proxy(
                 position=[0, 0, -10],
@@ -50,8 +76,8 @@ class FK(motionBase.MotionModuleBase):
                 side=self.side,
                 label=self.label,
                 name="UpVector",
-                parent="Start"
-            )
+                parent="Start",
+            ),
         }
         if self.segments > 1:
             par = "Start"
@@ -62,25 +88,20 @@ class FK(motionBase.MotionModuleBase):
                     side=self.side,
                     label=self.label,
                     name=str(i),
-                    parent=par
+                    parent=par,
                 )
                 par = str(i)
             self.proxies["End"] = self.proxies.pop("End")
 
             self.proxies["End"].parent = str(segments - 1)
 
-        self.sockets = {
-            "Start": None
-        }
+        self.sockets = {"Start": None}
 
         if self.segments > 1:
             for i in range(1, self.segments):
                 self.sockets[f"Segment_{i}"] = None
 
-        self.plugs = {
-            "Local": None,
-            "World": None
-        }
+        self.plugs = {"Local": None, "World": None}
 
     def buildProxies(self):
         """Build the proxies for the module."""
@@ -126,8 +147,11 @@ class FK(motionBase.MotionModuleBase):
             index += 1
 
         jointTools.aimSequence(
-            FKJoints, aimAxis=self.aimAxis, upAxis=self.upAxis,
-            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy")
+            FKJoints,
+            aimAxis=self.aimAxis,
+            upAxis=self.upAxis,
+            upObj=f"{self.getFullName()}_{self.proxies['UpVector'].name}_proxy",
+        )
 
         FKGrps = []
         FKCtrls = []
@@ -137,22 +161,18 @@ class FK(motionBase.MotionModuleBase):
             ctrl = cmds.createNode("transform", n=f"{fJnt}_CTRL")
             cmds.parent(ctrl, grp)
 
-            cmds.xform(grp, ws=True, t=cmds.xform(
-                fJnt, q=True, ws=True, t=True
-            ))
-            cmds.xform(grp, ws=True, ro=cmds.xform(
-                fJnt, q=True, ws=True, ro=True
-            ))
+            cmds.xform(grp, ws=True, t=cmds.xform(fJnt, q=True, ws=True, t=True))
+            cmds.xform(grp, ws=True, ro=cmds.xform(fJnt, q=True, ws=True, ro=True))
 
             FKGrps.append(grp)
             FKCtrls.append(ctrl)
             ctrlObject = ctrlCrv.Ctrl(
-                    node=ctrl,
-                    shape="circle",
-                    scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
-                    offset=[0, 0, 0],
-                    orient=[0, 90, 0]
-                )
+                node=ctrl,
+                shape="circle",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 90, 0],
+            )
             ctrlObject.giveCtrlShape()
 
             if self.addOffsets:
@@ -163,9 +183,13 @@ class FK(motionBase.MotionModuleBase):
                 ctrlObject = ctrlCrv.Ctrl(
                     node=ctrl,
                     shape="square",
-                    scale=[self.ctrlScale[0]*0.85, self.ctrlScale[1]*0.85, self.ctrlScale[2]*0.85],
+                    scale=[
+                        self.ctrlScale[0] * 0.85,
+                        self.ctrlScale[1] * 0.85,
+                        self.ctrlScale[2] * 0.85,
+                    ],
                     offset=[0, 0, 0],
-                    orient=[0, 90, 0]
+                    orient=[0, 90, 0],
                 )
                 ctrlObject.giveCtrlShape()
 
@@ -173,12 +197,8 @@ class FK(motionBase.MotionModuleBase):
                 oCtrls.append(oCtrl)
                 cmds.parent(oCtrl, oGrp)
 
-                cmds.xform(grp, ws=True, t=cmds.xform(
-                    fJnt, q=True, ws=True, t=True
-                ))
-                cmds.xform(grp, ws=True, ro=cmds.xform(
-                    fJnt, q=True, ws=True, ro=True
-                ))
+                cmds.xform(grp, ws=True, t=cmds.xform(fJnt, q=True, ws=True, t=True))
+                cmds.xform(grp, ws=True, ro=cmds.xform(fJnt, q=True, ws=True, ro=True))
 
                 cmds.parent(oGrp, ctrl)
 
@@ -191,13 +211,13 @@ class FK(motionBase.MotionModuleBase):
                 sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
         if self.addOffsets:
             for og in oGrps:
-                        cmds.parent(og, FKCtrls[index])
-                        index+=1        
+                cmds.parent(og, FKCtrls[index])
+                index += 1
             index = 0
         for fg in FKGrps:
             if fg != FKGrps[-1]:
-                cmds.parent(FKGrps[index+1], FKCtrls[index])
-                index+=1
+                cmds.parent(FKGrps[index + 1], FKCtrls[index])
+                index += 1
 
         cmds.parent([FKGrps[0], FKJoints[0]], self.plugParent)
         self.addSocketMetaData()

@@ -6,8 +6,4 @@ import rigsys.modules.utility as utility
 import rigsys.modules.export as export
 
 
-allModuleTypes = {}
-allModuleTypes.update(motion.moduleTypes)
-allModuleTypes.update(deformer.moduleTypes)
-allModuleTypes.update(utility.moduleTypes)
-allModuleTypes.update(export.moduleTypes)
+__all__ = ["motion", "deformer", "utility", "export"]

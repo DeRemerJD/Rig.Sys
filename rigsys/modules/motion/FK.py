@@ -16,14 +16,14 @@ class FK(motionBase.MotionModuleBase):
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, 
-                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+        super().__init__(rig, side, label, buildOrder, isMuted,
+                         parent, mirror, bypassProxiesOnly, selectedPlug,
                          selectedSocket, aimAxis, upAxis)
 
         self.addOffsets = addOffsets
         self.ctrlShapes = ctrlShapes
         self.ctrlScale = ctrlScale
-        if self.ctrlScale == None:
+        if self.ctrlScale is None:
             self.ctrlScale = [1.0, 1.0, 1.0]
         self.segments = segments
 
@@ -147,12 +147,12 @@ class FK(motionBase.MotionModuleBase):
             FKGrps.append(grp)
             FKCtrls.append(ctrl)
             ctrlObject = ctrlCrv.Ctrl(
-                    node=ctrl,
-                    shape="circle",
-                    scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
-                    offset=[0, 0, 0],
-                    orient=[0, 90, 0]
-                )
+                node=ctrl,
+                shape="circle",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 90, 0]
+            )
             ctrlObject.giveCtrlShape()
 
             if self.addOffsets:
@@ -163,7 +163,7 @@ class FK(motionBase.MotionModuleBase):
                 ctrlObject = ctrlCrv.Ctrl(
                     node=ctrl,
                     shape="square",
-                    scale=[self.ctrlScale[0]*0.85, self.ctrlScale[1]*0.85, self.ctrlScale[2]*0.85],
+                    scale=[self.ctrlScale[0] * 0.85, self.ctrlScale[1] * 0.85, self.ctrlScale[2] * 0.85],
                     offset=[0, 0, 0],
                     orient=[0, 90, 0]
                 )
@@ -191,13 +191,13 @@ class FK(motionBase.MotionModuleBase):
                 sc = cmds.scaleConstraint(ctrl, fJnt, n=f"{fJnt}_sc", mo=0)
         if self.addOffsets:
             for og in oGrps:
-                        cmds.parent(og, FKCtrls[index])
-                        index+=1        
+                cmds.parent(og, FKCtrls[index])
+                index += 1
             index = 0
         for fg in FKGrps:
             if fg != FKGrps[-1]:
-                cmds.parent(FKGrps[index+1], FKCtrls[index])
-                index+=1
+                cmds.parent(FKGrps[index + 1], FKCtrls[index])
+                index += 1
 
         cmds.parent([FKGrps[0], FKJoints[0]], self.plugParent)
         self.addSocketMetaData()

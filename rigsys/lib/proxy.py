@@ -71,9 +71,7 @@ class Proxy:
 
     def buildProxyModule(self):
         if cmds.objExists("{}_{}_proxyMODULE".format(self.side, self.label)):
-             self.proxyModuleNode = "{}_{}_proxyMODULE".format(self.side, self.label)
+            self.proxyModuleNode = "{}_{}_proxyMODULE".format(self.side, self.label)
         else:
             self.proxyModuleNode = cmds.createNode("transform", n="{}_{}_proxyMODULE".format(self.side, self.label))
             cmds.parent(self.proxyModuleNode, "proxies")
-
-            

@@ -37,16 +37,17 @@ import rigsys.lib.nurbs as nurbs
 
 logger = logging.getLogger(__name__)
 
-def writeSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
+
+def writeSCLS(objects: list = [], path: str = "", suffix: str = "scls"):
     if len(objects) == 0:
         objects = cmds.ls(sl=1)
         if len(objects) == 0:
             cmds.error("No Objects provided or selected.")
     if path == "":
         cmds.error("Path is empty")
-    
+
     for obj in objects:
-        cmds.deformerWeights(f"{obj}_{suffix}.json", 
+        cmds.deformerWeights(f"{obj}_{suffix}.json",
                              ex=True,
                              p=path,
                              deformer=f"{obj}_{suffix}",
@@ -56,16 +57,17 @@ def writeSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
                              dv=1.0
                              )
 
-def readSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
+
+def readSCLS(objects: list = [], path: str = "", suffix: str = "scls"):
     if len(objects) == 0:
         objects = cmds.ls(sl=1)
         if len(objects) == 0:
             cmds.error("No Objects provided or selected.")
     if path == "":
         cmds.error("Path is empty")
-    
+
     for obj in objects:
-        cmds.deformerWeights(f"{obj}_{suffix}.json", 
+        cmds.deformerWeights(f"{obj}_{suffix}.json",
                              im=True,
                              p=path,
                              deformer=f"{obj}_{suffix}",
@@ -75,7 +77,8 @@ def readSCLS(objects:list=[], path:str = "", suffix:str = "scls"):
                              dv=1.0
                              )
 
-def createSCLS(object:str = "", joints:list = [], suffix:str = "scls", maxInfluences=4):
+
+def createSCLS(object: str = "", joints: list = [], suffix: str = "scls", maxInfluences=4):
     if object == "":
         object = cmds.ls(sl=1)[-1]
         if len(object) == 0:
@@ -86,12 +89,13 @@ def createSCLS(object:str = "", joints:list = [], suffix:str = "scls", maxInflue
         if len(joints) == 0:
             cmds.error("Mo Joints Provided")
 
-    cmds.skinCluster(joints, 
-                     object, 
+    cmds.skinCluster(joints,
+                     object,
                      n=f"{object}_{suffix}",
                      tsb=True,
                      mi=maxInfluences)
-    
+
+
 def getSelectedJoints():
     print(cmds.ls(sl=1))
 

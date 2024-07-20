@@ -11,15 +11,15 @@ import maya.cmds as cmds
 class Limb(motionBase.MotionModuleBase):
     """Limb Motion Module."""
 
-    def __init__(self, rig, side="", label="", 
+    def __init__(self, rig, side="", label="",
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None,
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
-                 aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True, 
-                 clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
+                 aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True,
+                 clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11,
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
-                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+                         parent, mirror, bypassProxiesOnly, selectedPlug,
                          selectedSocket, aimAxis, upAxis)
 
         self.addOffset = addOffset
@@ -180,9 +180,10 @@ class Limb(motionBase.MotionModuleBase):
         # and aim those joints. Finally with the shoulder rotations set the clav will
         # be aimed and we can remove the constraint, parent the shoulder to the clavicle
         # and then freeze xforms
-        ac = cmds.aimConstraint(baseJoints[1], baseJoints[0], aim=aimVec, 
-                        u=upVec, wut="objectrotation", wu=upVec, wuo=baseJoints[1])[0]        
-        
+        ac = cmds.aimConstraint(
+            baseJoints[1], baseJoints[0], aim=aimVec, u=upVec, wut="objectrotation", wu=upVec, wuo=baseJoints[1]
+        )[0]
+
         cmds.parent(baseJoints[2], baseJoints[1])
         cmds.parent(baseJoints[3], baseJoints[2])
 
@@ -419,7 +420,6 @@ class Limb(motionBase.MotionModuleBase):
             offsetVal = axisMultOffset * xyz
             offsetArray.append(offsetVal)
 
-
         endCtrlObject = ctrlCrv.Ctrl(
             node=endCtrl,
             shape="box",
@@ -510,8 +510,8 @@ class Limb(motionBase.MotionModuleBase):
 
         oc = cmds.orientConstraint(baseJoints[2], loRollEnd, n=f"{loRollEnd}_oc", mo=0)
         cmds.parent(loIK, baseJoints[3])
-        
-        #Cleanup
+
+        # Cleanup
         # cmds.parent([upIK, loIK], self.moduleUtilities)
 
         return [upRollStart, upRollEnd], [loRollStart, loRollEnd], upIK, loIK
@@ -608,7 +608,7 @@ class Limb(motionBase.MotionModuleBase):
             ribbonOffsets.append(offset)
             ribbonControls.append(ctrl)
             ribbonJoints.append(jnt)
-            self.sockets[f"Ribbon_{i}"] = jnt 
+            self.sockets[f"Ribbon_{i}"] = jnt
             ctrlObject = ctrlCrv.Ctrl(
                 node=ctrl,
                 shape="circle",
@@ -671,14 +671,13 @@ class Limb(motionBase.MotionModuleBase):
 
         ptc = cmds.parentConstraint(
             midOffset, ribbonGroups[3], n=f"{ribbonGroups[3]}_ptc", mo=0)
-        
-        
+
         posAim = self.aimAxis
         negAim = jointTools.axisFlip(self.aimAxis)
         posAimVec = jointTools.axisToVector(posAim)
         negAimVec = jointTools.axisToVector(negAim)
 
-        # posUp = self.upAxis     
+        # posUp = self.upAxis
         # posUpVec = jointTools.axisToVector(posUp)
         crossAxis = jointTools.getCrossAxis(self.aimAxis, self.upAxis)
         crossVec = jointTools.axisToVector(crossAxis)

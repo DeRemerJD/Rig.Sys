@@ -17,8 +17,8 @@ class FKSegment(motionBase.MotionModuleBase):
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
-        super().__init__(rig, side, label, buildOrder, isMuted, 
-                         parent, mirror, bypassProxiesOnly, selectedPlug, 
+        super().__init__(rig, side, label, buildOrder, isMuted,
+                         parent, mirror, bypassProxiesOnly, selectedPlug,
                          selectedSocket, aimAxis, upAxis)
 
         if ctrlScale is None:

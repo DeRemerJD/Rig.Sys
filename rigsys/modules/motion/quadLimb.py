@@ -772,6 +772,8 @@ class QuadLimb(motionBase.MotionModuleBase):
                                aimAxis=self.aimAxis, upAxis=self.upAxis)
             index += 1
             cmds.makeIdentity([ball, toe], a=True)   
+            self.bindJoints[base[0]] = baseJoints[-1]
+            self.bindJoints[base[1]] = base[0]
 
         inverse = ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
         iJnts = []
@@ -788,7 +790,7 @@ class QuadLimb(motionBase.MotionModuleBase):
             index += 1
             self.sockets[i] = jnt
             if len(iJnts) == 1:
-                self.bindJoints[jnt] = baseJoints[-1]
+                self.bindJoints[jnt] = baseJoints[-3]
             else:
                 self.bindJoints[jnt] = iJnts[len(iJnts) - 2]
 
@@ -832,8 +834,10 @@ class QuadLimb(motionBase.MotionModuleBase):
                 cmds.setAttr(f"{rollMD}.input2{i}", -1)
             else:
                 cmds.setAttr(f"{rollMD}.input2{i}", 1)
-
-        cmds.setAttr(f"{bankCD}.operation", 2)
+        if self.side == "L":
+            cmds.setAttr(f"{bankCD}.operation", 2)
+        else:
+            cmds.setAttr(f"{bankCD}.operation", 4)
         cmds.setAttr(f"{raiseCD}.operation", 4)
 
         cmds.connectAttr(f"{globalCtrl}.translateZ", f"{rollMD}.input1X")

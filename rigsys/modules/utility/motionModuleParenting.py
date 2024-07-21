@@ -56,7 +56,7 @@ class MotionModuleParenting(UtilityModuleBase):
             constructedLabel = f"{module.side}_{module.label}"
             if constructedLabel != f"{motionModules[0].side}_{motionModules[0].label}":
                 # World Parenting
-                worldSocket = list(motionModules[0].sockets.values())[0]
+                worldSocket = list(motionModules[0].sockets.values())[-1]
                 ptc = cmds.parentConstraint(worldSocket, module.worldParent, mo=0)[0]
                 cmds.setAttr(f"{ptc}.interpType", 2)
                 sc = cmds.scaleConstraint(worldSocket, module.worldParent, mo=0)

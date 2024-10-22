@@ -272,14 +272,17 @@ class Lips(motionBase.MotionModuleBase):
         for i in range(self.numberOfJoints):
             if uPos > 1.0:
                 uPos = 1.0
+            if i == ((self.numberOfJoints - 1)/2)-1:
+                indexing = 0
+                print(f"{indexing} : {i}")
+            print(indexing)
             if i <= ((self.numberOfJoints-2) / 2):
                 if i == 0:
                     jLabel = f"L_{self.label}_Corner"
 
                     cinfo = cmds.createNode("pointOnCurveInfo", n=f"UpLip_{i}_cInfo")                    
                     lCorner = cmds.createNode("joint",
-                                              n=jLabel)
-                    
+                                              n=jLabel)                    
                     cmds.connectAttr(f"{upCurve}.worldSpace[0]", f"{cinfo}.inputCurve")
                     cmds.connectAttr(f"{cinfo}.result.position", f"{lCorner}.translate")
                     cmds.setAttr(f"{cinfo}.parameter", uPos)
@@ -326,8 +329,7 @@ class Lips(motionBase.MotionModuleBase):
                     cornerJoints.append(rCorner)
                     cInfoNodes.append(cinfo)
                 # Make Right Joints
-                else:
-                    indexing -= 1
+                else:                    
                     jUpLabel = f"R_{self.label}_Up_{indexing}"
                     jLoLabel = f"R_{self.label}_Lo_{indexing}"
 
@@ -348,6 +350,7 @@ class Lips(motionBase.MotionModuleBase):
                     loLipJoints.append(loJnt)
                     cInfoNodes.append(upcinfo)
                     cInfoNodes.append(locinfo)
+                    indexing += 1
             else:
                 # Make Midde Joint
                 jUpLabel = f"M_{self.label}_Up"
@@ -371,7 +374,7 @@ class Lips(motionBase.MotionModuleBase):
                 cInfoNodes.append(upcinfo)
                 cInfoNodes.append(locinfo)
             uPos += infl
-        
+
         # Make position dict
         jPos = {}
         for u, l in zip(upLipJoints, loLipJoints):
@@ -379,7 +382,7 @@ class Lips(motionBase.MotionModuleBase):
             jPos[l] = cmds.xform(l, q=True, ws=True, t=True)
         jPos[cornerJoints[0]] = cmds.xform(cornerJoints[0], q=True, ws=True, t=True)
         jPos[cornerJoints[1]] = cmds.xform(cornerJoints[1], q=True, ws=True, t=True)
-
+        
         cmds.delete(cInfoNodes)
         cmds.delete([upCurve, loCurve])
         for j, t in jPos.items():
@@ -400,14 +403,14 @@ class Lips(motionBase.MotionModuleBase):
         orderedUpLipR = upLipJoints[int(lipRange)+1::]
         orderedLoLipR = loLipJoints[int(lipRange)+1::]
 
-        jointTools.aimSequence(targets=orderedUpLipL, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-                               aimAxis=self.aimAxis, upAxis=self.upAxis)
-        jointTools.aimSequence(targets=orderedLoLipL, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-                               aimAxis=self.aimAxis, upAxis=self.upAxis)
-        jointTools.aimSequence(targets=orderedUpLipR, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-                               aimAxis=self.aimAxis, upAxis=jointTools.axisFlip(self.upAxis))        
-        jointTools.aimSequence(targets=orderedLoLipR, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-                               aimAxis=self.aimAxis, upAxis=jointTools.axisFlip(self.upAxis))
+        # jointTools.aimSequence(targets=orderedUpLipL, upObj=f"{self.side}_{self.label}_UpVector_proxy",
+        #                        aimAxis=self.aimAxis, upAxis=self.upAxis, upType="objectrotation", vector=self.upAxis)
+        # jointTools.aimSequence(targets=orderedLoLipL, upObj=f"{self.side}_{self.label}_UpVector_proxy",
+        #                        aimAxis=self.aimAxis, upAxis=self.upAxis, upType="objectrotation", vector=self.upAxis)
+        # jointTools.aimSequence(targets=orderedUpLipR, upObj=f"{self.side}_{self.label}_UpVector_proxy",
+        #                        aimAxis=self.aimAxis, upAxis=jointTools.axisFlip(self.upAxis), upType="objectrotation", vector=self.upAxis)        
+        # jointTools.aimSequence(targets=orderedLoLipR, upObj=f"{self.side}_{self.label}_UpVector_proxy",
+        #                        aimAxis=self.aimAxis, upAxis=jointTools.axisFlip(self.upAxis), upType="objectrotation", vector=self.upAxis)
         oc = cmds.orientConstraint([upLipJoints[int(lipRange)-1], loLipJoints[int(lipRange)-1]], cornerJoints[0], mo=0)[0]
         cmds.setAttr(f"{oc}.interpType", 2)
         cmds.delete(oc)
@@ -548,25 +551,27 @@ class Lips(motionBase.MotionModuleBase):
         loLOffsets = loOffsets[:int(lipRange):]
         loLOffsets.insert(0, loOffsets[int(lipRange)])
         upROffsets = upOffsets[int(lipRange)+1::]
-        upROffsets.append(upOffsets[int(lipRange)])
+        upROffsets.insert(0, upOffsets[int(lipRange)])
         loROffsets = loOffsets[int(lipRange)+1::]
-        loROffsets.append(loOffsets[int(lipRange)])
-        upROffsets.reverse()
-        loROffsets.reverse()
+        loROffsets.insert(0, loOffsets[int(lipRange)])
+        # upROffsets.reverse()
+        # loROffsets.reverse()
+        print(upLOffsets)
         print(upROffsets)
+
         for i in range(len(upLOffsets)-1):
             ac = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=1, 
-                                    n=f"{upLOffsets[i+1]}_ac", sk="x", aim=jointTools.axisToVector(self.aimAxis),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=upMiddleCtrl)
+                                    n=f"{upLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object")
             ac = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=1, 
-                                    n=f"{loLOffsets[i+1]}_ac", sk="x", aim=jointTools.axisToVector(self.aimAxis),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=loMiddleCtrl)
+                                    n=f"{loLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object")
             ac = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=1, 
-                                    n=f"{upROffsets[i+1]}_ac", sk="x", aim=jointTools.axisToVector(self.aimAxis),
-                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upMiddleCtrl)
+                                    n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(self.aimAxis),
+                                    u=jointTools.axisToVector(self.upAxis), wuo=upROffsets[i], wut="object")
             ac = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=1, 
-                                    n=f"{loROffsets[i+1]}_ac", sk="x", aim=jointTools.axisToVector(self.aimAxis),
-                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loMiddleCtrl)
+                                    n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(self.aimAxis),
+                                    u=jointTools.axisToVector((self.upAxis)), wuo=loROffsets[i], wut="object")
             print(i)
 
         inflCalc = 0.0
@@ -574,9 +579,6 @@ class Lips(motionBase.MotionModuleBase):
 
         for i in range(int(lipRange)):
             inflCalc +=inflVal
-            # if i == 0 or i == lipRange+1:
-            # if i != int(lipRange+1):
-            #     pass
             # Make lip MD / PMA
             mlUpMd = cmds.createNode("multiplyDivide", n=f"{upLipJoints[:int(lipRange):][i]}_M_MD")
             lUpMd = cmds.createNode("multiplyDivide", n=f"{upLipJoints[:int(lipRange):][i]}_L_MD")
@@ -618,37 +620,38 @@ class Lips(motionBase.MotionModuleBase):
             cmds.connectAttr(f"{rLoPma}.output3D", f"{loOffsets[int(lipRange)+1::][i]}.translate")
 
             # Set Calc Values
-            sine = self.easeInOutSine(input=inflCalc)
-            cubicOut = self.easeInCubic(input=inflCalc)
+            sine = self.easeInCubic(input=inflCalc)
+            cubicIn = self.easeInCubic(input=inflCalc)
+            sineIn = self.easeInSine(input=inflCalc)
 
             # Up Left
-            cmds.setAttr(f"{mlUpMd}.input2.input2X", 1.0-cubicOut)
-            cmds.setAttr(f"{mlUpMd}.input2.input2Y", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{mlUpMd}.input2.input2Z", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{lUpMd}.input2.input2X", cubicOut)
-            cmds.setAttr(f"{lUpMd}.input2.input2Y", (cubicOut)*-1)
-            cmds.setAttr(f"{lUpMd}.input2.input2Z", (cubicOut)*-1)
+            cmds.setAttr(f"{mlUpMd}.input2.input2X", 1.0-sineIn)
+            cmds.setAttr(f"{mlUpMd}.input2.input2Y", (1.0-cubicIn))
+            cmds.setAttr(f"{mlUpMd}.input2.input2Z", (1.0-cubicIn))
+            cmds.setAttr(f"{lUpMd}.input2.input2X", sineIn)
+            cmds.setAttr(f"{lUpMd}.input2.input2Y", (cubicIn))
+            cmds.setAttr(f"{lUpMd}.input2.input2Z", (cubicIn))
             # Lo Left
-            cmds.setAttr(f"{mlLoMd}.input2.input2X", 1.0-cubicOut)
-            cmds.setAttr(f"{mlLoMd}.input2.input2Y", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{mlLoMd}.input2.input2Z", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{lLoMd}.input2.input2X", cubicOut)
-            cmds.setAttr(f"{lLoMd}.input2.input2Y", (cubicOut)*-1)
-            cmds.setAttr(f"{lLoMd}.input2.input2Z", (cubicOut)*-1)
+            cmds.setAttr(f"{mlLoMd}.input2.input2X", 1.0-sineIn)
+            cmds.setAttr(f"{mlLoMd}.input2.input2Y", (1.0-cubicIn))
+            cmds.setAttr(f"{mlLoMd}.input2.input2Z", (1.0-cubicIn))
+            cmds.setAttr(f"{lLoMd}.input2.input2X", sineIn)
+            cmds.setAttr(f"{lLoMd}.input2.input2Y", (cubicIn))
+            cmds.setAttr(f"{lLoMd}.input2.input2Z", (cubicIn))
             # Up Right
-            cmds.setAttr(f"{mrUpMd}.input2.input2X", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{mrUpMd}.input2.input2Y", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{mrUpMd}.input2.input2Z", 1.0-cubicOut)
-            cmds.setAttr(f"{rUpMd}.input2.input2X", (cubicOut)*-1)
-            cmds.setAttr(f"{rUpMd}.input2.input2Y", (cubicOut)*-1)
-            cmds.setAttr(f"{rUpMd}.input2.input2Z",cubicOut)
+            cmds.setAttr(f"{mrUpMd}.input2.input2X", (1.0-sineIn))
+            cmds.setAttr(f"{mrUpMd}.input2.input2Y", (1.0-cubicIn))
+            cmds.setAttr(f"{mrUpMd}.input2.input2Z", 1.0-cubicIn)
+            cmds.setAttr(f"{rUpMd}.input2.input2X", (sineIn))
+            cmds.setAttr(f"{rUpMd}.input2.input2Y", (cubicIn))
+            cmds.setAttr(f"{rUpMd}.input2.input2Z", cubicIn)
             # Lo Right
-            cmds.setAttr(f"{mrLoMd}.input2.input2X", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{mrLoMd}.input2.input2Y", (1.0-cubicOut)*-1)
-            cmds.setAttr(f"{mrLoMd}.input2.input2Z", 1.0-cubicOut)
-            cmds.setAttr(f"{rLoMd}.input2.input2X", (cubicOut)*-1)
-            cmds.setAttr(f"{rLoMd}.input2.input2Y", (cubicOut)*-1)
-            cmds.setAttr(f"{rLoMd}.input2.input2Z", cubicOut)
+            cmds.setAttr(f"{mrLoMd}.input2.input2X", (1.0-sineIn))
+            cmds.setAttr(f"{mrLoMd}.input2.input2Y", (1.0-cubicIn))
+            cmds.setAttr(f"{mrLoMd}.input2.input2Z", 1.0-cubicIn)
+            cmds.setAttr(f"{rLoMd}.input2.input2X", (sineIn))
+            cmds.setAttr(f"{rLoMd}.input2.input2Y", (cubicIn))
+            cmds.setAttr(f"{rLoMd}.input2.input2Z", cubicIn)
 
         self.addSocketMetaData()
 
@@ -661,5 +664,9 @@ class Lips(motionBase.MotionModuleBase):
     def easeInCubic(self, input = 1.0):
         return input * input * input
     
-    def easeOutCirc(self, input = 1.0):
-        return m.sqrt(1 - m.pow(input - 1, 2))
+    def easeInCirc(self, input = 1.0):
+        return 1 - m.sqrt(1 - m.pow(input, 2))
+    
+    def easeInSine(self, input = 1.0):
+        return 1 - m.cos((input*m.pi)/2)
+    

@@ -274,8 +274,6 @@ class Lips(motionBase.MotionModuleBase):
                 uPos = 1.0
             if i == ((self.numberOfJoints - 1)/2)-1:
                 indexing = 0
-                print(f"{indexing} : {i}")
-            print(indexing)
             if i <= ((self.numberOfJoints-2) / 2):
                 if i == 0:
                     jLabel = f"L_{self.label}_Corner"
@@ -390,11 +388,7 @@ class Lips(motionBase.MotionModuleBase):
 
         # Aim Joints.
         lipRange = (len(upLipJoints)-1) / 2
-        print(upLipJoints)
-        print(lipRange)
-        print(upLipJoints[int(lipRange)-1])
-        print(upLipJoints[int(lipRange)+1])
-        print("###########")
+
         # Order lists
         orderedUpLipL = upLipJoints[:int(lipRange):]
         orderedUpLipL.insert(0, upLipJoints[int(lipRange)])
@@ -431,6 +425,7 @@ class Lips(motionBase.MotionModuleBase):
         cornerParents = []
         cornerOffsets = []
         cornerCtrls = []
+        ptcs = []
 
         # Make control and logic.
         for upJnt, loJnt in zip(upLipJoints, loLipJoints):
@@ -444,10 +439,13 @@ class Lips(motionBase.MotionModuleBase):
             loCtrl = cmds.createNode("transform", n=f"{loJnt}_CTRL", p=loOffset)
             cmds.xform(loPar, ws=True, m=cmds.xform(loJnt, q=True, ws=True, m=True))
 
-            ptc = cmds.parentConstraint(upCtrl, upJnt, mo=0, n=f"{upJnt}_ptc")[0]
-            cmds.setAttr(f"{ptc}.interpType", 2)
-            ptc = cmds.parentConstraint(loCtrl, loJnt, mo=0, n=f"{loJnt}_ptc")[0]
-            cmds.setAttr(f"{ptc}.interpType", 2)
+            ptc_u = cmds.parentConstraint(upCtrl, upJnt, mo=0, n=f"{upJnt}_ptc")[0]
+            cmds.setAttr(f"{ptc_u}.interpType", 2)
+            ptc_l = cmds.parentConstraint(loCtrl, loJnt, mo=0, n=f"{loJnt}_ptc")[0]
+            cmds.setAttr(f"{ptc_l}.interpType", 2)
+
+            ptcs.append(ptc_u)
+            ptcs.append(ptc_l)
             up = ctrlCrv.Ctrl(
             node=upCtrl,
             shape="sphere",
@@ -478,6 +476,7 @@ class Lips(motionBase.MotionModuleBase):
             cmds.xform(par, ws=True, m=cmds.xform(corner, q=True, ws=True, m=True))
             ptc = cmds.parentConstraint(ctrl, corner, mo=0, n=f"{corner}_ptc")[0]
             cmds.setAttr(f"{ptc}.interpType", 2)
+            ptcs.append(ptc)
 
             cornerParents.append(par)
             cornerOffsets.append(offset)
@@ -489,15 +488,23 @@ class Lips(motionBase.MotionModuleBase):
             offset=[0, 0, 0]
             )
             crnr.giveCtrlShape()
+        for up, lp in zip(upParents[int(lipRange+1)::], loParents[int(lipRange+1)::]):
+            cmds.setAttr(f"{up}.scaleX", -1)
+            cmds.setAttr(f"{lp}.scaleX", -1)
+        cmds.setAttr(f"{cornerParents[1]}.scaleX", -1)
+
+        # Side Inversion
+        lGroup = cmds.createNode("transform", n=f"L_{self.label}_controls")
+        rGroup = cmds.createNode("transform", n=f"R_{self.label}_controls")
+        cmds.parent(upParents[:int(lipRange):], lGroup)
+        cmds.parent(loParents[:int(lipRange):], lGroup)
+        cmds.parent(cornerParents[0], lGroup)
+        cmds.setAttr(f"{rGroup}.scaleX", -1)
+        cmds.parent(upParents[int(lipRange+1)::], rGroup)
+        cmds.parent(loParents[int(lipRange+1)::], rGroup)
+        cmds.parent(cornerParents[1], rGroup)
 
         # Make constraints
-        print("FOR TRACKING")
-        print(upOffsets)
-        print(loOffsets)
-        print(upOffsets[:int(lipRange):])
-
-        
-
         upMiddlePar = cmds.createNode("transform", n=f"{upLipJoints[int(lipRange)]}_Main_grp")
         upMiddleCtrl = cmds.createNode("transform", n=f"{upLipJoints[int(lipRange)]}_Main_CTRL", p=upMiddlePar)
         loMiddlePar = cmds.createNode("transform", n=f"{loLipJoints[int(lipRange)]}_Main_grp")
@@ -539,6 +546,10 @@ class Lips(motionBase.MotionModuleBase):
         cmds.xform(loMiddlePar, ws=True, t=cmds.xform(loLipJoints[int(lipRange)], q=True, ws=True, t=True))
         cmds.xform(lCornerPar, ws=True, t=cmds.xform(cornerJoints[0], q=True, ws=True, t=True))
         cmds.xform(rCornerPar, ws=True, t=cmds.xform(cornerJoints[1], q=True, ws=True, t=True))
+        cmds.setAttr(f"{rCornerPar}.scaleX", -1)
+
+        cmds.parent(lCornerPar, lGroup)
+        cmds.parent(rCornerPar, rGroup)
 
         ptc = cmds.parentConstraint(upMiddleCtrl, upParents[int(lipRange)], mo=1, n=f"{upParents[int(lipRange)]}_ptc")
         ptc = cmds.parentConstraint(loMiddleCtrl, loParents[int(lipRange)], mo=1, n=f"{loParents[int(lipRange)]}_ptc")
@@ -554,25 +565,47 @@ class Lips(motionBase.MotionModuleBase):
         upROffsets.insert(0, upOffsets[int(lipRange)])
         loROffsets = loOffsets[int(lipRange)+1::]
         loROffsets.insert(0, loOffsets[int(lipRange)])
-        # upROffsets.reverse()
-        # loROffsets.reverse()
-        print(upLOffsets)
-        print(upROffsets)
-
+        acs = []
         for i in range(len(upLOffsets)-1):
-            ac = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=1, 
+            ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=0, 
                                     n=f"{upLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object")
-            ac = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=1, 
+                                    u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object")[0]
+            ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=0, 
                                     n=f"{loLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object")
-            ac = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=1, 
-                                    n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(self.aimAxis),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=upROffsets[i], wut="object")
-            ac = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=1, 
-                                    n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(self.aimAxis),
-                                    u=jointTools.axisToVector((self.upAxis)), wuo=loROffsets[i], wut="object")
-            print(i)
+                                    u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object")[0]
+            ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=0, 
+                                    n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upROffsets[i], wut="object")[0]
+            ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=0 , 
+                                    n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object")[0]
+            acs.extend([ac_ul, ac_ll, ac_ur, ac_lr])
+        cmds.delete(acs)
+        cmds.delete(ptcs)
+        cmds.makeIdentity(upLipJoints, a=True)
+        cmds.makeIdentity(loLipJoints, a=True)
+        cmds.makeIdentity(cornerJoints, a=True)
+        
+        for i in range(len(upLipJoints)):# zip(upLipJoints, loLipJoints):
+            ptc = cmds.parentConstraint(upCtrls[i], upLipJoints[i], mo=0, n=f"{upLipJoints[i]}_ptc")[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            ptc = cmds.parentConstraint(loCtrls[i], loLipJoints[i], mo=0, n=f"{loLipJoints[i]}_ptc")[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+        for i in range(2):
+            ptc = cmds.parentConstraint(cornerCtrls[i], cornerJoints[i], n=f"{cornerJoints[i]}_ptc", mo=0)
+        for i in range(len(upLOffsets)-1):
+            ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=0, 
+                                    n=f"{upLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object")[0]
+            ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=0, 
+                                    n=f"{loLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object")[0]
+            ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=0, 
+                                    n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upROffsets[i], wut="object")[0]
+            ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=0 , 
+                                    n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
+                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object")[0]
 
         inflCalc = 0.0
         inflVal = 1 / (lipRange+1)
@@ -639,14 +672,14 @@ class Lips(motionBase.MotionModuleBase):
             cmds.setAttr(f"{lLoMd}.input2.input2Y", (cubicIn))
             cmds.setAttr(f"{lLoMd}.input2.input2Z", (cubicIn))
             # Up Right
-            cmds.setAttr(f"{mrUpMd}.input2.input2X", (1.0-sineIn))
+            cmds.setAttr(f"{mrUpMd}.input2.input2X", (1.0-sineIn)*-1)
             cmds.setAttr(f"{mrUpMd}.input2.input2Y", (1.0-cubicIn))
             cmds.setAttr(f"{mrUpMd}.input2.input2Z", 1.0-cubicIn)
             cmds.setAttr(f"{rUpMd}.input2.input2X", (sineIn))
             cmds.setAttr(f"{rUpMd}.input2.input2Y", (cubicIn))
             cmds.setAttr(f"{rUpMd}.input2.input2Z", cubicIn)
             # Lo Right
-            cmds.setAttr(f"{mrLoMd}.input2.input2X", (1.0-sineIn))
+            cmds.setAttr(f"{mrLoMd}.input2.input2X", (1.0-sineIn)*-1)
             cmds.setAttr(f"{mrLoMd}.input2.input2Y", (1.0-cubicIn))
             cmds.setAttr(f"{mrLoMd}.input2.input2Z", 1.0-cubicIn)
             cmds.setAttr(f"{rLoMd}.input2.input2X", (sineIn))

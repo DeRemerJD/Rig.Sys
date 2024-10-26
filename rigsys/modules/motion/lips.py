@@ -686,6 +686,21 @@ class Lips(motionBase.MotionModuleBase):
             cmds.setAttr(f"{rLoMd}.input2.input2Y", (cubicIn))
             cmds.setAttr(f"{rLoMd}.input2.input2Z", cubicIn)
 
+        '''
+        Ight, next up. Mouth controls, fuck me.
+
+        3 Control (plus optional jaw influence if added as a var)
+        UpMouth/LoMouth: Ctrl drives a transform, child of transform is joint. Blends between the 
+                Up/LoMouth ctrl at the same CubicIn val as the UpLip_Main/LoLip_Main controls
+                as well as 50/50 blending the Corner_Main controls. Joint ptc 50/50 the Mouth parent
+        Mouth: ctrl directly drives the t/r/s of the UpMouth/LoMouth joint. 
+        If there is a jaw, Mouth and loMouth become children PTC of jaw
+        '''
+
+        mouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_grp")
+        mouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_CTRL", p=mouthPar)
+        mouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_Mouth", p=mouthCtrl)
+
         self.addSocketMetaData()
 
     def easeInOutSine(self, input = 1.0):

@@ -73,22 +73,6 @@ class Lips(motionBase.MotionModuleBase):
                 name="Mouth",
                 plug=True
             ),
-            "UpMouth": proxy.Proxy(
-                position=[0, 10, 0],
-                rotation=[0, 0, 0],
-                side="M",
-                label=self.label,
-                name="UpMouth",
-                parent="Mouth"
-            ),
-            "LoMouth": proxy.Proxy(
-                position=[0, 10, 0],
-                rotation=[0, 0, 0],
-                side="M",
-                label=self.label,
-                name="LoMouth",
-                parent="Mouth"
-            ),
             "UpVector": proxy.Proxy(
                 position=[0, 0, 10],
                 rotation=[0, 0, 0],
@@ -700,6 +684,83 @@ class Lips(motionBase.MotionModuleBase):
         mouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_grp")
         mouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_CTRL", p=mouthPar)
         mouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_Mouth", p=mouthCtrl)
+
+        upMouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_UpMouth_grp")
+        upMouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_UpMouth_CTRL", p=upMouthPar)
+        upMouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_UpMouth", p=upMouthCtrl)
+
+        loMouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_LoMouth_grp")
+        loMouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_LoMouth_CTRL", p=loMouthPar)
+        loMouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_LoMouth", p=loMouthCtrl)
+
+        cmds.xform(mouthPar, ws=True, t=cmds.xform(
+            f"{self.side}_{self.label}_{self.proxies['Mouth'].name}_proxy",
+            q=True, t=True
+        ))
+        cmds.xform(upMouthPar, ws=True, t=cmds.xform(
+            f"{self.side}_{self.label}_{self.proxies['Mouth'].name}_proxy",
+            q=True, t=True
+        ))
+        cmds.xform(loMouthPar, ws=True, t=cmds.xform(
+            f"{self.side}_{self.label}_{self.proxies['Mouth'].name}_proxy",
+            q=True, t=True
+        ))
+
+        # Ok some fucking madness here I'll document later.... fuck me
+        inflCalc = 0.0
+        inflVal = 1 / (lipRange+1)
+        rangeValues = []
+        for i in range(int(lipRange)):
+            inflCalc += inflVal
+            sineIn = self.easeInSine(input=inflCalc)
+            cubicIn = self.easeInCubic(input=inflCalc)
+            circIn = self.easeInCirc(input=inflCalc)
+            rangeValues.append(circIn)
+        print("#############")
+        print(rangeValues)
+        index = -1
+        for i in range((int(lipRange))):
+            #pass
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upParents[:int(lipRange):][i],
+                                        n=f"{upParents[:int(lipRange):][i]}_ptc", mo=1)[0]
+            
+            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1.0-rangeValues[i])
+            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", rangeValues[i])
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upParents[:int(lipRange):-1][i],
+                                        n=f"{upParents[:int(lipRange):-1][i]}_ptc", mo=1)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1.0-rangeValues[index])
+            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", rangeValues[index])
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loParents[:int(lipRange):][i],
+                                        n=f"{loParents[:int(lipRange):][i]}_ptc", mo=1)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[i])
+            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[i])
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loParents[:int(lipRange):-1][i],
+                                        n=f"{loParents[:int(lipRange):-1][i]}_ptc", mo=1)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[index])
+            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[index])
+            index-=1
+        print(upParents[int(lipRange)])
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upOffsets[int(lipRange)],
+                                        n=f"{upParents[int(lipRange)]}_ptc", mo=1)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
+        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loOffsets[int(lipRange)],
+                                        n=f"{loParents[int(lipRange)]}_ptc", mo=1)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
+        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+        for i in [lCornerPar, rCornerPar]:
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], i,
+                                            n=f"{i}_ptc", mo=1)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0.5)
+            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0.5)
+
+
 
         self.addSocketMetaData()
 

@@ -535,8 +535,8 @@ class Lips(motionBase.MotionModuleBase):
         cmds.parent(lCornerPar, lGroup)
         cmds.parent(rCornerPar, rGroup)
 
-        ptc = cmds.parentConstraint(upMiddleCtrl, upParents[int(lipRange)], mo=1, n=f"{upParents[int(lipRange)]}_ptc")
-        ptc = cmds.parentConstraint(loMiddleCtrl, loParents[int(lipRange)], mo=1, n=f"{loParents[int(lipRange)]}_ptc")
+        ptc = cmds.parentConstraint(upMiddleCtrl, upOffsets[int(lipRange)], mo=1, n=f"{upParents[int(lipRange)]}_ptc")
+        ptc = cmds.parentConstraint(loMiddleCtrl, loOffsets[int(lipRange)], mo=1, n=f"{loParents[int(lipRange)]}_ptc")
         ptc = cmds.parentConstraint(lCornerCtrl, cornerParents[0], mo=1, n=f"{cornerParents[0]}_ptc")
         ptc = cmds.parentConstraint(rCornerCtrl, cornerParents[1], mo=1, n=f"{cornerParents[1]}_ptc")
 
@@ -580,16 +580,20 @@ class Lips(motionBase.MotionModuleBase):
         for i in range(len(upLOffsets)-1):
             ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=0, 
                                     n=f"{upLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object")[0]
+                                    u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object",
+                                    sk="x")[0]
             ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=0, 
                                     n=f"{loLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
-                                    u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object")[0]
+                                    u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object",
+                                    sk="x")[0]
             ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=0, 
                                     n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
-                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upROffsets[i], wut="object")[0]
+                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upROffsets[i], wut="object",
+                                    sk="x")[0]
             ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=0 , 
                                     n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
-                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object")[0]
+                                    u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object",
+                                    sk="x")[0]
 
         inflCalc = 0.0
         inflVal = 1 / (lipRange+1)
@@ -638,8 +642,10 @@ class Lips(motionBase.MotionModuleBase):
 
             # Set Calc Values
             sine = self.easeInCubic(input=inflCalc)
-            cubicIn = self.easeInCubic(input=inflCalc)
-            sineIn = self.easeInSine(input=inflCalc)
+            # cubicIn = self.easeInCubic(input=inflCalc)
+            # sineIn = self.easeInSine(input=inflCalc)
+            cubicIn = self.easeInSine(input=inflCalc)
+            sineIn = inflCalc
 
             # Up Left
             cmds.setAttr(f"{mlUpMd}.input2.input2X", 1.0-sineIn)
@@ -669,6 +675,19 @@ class Lips(motionBase.MotionModuleBase):
             cmds.setAttr(f"{rLoMd}.input2.input2X", (sineIn))
             cmds.setAttr(f"{rLoMd}.input2.input2Y", (cubicIn))
             cmds.setAttr(f"{rLoMd}.input2.input2Z", cubicIn)
+        
+        for i, j in zip(upOffsets, loOffsets):
+            if i != upOffsets[int(lipRange)]:
+                cmds.connectAttr(f"{upMiddleCtrl}.rotateX", f"{i}.rotateX")
+            if j != loOffsets[int(lipRange)]:
+                cmds.connectAttr(f"{loMiddleCtrl}.rotateX", f"{j}.rotateX")
+        print(upOffsets)
+        oc = cmds.orientConstraint([upOffsets[int(lipRange-1)], loOffsets[int(lipRange-1)]], cornerOffsets[0],
+                                   n=f"{cornerOffsets[0]}_oc", mo=1)[0]
+        cmds.setAttr(f"{oc}.interpType", 2)
+        oc = cmds.orientConstraint([upOffsets[-1], loOffsets[-1]], cornerOffsets[1],
+                                   n=f"{cornerOffsets[1]}_oc", mo=1)[0]
+        cmds.setAttr(f"{oc}.interpType", 2)
 
         '''
         Ight, next up. Mouth controls, fuck me.
@@ -682,16 +701,40 @@ class Lips(motionBase.MotionModuleBase):
         '''
 
         mouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_grp")
-        mouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_CTRL", p=mouthPar)
-        mouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_Mouth", p=mouthCtrl)
+        mouthOffset = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_offset", p=mouthPar)
+        mouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_Mouth_CTRL", p=mouthOffset)
+        # mouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_Mouth", p=mouthCtrl)
+        mouth = ctrlCrv.Ctrl(
+            node=mouthCtrl,
+            shape="box",
+            scale=[self.ctrlScale[0] * 0.75, self.ctrlScale[1] * 0.75, self.ctrlScale[2] * 0.75],
+            offset=[0, 0, self.ctrlScale[2] * 1.5]
+            )
+        mouth.giveCtrlShape()
 
         upMouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_UpMouth_grp")
-        upMouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_UpMouth_CTRL", p=upMouthPar)
-        upMouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_UpMouth", p=upMouthCtrl)
+        upMouthOffset = cmds.createNode("transform", n=f"{self.side}_{self.label}_UpMouth_offset", p=upMouthPar)
+        upMouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_UpMouth_CTRL", p=upMouthOffset)
+        # upMouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_UpMouth", p=upMouthCtrl)
+        upMouth = ctrlCrv.Ctrl(
+            node=upMouthCtrl,
+            shape="circle",
+            scale=[self.ctrlScale[0] * 0.75, self.ctrlScale[1] * 0.25, self.ctrlScale[2] * 0.75],
+            offset=[0, self.ctrlScale[1], self.ctrlScale[2] * 1.5]
+            )
+        upMouth.giveCtrlShape()
 
         loMouthPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_LoMouth_grp")
-        loMouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_LoMouth_CTRL", p=loMouthPar)
-        loMouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_LoMouth", p=loMouthCtrl)
+        loMouthOffset = cmds.createNode("transform", n=f"{self.side}_{self.label}_LoMouth_offset", p=loMouthPar)
+        loMouthCtrl = cmds.createNode("transform", n=f"{self.side}_{self.label}_LoMouth_CTRL", p=loMouthOffset)
+        # loMouthJoint = cmds.createNode("joint", n=f"{self.side}_{self.label}_LoMouth", p=loMouthCtrl)
+        loMouth = ctrlCrv.Ctrl(
+            node=loMouthCtrl,
+            shape="circle",
+            scale=[self.ctrlScale[0] * 0.75, self.ctrlScale[1] * 0.25, self.ctrlScale[2] * 0.75],
+            offset=[0, self.ctrlScale[1] * -1, self.ctrlScale[2] * 1.5]
+            )
+        loMouth.giveCtrlShape()
 
         cmds.xform(mouthPar, ws=True, t=cmds.xform(
             f"{self.side}_{self.label}_{self.proxies['Mouth'].name}_proxy",
@@ -706,6 +749,7 @@ class Lips(motionBase.MotionModuleBase):
             q=True, t=True
         ))
 
+
         # Ok some fucking madness here I'll document later.... fuck me
         inflCalc = 0.0
         inflVal = 1 / (lipRange+1)
@@ -716,8 +760,7 @@ class Lips(motionBase.MotionModuleBase):
             cubicIn = self.easeInCubic(input=inflCalc)
             circIn = self.easeInCirc(input=inflCalc)
             rangeValues.append(circIn)
-        print("#############")
-        print(rangeValues)
+
         index = -1
         for i in range((int(lipRange))):
             #pass
@@ -742,14 +785,24 @@ class Lips(motionBase.MotionModuleBase):
             cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[index])
             cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[index])
             index-=1
-        print(upParents[int(lipRange)])
-        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upOffsets[int(lipRange)],
+
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upParents[int(lipRange)],
                                         n=f"{upParents[int(lipRange)]}_ptc", mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
         cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
         cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
-        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loOffsets[int(lipRange)],
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upMiddlePar,
+                                        n=f"{upMiddlePar}_ptc", mo=1)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
+        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loParents[int(lipRange)],
                                         n=f"{loParents[int(lipRange)]}_ptc", mo=1)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
+        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
+        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loMiddlePar,
+                                        n=f"{upMiddlePar}_ptc", mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
         cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
         cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
@@ -759,6 +812,22 @@ class Lips(motionBase.MotionModuleBase):
             cmds.setAttr(f"{ptc}.interpType", 2)
             cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0.5)
             cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0.5)
+
+        if self.jawTarget:
+            if self.jawTarget is not None:
+                if cmds.objExists(self.jawTarget):
+                    ptc = cmds.parentConstraint(self.jawTarget, loMouthPar, 
+                                                n=f"{loMouthPar}_jawTarget_ptc", mo=1)[0]
+                    ptc = cmds.parentConstraint(self.jawTarget, mouthPar, 
+                                                n=f"{mouthPar}_jawTarget_ptc", mo=1)[0]
+        for i in [upMouthOffset, loMouthOffset]:
+            cmds.connectAttr(f"{mouthCtrl}.translate", f"{i}.translate")
+            cmds.connectAttr(f"{mouthCtrl}.rotate", f"{i}.rotate")
+            cmds.connectAttr(f"{mouthCtrl}.scale", f"{i}.scale")
+
+        ptc = cmds.parentConstraint([upMouthPar, loMouthPar], mouthOffset,
+                                    n=f"{mouthOffset}_blend_ptc", mo=1)[0]
+        cmds.setAttr(f"{ptc}.interpType", 2)
 
 
 

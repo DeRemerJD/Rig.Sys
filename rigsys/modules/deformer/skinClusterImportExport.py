@@ -6,6 +6,7 @@ import maya.cmds as cmds
 
 logger = logging.getLogger(__name__)
 
+
 class skinClusterImportExport(deformerBase.DeformerModuleBase):
     """Build bind joints utility module."""
 
@@ -37,7 +38,7 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
                 cmds.error(f"Missing the following joints {gatherMissing}; for {self.obj}_scls")
         if self.path is None or self.path == "":
             cmds.error(f"Path is incorrect {self.path}")
-        
+
         if self.createSCLS:
             self.createSkinCluster()
         if self.importSCLS:
@@ -46,31 +47,33 @@ class skinClusterImportExport(deformerBase.DeformerModuleBase):
             self.writeWeights()
 
     def createSkinCluster(self):
-        cmds.skinCluster(self.joints, 
-                         self.obj, 
+        cmds.skinCluster(self.joints,
+                         self.obj,
                          n=f"{self.obj}_scls",
                          tsb=True,
                          mi=self.maxInfluences)
 
     def writeWeights(self):
         print(f"Exporting {self.obj}_scls. . .")
-        cmds.deformerWeights(f"{self.obj}_scls.json", 
+        cmds.deformerWeights(f"{self.obj}_scls.json",
                              ex=True,
                              p=self.path,
                              deformer=f"{self.obj}_scls",
                              m="index",
                              at=["maintainMaxInfluences", "maxInfluences"],
                              format="JSON",
-                             dv=1.0                             
+                             dv=1.0,
                              )
+
     def readWeights(self):
         print(f"Importing {self.obj}_scls. . .")
-        cmds.deformerWeights(f"{self.obj}_scls.json", 
-                             im=True,
-                             p=self.path,
-                             deformer=f"{self.obj}_scls",
-                             m="index",
-                             at=["maintainMaxInfluences", "maxInfluences"],
-                             format="JSON",
-                             dv=1.0
-                             )
+        cmds.deformerWeights(
+            f"{self.obj}_scls.json",
+            im=True,
+            p=self.path,
+            deformer=f"{self.obj}_scls",
+            m="index",
+            at=["maintainMaxInfluences", "maxInfluences"],
+            format="JSON",
+            dv=1.0
+        )

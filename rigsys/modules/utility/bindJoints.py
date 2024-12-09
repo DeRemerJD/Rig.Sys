@@ -6,6 +6,7 @@ import maya.cmds as cmds
 
 logger = logging.getLogger(__name__)
 
+
 class BindJoints(utilityBase.UtilityModuleBase):
     """Build bind joints utility module."""
 
@@ -23,7 +24,7 @@ class BindJoints(utilityBase.UtilityModuleBase):
         for module in motionModules:
             # if not module.isRun:
             #     logger.error(f"Module not run: {module.getFullName()}. Unable to perform parenting.")
-            #     continue            
+            #     continue
 
             for jnt in module.bindJoints.keys():
                 bindJoint = cmds.createNode("joint", n=f"{jnt}_bind")
@@ -70,7 +71,7 @@ class BindJoints(utilityBase.UtilityModuleBase):
                             cmds.parent(f"{jnt}_bind", f"{constructedBind}")
             else:
                 if self.underGroup is not None or self.underGroup != "":
-                    
+
                     if cmds.objExists(self.underGroup):
 
                         for jnt, parJnt in module.bindJoints.items():

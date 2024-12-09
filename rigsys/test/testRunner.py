@@ -1,11 +1,12 @@
 """Run all tests in the test folder."""
 
 import logging
-import os
 import pytest
 import sys
 
 import maya.cmds as cmds
+
+from pathlib import Path
 
 from rigsys.utils.unload import unloadPackages, nukePycFiles
 
@@ -43,13 +44,10 @@ def runTests(pattern="test_"):
     unloadPackages(silent=False, packages=["rigsys"])
     nukePycFiles()
 
-    testPath = os.path.dirname(__file__)
+    test_path = Path(__file__).parent
+    fix_stdout()
 
-    try:
-        pytest.main([testPath, "-k", pattern])
-    except Exception:
-        logger.warning("Error running tests. Trying again with fixed stdout.")
-        fix_stdout()
+    pytest.main([test_path, "-k", pattern])
 
     cmds.file(new=True, force=True)
 

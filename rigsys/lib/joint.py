@@ -200,8 +200,9 @@ def axisToVector(axis):
         vec = [0, 0, -1]
     return vec
 
-# Function that takes a string vector and returns the proper numerical vector.
+
 def axisFlip(axis):
+    """Function that takes a string vector and returns the proper numerical vector."""
     newAxis = None
     if axis == "+x":
         newAxis = "-x"
@@ -216,6 +217,7 @@ def axisFlip(axis):
     elif axis == "-z":
         newAxis = "+z"
     return newAxis
+
 
 def getCrossAxis(aim, up):
     axies = [aim, up]

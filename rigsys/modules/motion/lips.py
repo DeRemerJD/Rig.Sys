@@ -401,12 +401,15 @@ class Lips(motionBase.MotionModuleBase):
 
         # components
         upParents = []
+        upZippers = []
         upOffsets = []
         upCtrls = []
         loParents = []
+        loZippers = []
         loOffsets = []
         loCtrls = []
         cornerParents = []
+        cornerZippers = []
         cornerOffsets = []
         cornerCtrls = []
         ptcs = []
@@ -415,11 +418,13 @@ class Lips(motionBase.MotionModuleBase):
         for upJnt, loJnt in zip(upLipJoints, loLipJoints):
             # Make parent, offset, control
             upPar = cmds.createNode("transform", n=f"{upJnt}_grp")
-            upOffset = cmds.createNode("transform", n=f"{upJnt}_offset", p=upPar)
+            upZip = cmds.createNode("transform", n=f"{upJnt}_zipper", p=upPar)
+            upOffset = cmds.createNode("transform", n=f"{upJnt}_offset", p=upZip)
             upCtrl = cmds.createNode("transform", n=f"{upJnt}_CTRL", p=upOffset)
             cmds.xform(upPar, ws=True, m=cmds.xform(upJnt, q=True, ws=True, m=True))
             loPar = cmds.createNode("transform", n=f"{loJnt}_grp")
-            loOffset = cmds.createNode("transform", n=f"{loJnt}_offset", p=loPar)
+            loZip = cmds.createNode("transform", n=f"{upJnt}_zipper", p=loPar)
+            loOffset = cmds.createNode("transform", n=f"{loJnt}_offset", p=loZip)
             loCtrl = cmds.createNode("transform", n=f"{loJnt}_CTRL", p=loOffset)
             cmds.xform(loPar, ws=True, m=cmds.xform(loJnt, q=True, ws=True, m=True))
 
@@ -446,16 +451,19 @@ class Lips(motionBase.MotionModuleBase):
             lo.giveCtrlShape()
             
             upParents.append(upPar)
+            upZippers.append(upZip)
             upOffsets.append(upOffset)
             upCtrls.append(upCtrl)
             loParents.append(loPar)
+            loZippers.append(loZip)
             loOffsets.append(loOffset)
             loCtrls.append(loCtrl)
 
 
         for corner in cornerJoints:
             par = cmds.createNode("transform", n=f"{corner}_grp")
-            offset = cmds.createNode("transform", n=f"{corner}_offset", p=par)
+            czip = cmds.createNode("transform", n=f"{corner}_zipper", p=par)
+            offset = cmds.createNode("transform", n=f"{corner}_offset", p=czip)
             ctrl = cmds.createNode("transform", n=f"{corner}_CTRL", p=offset)
             cmds.xform(par, ws=True, m=cmds.xform(corner, q=True, ws=True, m=True))
             ptc = cmds.parentConstraint(ctrl, corner, mo=0, n=f"{corner}_ptc")[0]
@@ -463,6 +471,7 @@ class Lips(motionBase.MotionModuleBase):
             ptcs.append(ptc)
 
             cornerParents.append(par)
+            cornerZippers.append(czip)
             cornerOffsets.append(offset)
             cornerCtrls.append(ctrl)
             crnr = ctrlCrv.Ctrl(

@@ -49,6 +49,26 @@ class Lips(motionBase.MotionModuleBase):
         Note: Lips aim to the parent of each target. This allows for localized transforms while allowing
               the methods for easing to affect the lips when moving the jaw, mouth or corner controls.
 
+              
+
+        NOTE NOTE NOTE NOTE NOTE ATTENTION ATTENTION: ZIPPER DEBUG...
+        TODO: 
+        New Heirarchy for lip controls
+        GROUP
+            Offset 
+            ZipperOffset: A node that has the positional / rotational initial data of the Offset
+                Zipper
+                    CTRL
+        
+            Locator: A node that has the positional / rotational initial data of the Offset
+        
+        1: Mult Matrix the WorldSpace of the Offset and InverseWorldSpace then decompose the matrix to xform Data
+        2: Take the Transoform and Rotate data then put them into two Multiply Divide nodes in Input 1
+        3: Create a Remap Value node and a zipper / lip influence value on the Mouth CTRL
+        4: lip Influence > Input Value, use the out value as a multiplier for the Input 2 of each MultiplyDivide node
+        5: Output of the MD nodes to Translate / Rotate of the Zipper Node. 
+
+        The input min / max of the remap value will dictate the zipper falloff. Do this in pairs of values IE L_Up_1 and R_Up_1
         '''
 
         if ctrlScale is None:
@@ -412,20 +432,26 @@ class Lips(motionBase.MotionModuleBase):
         cornerZippers = []
         cornerOffsets = []
         cornerCtrls = []
+        upLocZippers = []
+        loLocZippers = []
         ptcs = []
 
         # Make control and logic.
         for upJnt, loJnt in zip(upLipJoints, loLipJoints):
             # Make parent, offset, control
             upPar = cmds.createNode("transform", n=f"{upJnt}_grp")
-            upZip = cmds.createNode("transform", n=f"{upJnt}_zipper", p=upPar)
-            upOffset = cmds.createNode("transform", n=f"{upJnt}_offset", p=upZip)
-            upCtrl = cmds.createNode("transform", n=f"{upJnt}_CTRL", p=upOffset)
+            upOffset = cmds.createNode("transform", n=f"{upJnt}_offset", p=upPar)
+            upCorrective = cmds.createNode("transform", n=f"{upJnt}_corrective", p=upPar)
+            upZip = cmds.createNode("transform", n=f"{upJnt}_zipper", p=upCorrective)            
+            upCtrl = cmds.createNode("transform", n=f"{upJnt}_CTRL", p=upZip)
+            upLocZip = cmds.createNode("transform", n=f"{upJnt}_locator", p=upPar)
             cmds.xform(upPar, ws=True, m=cmds.xform(upJnt, q=True, ws=True, m=True))
             loPar = cmds.createNode("transform", n=f"{loJnt}_grp")
-            loZip = cmds.createNode("transform", n=f"{upJnt}_zipper", p=loPar)
-            loOffset = cmds.createNode("transform", n=f"{loJnt}_offset", p=loZip)
-            loCtrl = cmds.createNode("transform", n=f"{loJnt}_CTRL", p=loOffset)
+            loOffset = cmds.createNode("transform", n=f"{loJnt}_offset", p=loPar)
+            loCorrective = cmds.createNode("transform", n=f"{loJnt}_corrective", p=loPar)
+            loZip = cmds.createNode("transform", n=f"{loJnt}_zipper", p=loCorrective)
+            loCtrl = cmds.createNode("transform", n=f"{loJnt}_CTRL", p=loZip)
+            loLocZip = cmds.createNode("transform", n=f"{loJnt}_locator", p=loPar)
             cmds.xform(loPar, ws=True, m=cmds.xform(loJnt, q=True, ws=True, m=True))
 
             ptc_u = cmds.parentConstraint(upCtrl, upJnt, mo=0, n=f"{upJnt}_ptc")[0]
@@ -454,11 +480,13 @@ class Lips(motionBase.MotionModuleBase):
             upZippers.append(upZip)
             upOffsets.append(upOffset)
             upCtrls.append(upCtrl)
+            upLocZippers.append(upLocZip)
+            
             loParents.append(loPar)
             loZippers.append(loZip)
             loOffsets.append(loOffset)
             loCtrls.append(loCtrl)
-
+            loLocZippers.append(loLocZip)
 
         for corner in cornerJoints:
             par = cmds.createNode("transform", n=f"{corner}_grp")
@@ -606,6 +634,7 @@ class Lips(motionBase.MotionModuleBase):
 
         inflCalc = 0.0
         inflVal = 1 / (lipRange+1)
+        
 
         for i in range(int(lipRange)):
             inflCalc +=inflVal
@@ -837,6 +866,102 @@ class Lips(motionBase.MotionModuleBase):
         ptc = cmds.parentConstraint([upMouthPar, loMouthPar], mouthOffset,
                                     n=f"{mouthOffset}_blend_ptc", mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
+
+        # Make zipper Lip Matrix/MD/Remap nodes
+        cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=2.0, dv=1.0, k=True)
+        lipRange = int(len(upLipJoints)-1)
+        rangeSet = int(lipRange/2)
+
+        rangeSetInfl = 1 / (rangeSet+1)
+        print("BEGIN DEBUG...")
+        print(rangeSetInfl)
+        rangeCatch = 0
+        index = 0
+        rangeCatch+=rangeSetInfl
+        for up, lo in zip(upLipJoints, loLipJoints):
+            print(index)
+            upMM = cmds.createNode("multMatrix", n=f"{up}_zipper_MM")
+            loMM = cmds.createNode("multMatrix", n=f"{lo}_zipper_MM")
+            upDM = cmds.createNode("decomposeMatrix", n=f"{up}_zipper_DM")
+            loDM = cmds.createNode("decomposeMatrix", n=f"{lo}_zipper_DM")
+            upTXMD = cmds.createNode("multiplyDivide", n=f"{up}_zipper_TX_MD")
+            upRXMD = cmds.createNode("multiplyDivide", n=f"{up}_zipper_RX_MD")
+            loTXMD = cmds.createNode("multiplyDivide", n=f"{lo}_zipper_TX_MD")
+            loRXMD = cmds.createNode("multiplyDivide", n=f"{lo}_zipper_RX_MD")
+            upRV = cmds.createNode("remapValue", n=f"{up}_zipper_RV")
+            loRV = cmds.createNode("remapValue", n=f"{lo}_zipper_RV")
+            
+            cmds.connectAttr(f"{upOffsets[index]}.worldMatrix[0]", f"{upMM}.matrixIn[0]")
+            cmds.connectAttr(f"{upLocZippers[index]}.worldInverseMatrix[0]", f"{upMM}.matrixIn[1]")
+            cmds.connectAttr(f"{upMM}.matrixSum", f"{upDM}.inputMatrix")
+            cmds.connectAttr(f"{upDM}.outputTranslate", f"{upTXMD}.input1")
+            cmds.connectAttr(f"{upDM}.outputRotate", f"{upRXMD}.input1")
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{upRV}.inputValue")
+
+            cmds.connectAttr(f"{loOffsets[index]}.worldMatrix[0]", f"{loMM}.matrixIn[0]")
+            cmds.connectAttr(f"{loLocZippers[index]}.worldInverseMatrix[0]", f"{loMM}.matrixIn[1]")
+            cmds.connectAttr(f"{loMM}.matrixSum", f"{loDM}.inputMatrix")
+            cmds.connectAttr(f"{loDM}.outputTranslate", f"{loTXMD}.input1")
+            cmds.connectAttr(f"{loDM}.outputRotate", f"{loRXMD}.input1")
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{loRV}.inputValue")
+
+            cmds.setAttr(f"{upRV}.outputMax", 2.0)
+            cmds.setAttr(f"{loRV}.outputMax", 2.0)
+
+
+            for i in ["input2X","input2Y", "input2Z"]:
+                cmds.connectAttr(f"{upRV}.outValue", f"{upTXMD}.{i}")
+                cmds.connectAttr(f"{upRV}.outValue", f"{upRXMD}.{i}")
+                cmds.connectAttr(f"{loRV}.outValue", f"{loTXMD}.{i}")
+                cmds.connectAttr(f"{loRV}.outValue", f"{loRXMD}.{i}")
+
+            cmds.connectAttr(f"{upTXMD}.output.outputY", f"{upZippers[index]}.translate.translateY")
+            cmds.connectAttr(f"{upOffsets[index]}.translate.translateX", f"{upZippers[index]}.translate.translateX")
+            cmds.connectAttr(f"{upOffsets[index]}.translate.translateZ", f"{upZippers[index]}.translate.translateZ")
+            cmds.connectAttr(f"{upRXMD}.output", f"{upZippers[index]}.rotate")
+            # cmds.connectAttr(f"{upRXMD}.output.outputX", f"{upZippers[index]}.rotate.rotateX")
+            # cmds.connectAttr(f"{upOffsets[index]}.rotate.rotateY", f"{upZippers[index]}.rotate.rotateY")
+            # cmds.connectAttr(f"{upOffsets[index]}.rotate.rotateZ", f"{upZippers[index]}.rotate.rotateZ")
+
+            cmds.connectAttr(f"{loTXMD}.output.outputY", f"{loZippers[index]}.translate.translateY")
+            cmds.connectAttr(f"{loOffsets[index]}.translate.translateX", f"{loZippers[index]}.translate.translateX")
+            cmds.connectAttr(f"{loOffsets[index]}.translate.translateZ", f"{loZippers[index]}.translate.translateZ")
+            cmds.connectAttr(f"{loRXMD}.output", f"{loZippers[index]}.rotate")
+            # cmds.connectAttr(f"{loRXMD}.output.outputX", f"{loZippers[index]}.rotate.rotateX")
+            # cmds.connectAttr(f"{loOffsets[index]}.rotate.rotateY", f"{loZippers[index]}.rotate.rotateY")
+            # cmds.connectAttr(f"{loOffsets[index]}.rotate.rotateZ", f"{loZippers[index]}.rotate.rotateZ")
+
+            if rangeCatch >= (rangeSetInfl * (rangeSet+1)):
+                print("READ THE CATCH OVERRIDE")
+                rangeCatch = rangeSetInfl
+
+            if up in upLipJoints[(rangeSet+1)::]:
+                diff = 2.0 - rangeCatch
+                cmds.setAttr(f"{upRV}.inputMin", rangeCatch)                
+                cmds.setAttr(f"{upRV}.inputMax", diff)
+                cmds.setAttr(f"{loRV}.inputMin", rangeCatch)                
+                cmds.setAttr(f"{loRV}.inputMax", diff)
+                #rangeCatch+=rangeSetInfl
+            elif up in upLipJoints[:rangeSet:]:
+                diff = 2.0 - rangeCatch
+                cmds.setAttr(f"{upRV}.inputMin", rangeCatch)                
+                cmds.setAttr(f"{upRV}.inputMax", diff)
+                cmds.setAttr(f"{loRV}.inputMin", rangeCatch)                
+                cmds.setAttr(f"{loRV}.inputMax", diff)
+                #rangeCatch+=rangeSetInfl
+            else:
+                rangeCatch=0
+                cmds.setAttr(f"{upRV}.inputMin", 0)                
+                cmds.setAttr(f"{upRV}.inputMax", 2)
+                cmds.setAttr(f"{loRV}.inputMin", 0)                
+                cmds.setAttr(f"{loRV}.inputMax", 2)
+            rangeCatch+=rangeSetInfl
+            print(rangeCatch)
+            
+
+        
+            index+=1
+
 
 
 

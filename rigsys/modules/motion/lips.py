@@ -69,6 +69,12 @@ class Lips(motionBase.MotionModuleBase):
         5: Output of the MD nodes to Translate / Rotate of the Zipper Node. 
 
         The input min / max of the remap value will dictate the zipper falloff. Do this in pairs of values IE L_Up_1 and R_Up_1
+
+
+
+
+
+        
         '''
 
         if ctrlScale is None:
@@ -401,14 +407,6 @@ class Lips(motionBase.MotionModuleBase):
         orderedUpLipR = upLipJoints[int(lipRange)+1::]
         orderedLoLipR = loLipJoints[int(lipRange)+1::]
 
-        # jointTools.aimSequence(targets=orderedUpLipL, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-        #                        aimAxis=self.aimAxis, upAxis=self.upAxis, upType="objectrotation", vector=self.upAxis)
-        # jointTools.aimSequence(targets=orderedLoLipL, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-        #                        aimAxis=self.aimAxis, upAxis=self.upAxis, upType="objectrotation", vector=self.upAxis)
-        # jointTools.aimSequence(targets=orderedUpLipR, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-        #                        aimAxis=self.aimAxis, upAxis=jointTools.axisFlip(self.upAxis), upType="objectrotation", vector=self.upAxis)        
-        # jointTools.aimSequence(targets=orderedLoLipR, upObj=f"{self.side}_{self.label}_UpVector_proxy",
-        #                        aimAxis=self.aimAxis, upAxis=jointTools.axisFlip(self.upAxis), upType="objectrotation", vector=self.upAxis)
         oc = cmds.orientConstraint([upLipJoints[int(lipRange)-1], loLipJoints[int(lipRange)-1]], cornerJoints[0], mo=0)[0]
         cmds.setAttr(f"{oc}.interpType", 2)
         cmds.delete(oc)
@@ -1046,30 +1044,6 @@ class Lips(motionBase.MotionModuleBase):
             cmds.xform(cornerCorrectives[index], ws=True, ro=cmds.xform(i, q=True, ws=True, ro=True))
             index+=1
 
-        # cmds.error("##")
-
-        
-        # # Make zipper Lip Matrix/MD/Remap nodes
-        # for i in [upCorrectives, upLocZippers, loCorrectives, loLocZippers]:
-        #     cmds.parent(i, zipperGroup)
-        # index = 0
-        # for j in upCorrectives:
-        #     bn = cmds.createNode("transform", n=f"{j}_bakeNull", p=zipperGroup)
-        #     cmds.xform(bn, ws=True, t=cmds.xform(j, q=True, ws=True, t=True))
-        #     cmds.parent(j, bn)
-        #     # cmds.connectAttr(f"{upParents[index]}.translate", f"{bn}.translate")
-        #     # cmds.connectAttr(f"{upParents[index]}.rotate", f"{bn}.rotate")
-        #     index+=1
-        # index=0
-        # for y in loCorrectives:
-        #     bn = cmds.createNode("transform", n=f"{y}_bakeNull", p=zipperGroup)
-        #     cmds.xform(bn, ws=True, t=cmds.xform(y, q=True, ws=True, t=True))
-        #     cmds.parent(y, bn)
-        #     # cmds.connectAttr(f"{loParents[index]}.translate", f"{bn}.translate")
-        #     # cmds.connectAttr(f"{loParents[index]}.rotate", f"{bn}.rotate")
-        #     index+=1
-
-        #cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=2.0, dv=1.0, k=True)
         lipRange = int(len(upLipJoints)-1)
         rangeSet = int(lipRange/2)
 
@@ -1154,15 +1128,9 @@ class Lips(motionBase.MotionModuleBase):
                 cmds.setAttr(f"{upRV}.inputMax", 2)
                 cmds.setAttr(f"{loRV}.inputMin", 0)                
                 cmds.setAttr(f"{loRV}.inputMax", 2)
-            rangeCatch+=rangeSetInfl
-            print(rangeCatch)
-            
+            rangeCatch+=rangeSetInfl 
 
-        
             index+=1
-
-
-
 
         self.addSocketMetaData()
 
@@ -1181,3 +1149,65 @@ class Lips(motionBase.MotionModuleBase):
     def easeInSine(self, input = 1.0):
         return 1 - m.cos((input*m.pi)/2)
     
+    @staticmethod
+    def getModuleDetails():
+        # Print relevant doc information for this module
+        return print('''
+        This module functions as described below. . . 
+
+        The LIPS module is a multi side module which will encompass a L, R, M side labelling; this cannot be overridden.
+        There are also a few -gotchas- that the module works around such as. . .
+            1 ) There must be an odd number of lip joints, if there are not an odd number the module will ADD
+                another lip to compensate. This is because multiple layers of nodes depend on an M lip and L / R corner
+                lip to function.
+            2) The L R M naming for sides cannot be edited at this time, this will be a feature added in the future.
+              
+            3) There are a few transform based bugs with the zipper function when using the mouth / jaw
+              
+        How the LIPS work.
+              CONTROLS
+              1 ) There are several LOCAL lip CONTROLs which dictate the xforms of the JOINTs.
+              
+              2 ) There are a set of MAIN CORNER CONTROLs and UP / LO lip CONTROLs which position the LOCAL CONTROLs
+                  along as EASING mathmatical curve (there is no CV curve in the scene).
+              
+              3 ) The LOCAL CONTROLs aim and the previous sequencial LOCAL unless they are the CORNER or MIDDLE LOCALs. 
+                  The MIDDLE LOCALs are a PTC to the relevant MAIN CONTROL and the CORNERs OC between the previous sequencial 
+                  LOCAL CONTROLs
+              
+              4 ) The MOUTH CONTROLs are comprised of a PRIMARY MOUTH, UP MOUTH and LO MOUTH.
+                  The PRIMARY moves all CONTROLs of the module in a parent relationship 
+                  UP and LO PRIMARY CONTROLs xform the MAIN CONTROLs using PTCs
+              
+              5 ) The PRIMARY MOUTH has a zipper attribute which will return all LOCAL CONTROLs to their default position
+                  in a cascade method. 
+        ''')
+
+    @staticmethod
+    def getModuleHelp():
+        # Print all mutable arguments and guidelines for the module.
+        return print('''
+        The following variables edit the module functions
+            VARIABLES:
+                rig: ...
+
+                side: A String dictating the side of the motion system (usually L, R, or M)
+                     
+                label: A string dicating the name of the module... (Arm, Leg, Spine, ect.)
+                     
+                ctrlShapes: A string which dictates the motion control shape, available options are...
+                            "circle", "square", "box", "sphere"
+                            This variable has a default loaded for the module, changing it could result in 
+                            unpredictable curve alignments
+
+                ctrlScale: By default "None", this can be edited as a list of 3 floats to change the scaleling of all controls
+
+                numberOfJoints: The total number of joints across each upper and lower lip array. Must be Odd, if the input
+                                value is not odd it will append 1 to the value.
+                
+                lipSegments: The total number of MAIN controls across the lips. Functions with 3 as a standard. 
+                     
+                jawTarget: A string which will constrain the lips to a jaw target and allow the mouth to open with a jaw.
+                           This is by default "None" and is not a required parameter.
+                     
+        ''')

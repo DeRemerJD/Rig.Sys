@@ -1132,6 +1132,16 @@ class Lips(motionBase.MotionModuleBase):
 
             index+=1
 
+        # Cleanup
+        # Parent joints
+        for i in [upLipJoints, loLipJoints, cornerJoints]:
+            jointGroup = cmds.createNode("transform", n=f"{self.side}_{self.label}_jointGroup")
+            cmds.parent(i, jointGroup)
+        cmds.parent(jointGroup, self.moduleUtilities)
+        cmds.parent(lGroup, self.plugParent)
+        cmds.parent(rGroup, self.plugParent)
+        
+
         self.addSocketMetaData()
 
     def easeInOutSine(self, input = 1.0):

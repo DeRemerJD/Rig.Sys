@@ -430,10 +430,17 @@ class Lips(motionBase.MotionModuleBase):
         loCtrls = []
         cornerParents = []
         cornerZippers = []
+        cornerLocZippers = []
         cornerOffsets = []
         cornerCtrls = []
         upLocZippers = []
         loLocZippers = []
+        upCorrectives = []
+        loCorrectives = []
+        cornerCorrectives = []  
+        upMouthZippers = []
+        loMouthZippers = []
+        cornerMouthZippers = []
         ptcs = []
 
         # Make control and logic.
@@ -445,6 +452,7 @@ class Lips(motionBase.MotionModuleBase):
             upZip = cmds.createNode("transform", n=f"{upJnt}_zipper", p=upCorrective)            
             upCtrl = cmds.createNode("transform", n=f"{upJnt}_CTRL", p=upZip)
             upLocZip = cmds.createNode("transform", n=f"{upJnt}_locator", p=upPar)
+            upMouthZipper = cmds.createNode("transform", n=f"{upJnt}_mouthTarget", p=upPar)
             cmds.xform(upPar, ws=True, m=cmds.xform(upJnt, q=True, ws=True, m=True))
             loPar = cmds.createNode("transform", n=f"{loJnt}_grp")
             loOffset = cmds.createNode("transform", n=f"{loJnt}_offset", p=loPar)
@@ -452,6 +460,7 @@ class Lips(motionBase.MotionModuleBase):
             loZip = cmds.createNode("transform", n=f"{loJnt}_zipper", p=loCorrective)
             loCtrl = cmds.createNode("transform", n=f"{loJnt}_CTRL", p=loZip)
             loLocZip = cmds.createNode("transform", n=f"{loJnt}_locator", p=loPar)
+            loMouthZipper = cmds.createNode("transform", n=f"{loJnt}_mouthTarget", p=loPar)
             cmds.xform(loPar, ws=True, m=cmds.xform(loJnt, q=True, ws=True, m=True))
 
             ptc_u = cmds.parentConstraint(upCtrl, upJnt, mo=0, n=f"{upJnt}_ptc")[0]
@@ -481,18 +490,25 @@ class Lips(motionBase.MotionModuleBase):
             upOffsets.append(upOffset)
             upCtrls.append(upCtrl)
             upLocZippers.append(upLocZip)
+            upCorrectives.append(upCorrective)
+            upMouthZippers.append(upMouthZipper)
             
             loParents.append(loPar)
             loZippers.append(loZip)
             loOffsets.append(loOffset)
             loCtrls.append(loCtrl)
             loLocZippers.append(loLocZip)
+            loCorrectives.append(loCorrective)
+            loMouthZippers.append(loMouthZipper)
 
         for corner in cornerJoints:
             par = cmds.createNode("transform", n=f"{corner}_grp")
-            czip = cmds.createNode("transform", n=f"{corner}_zipper", p=par)
-            offset = cmds.createNode("transform", n=f"{corner}_offset", p=czip)
+            offset = cmds.createNode("transform", n=f"{corner}_offset", p=par)
+            corrective = cmds.createNode("transform", n=f"{corner}_corrective", p=par)
+            czip = cmds.createNode("transform", n=f"{corner}_zipper", p=offset)
             ctrl = cmds.createNode("transform", n=f"{corner}_CTRL", p=offset)
+            cLocZip = cmds.createNode("transform", n=f"{corner}_locator", p=par)
+            cMouthZipper = cmds.createNode("transform", n=f"{corner}_mouthTarget", p=par)
             cmds.xform(par, ws=True, m=cmds.xform(corner, q=True, ws=True, m=True))
             ptc = cmds.parentConstraint(ctrl, corner, mo=0, n=f"{corner}_ptc")[0]
             cmds.setAttr(f"{ptc}.interpType", 2)
@@ -502,6 +518,9 @@ class Lips(motionBase.MotionModuleBase):
             cornerZippers.append(czip)
             cornerOffsets.append(offset)
             cornerCtrls.append(ctrl)
+            cornerLocZippers.append(cLocZip)
+            cornerCorrectives.append(corrective)
+            cornerMouthZippers.append(cMouthZipper)
             crnr = ctrlCrv.Ctrl(
             node=ctrl,
             shape="sphere",
@@ -517,6 +536,7 @@ class Lips(motionBase.MotionModuleBase):
         # Side Inversion
         lGroup = cmds.createNode("transform", n=f"L_{self.label}_controls")
         rGroup = cmds.createNode("transform", n=f"R_{self.label}_controls")
+        zipperGroup = cmds.createNode("transform", n=f"M_{self.label}_zippers")
         cmds.parent(upParents[:int(lipRange):], lGroup)
         cmds.parent(loParents[:int(lipRange):], lGroup)
         cmds.parent(cornerParents[0], lGroup)
@@ -631,6 +651,7 @@ class Lips(motionBase.MotionModuleBase):
                                     n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object",
                                     sk="x")[0]
+        
 
         inflCalc = 0.0
         inflVal = 1 / (lipRange+1)
@@ -719,7 +740,7 @@ class Lips(motionBase.MotionModuleBase):
                 cmds.connectAttr(f"{upMiddleCtrl}.rotateX", f"{i}.rotateX")
             if j != loOffsets[int(lipRange)]:
                 cmds.connectAttr(f"{loMiddleCtrl}.rotateX", f"{j}.rotateX")
-        print(upOffsets)
+
         oc = cmds.orientConstraint([upOffsets[int(lipRange-1)], loOffsets[int(lipRange-1)]], cornerOffsets[0],
                                    n=f"{cornerOffsets[0]}_oc", mo=1)[0]
         cmds.setAttr(f"{oc}.interpType", 2)
@@ -787,6 +808,7 @@ class Lips(motionBase.MotionModuleBase):
             q=True, t=True
         ))
 
+        cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=2.0, dv=1.0, k=True)
 
         # Ok some fucking madness here I'll document later.... fuck me
         inflCalc = 0.0
@@ -800,56 +822,199 @@ class Lips(motionBase.MotionModuleBase):
             rangeValues.append(circIn)
 
         index = -1
+
+        cmds.parent(upMouthZippers, mouthCtrl)
+        cmds.parent(loMouthZippers, mouthCtrl)
+        cmds.parent(cornerMouthZippers, mouthCtrl)
+
         for i in range((int(lipRange))):
             #pass
-            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upParents[:int(lipRange):][i],
-                                        n=f"{upParents[:int(lipRange):][i]}_ptc", mo=1)[0]
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, upMouthZippers[:int(lipRange):][i]], 
+                                        upParents[:int(lipRange):][i],
+                                        n=f"{upParents[:int(lipRange):][i]}_BC", mo=1)[0]
             
-            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1.0-rangeValues[i])
-            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", rangeValues[i])
-            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upParents[:int(lipRange):-1][i],
+            bc = cmds.createNode("blendColors", n=f"{upParents[:int(lipRange):][i]}_BC")
+
+            cmds.setAttr(f"{bc}.color1R", 1.0-rangeValues[i])
+            cmds.setAttr(f"{bc}.color1G", rangeValues[i])
+            cmds.setAttr(f"{bc}.color1B", 0.0)
+            cmds.setAttr(f"{bc}.color2R", 0.0)
+            cmds.setAttr(f"{bc}.color2G", 0.0)
+            cmds.setAttr(f"{bc}.color2B", 1.0)
+
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
+            cmds.setAttr(f"{ptc}.interpType", 2)
+
+            # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1.0-rangeValues[i])
+            # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", rangeValues[i])
+
+            cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+            cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+            cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{upMouthZippers[:int(lipRange):][i]}W2")
+
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, upMouthZippers[:int(lipRange):-1][i]], 
+                                        upParents[:int(lipRange):-1][i],
                                         n=f"{upParents[:int(lipRange):-1][i]}_ptc", mo=1)[0]
+            
+            bc = cmds.createNode("blendColors", n=f"{upParents[:int(lipRange):-1][i]}_BC")
+
+            cmds.setAttr(f"{bc}.color1R", 1.0-rangeValues[index])
+            cmds.setAttr(f"{bc}.color1G", rangeValues[index])
+            cmds.setAttr(f"{bc}.color1B", 0.0)
+            cmds.setAttr(f"{bc}.color2R", 0.0)
+            cmds.setAttr(f"{bc}.color2G", 0.0)
+            cmds.setAttr(f"{bc}.color2B", 1.0)
+
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
             cmds.setAttr(f"{ptc}.interpType", 2)
-            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1.0-rangeValues[index])
-            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", rangeValues[index])
-            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loParents[:int(lipRange):][i],
+
+            # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1.0-rangeValues[index])
+            # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", rangeValues[index])
+
+            cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+            cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+            cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{upMouthZippers[:int(lipRange):-1][i]}W2")
+
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, loMouthZippers[:int(lipRange):][i]], 
+                                        loParents[:int(lipRange):][i],
                                         n=f"{loParents[:int(lipRange):][i]}_ptc", mo=1)[0]
+            
+            bc = cmds.createNode("blendColors", n=f"{loParents[:int(lipRange):][i]}_BC")
+
+            cmds.setAttr(f"{bc}.color1R", rangeValues[i])
+            cmds.setAttr(f"{bc}.color1G", 1.0-rangeValues[i])
+            cmds.setAttr(f"{bc}.color1B", 0.0)
+            cmds.setAttr(f"{bc}.color2R", 0.0)
+            cmds.setAttr(f"{bc}.color2G", 0.0)
+            cmds.setAttr(f"{bc}.color2B", 1.0)
+
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
             cmds.setAttr(f"{ptc}.interpType", 2)
-            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[i])
-            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[i])
-            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loParents[:int(lipRange):-1][i],
+
+            # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[i])
+            # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[i])
+
+            cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+            cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+            cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{loMouthZippers[:int(lipRange):][i]}W2")
+
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, loMouthZippers[:int(lipRange):-1][i]], 
+                                        loParents[:int(lipRange):-1][i],
                                         n=f"{loParents[:int(lipRange):-1][i]}_ptc", mo=1)[0]
+            
+            bc = cmds.createNode("blendColors", n=f"{loParents[:int(lipRange):-1][i]}_BC")
+
+            cmds.setAttr(f"{bc}.color1R", rangeValues[index])
+            cmds.setAttr(f"{bc}.color1G", 1.0-rangeValues[index])
+            cmds.setAttr(f"{bc}.color1B", 0.0)
+            cmds.setAttr(f"{bc}.color2R", 0.0)
+            cmds.setAttr(f"{bc}.color2G", 0.0)
+            cmds.setAttr(f"{bc}.color2B", 1.0)
+
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
             cmds.setAttr(f"{ptc}.interpType", 2)
-            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[index])
-            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[index])
+
+            # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", rangeValues[index])
+            # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1.0-rangeValues[index])
+
+            cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+            cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+            cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{loMouthZippers[:int(lipRange):-1][i]}W2")
+
             index-=1
 
-        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upParents[int(lipRange)],
-                                        n=f"{upParents[int(lipRange)]}_ptc", mo=1)[0]
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, upMouthZippers[int(lipRange)]], 
+                                    upParents[int(lipRange)],
+                                    n=f"{upParents[int(lipRange)]}_ptc", mo=1)[0]
+        
+        bc = cmds.createNode("blendColors", n=f"{upParents[int(lipRange)]}_BC")
+
+        cmds.setAttr(f"{bc}.color1R", 1.0)
+        cmds.setAttr(f"{bc}.color1G", 0.0)
+        cmds.setAttr(f"{bc}.color1B", 0.0)
+        cmds.setAttr(f"{bc}.color2R", 0.0)
+        cmds.setAttr(f"{bc}.color2G", 0.0)
+        cmds.setAttr(f"{bc}.color2B", 1.0)
+
+        cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
         cmds.setAttr(f"{ptc}.interpType", 2)
-        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
-        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
+
+        # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
+        # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
+
+        cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+        cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+        cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{upMouthZippers[int(lipRange)]}W2")
+
         ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], upMiddlePar,
                                         n=f"{upMiddlePar}_ptc", mo=1)[0]
+    
         cmds.setAttr(f"{ptc}.interpType", 2)
+
         cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
         cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
-        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loParents[int(lipRange)],
+
+        ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, loMouthZippers[int(lipRange)]], loParents[int(lipRange)],
                                         n=f"{loParents[int(lipRange)]}_ptc", mo=1)[0]
+        
+        bc = cmds.createNode("blendColors", n=f"{loMouthZippers[int(lipRange)]}_BC")
+
+        cmds.setAttr(f"{bc}.color1R", 0.0)
+        cmds.setAttr(f"{bc}.color1G", 1.0)
+        cmds.setAttr(f"{bc}.color1B", 0.0)
+        cmds.setAttr(f"{bc}.color2R", 0.0)
+        cmds.setAttr(f"{bc}.color2G", 0.0)
+        cmds.setAttr(f"{bc}.color2B", 1.0)
+
+        cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
         cmds.setAttr(f"{ptc}.interpType", 2)
-        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
-        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+
+        # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
+        # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+
+        cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+        cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+        cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{loMouthZippers[int(lipRange)]}W2")
+
         ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loMiddlePar,
                                         n=f"{upMiddlePar}_ptc", mo=1)[0]
+        
         cmds.setAttr(f"{ptc}.interpType", 2)
+
         cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
         cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+        index = 0
         for i in [lCornerPar, rCornerPar]:
-            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], i,
+            ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, cornerMouthZippers[index]], i,
                                             n=f"{i}_ptc", mo=1)[0]
+            
+            bc = cmds.createNode("blendColors", n=f"{loMouthZippers[int(lipRange)]}_BC")
+
+            cmds.setAttr(f"{bc}.color1R", 0.5)
+            cmds.setAttr(f"{bc}.color1G", 0.5)
+            cmds.setAttr(f"{bc}.color1B", 0.0)
+            cmds.setAttr(f"{bc}.color2R", 0.0)
+            cmds.setAttr(f"{bc}.color2G", 0.0)
+            cmds.setAttr(f"{bc}.color2B", 1.0)
+
+            cmds.connectAttr(f"{mouthCtrl}.zipper", f"{bc}.blender")
+
             cmds.setAttr(f"{ptc}.interpType", 2)
-            cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0.5)
-            cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0.5)
+
+            # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0.5)
+            # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0.5)
+
+            cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
+            cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
+            cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{cornerMouthZippers[index]}W2")
+
+        index+=1
 
         if self.jawTarget:
             if self.jawTarget is not None:
@@ -867,19 +1032,53 @@ class Lips(motionBase.MotionModuleBase):
                                     n=f"{mouthOffset}_blend_ptc", mo=1)[0]
         cmds.setAttr(f"{ptc}.interpType", 2)
 
-        # Make zipper Lip Matrix/MD/Remap nodes
-        cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=2.0, dv=1.0, k=True)
+        index = 0
+        for i in upOffsets:
+            cmds.xform(upLocZippers[index], ws=True, ro=cmds.xform(i, q=True, ws=True, ro=True))
+            cmds.xform(loLocZippers[index], ws=True, ro=cmds.xform(loOffsets[index], q=True, ws=True, ro=True))
+            cmds.xform(upCorrectives[index], ws=True, ro=cmds.xform(i, q=True, ws=True, ro=True))
+            cmds.xform(loCorrectives[index], ws=True, ro=cmds.xform(loOffsets[index], q=True, ws=True, ro=True))
+            index+=1
+
+        index = 0
+        for i in cornerOffsets:
+            cmds.xform(cornerLocZippers[index], ws=True, ro=cmds.xform(i, q=True, ws=True, ro=True))
+            cmds.xform(cornerCorrectives[index], ws=True, ro=cmds.xform(i, q=True, ws=True, ro=True))
+            index+=1
+
+        # cmds.error("##")
+
+        
+        # # Make zipper Lip Matrix/MD/Remap nodes
+        # for i in [upCorrectives, upLocZippers, loCorrectives, loLocZippers]:
+        #     cmds.parent(i, zipperGroup)
+        # index = 0
+        # for j in upCorrectives:
+        #     bn = cmds.createNode("transform", n=f"{j}_bakeNull", p=zipperGroup)
+        #     cmds.xform(bn, ws=True, t=cmds.xform(j, q=True, ws=True, t=True))
+        #     cmds.parent(j, bn)
+        #     # cmds.connectAttr(f"{upParents[index]}.translate", f"{bn}.translate")
+        #     # cmds.connectAttr(f"{upParents[index]}.rotate", f"{bn}.rotate")
+        #     index+=1
+        # index=0
+        # for y in loCorrectives:
+        #     bn = cmds.createNode("transform", n=f"{y}_bakeNull", p=zipperGroup)
+        #     cmds.xform(bn, ws=True, t=cmds.xform(y, q=True, ws=True, t=True))
+        #     cmds.parent(y, bn)
+        #     # cmds.connectAttr(f"{loParents[index]}.translate", f"{bn}.translate")
+        #     # cmds.connectAttr(f"{loParents[index]}.rotate", f"{bn}.rotate")
+        #     index+=1
+
+        #cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=2.0, dv=1.0, k=True)
         lipRange = int(len(upLipJoints)-1)
         rangeSet = int(lipRange/2)
 
         rangeSetInfl = 1 / (rangeSet+1)
-        print("BEGIN DEBUG...")
-        print(rangeSetInfl)
+
         rangeCatch = 0
         index = 0
         rangeCatch+=rangeSetInfl
         for up, lo in zip(upLipJoints, loLipJoints):
-            print(index)
             upMM = cmds.createNode("multMatrix", n=f"{up}_zipper_MM")
             loMM = cmds.createNode("multMatrix", n=f"{lo}_zipper_MM")
             upDM = cmds.createNode("decomposeMatrix", n=f"{up}_zipper_DM")

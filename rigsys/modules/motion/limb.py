@@ -16,7 +16,7 @@ class Limb(motionBase.MotionModuleBase):
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True, 
                  clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
-                 ikCtrlFloor: bool = False, foot: bool = False,
+                 ikCtrlToFloor: bool = False, foot: bool = False,
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
@@ -33,7 +33,7 @@ class Limb(motionBase.MotionModuleBase):
         # Module Specific Exposed Variables
         self.pvMultiplier = pvMultiplier
         self.numberOfJoints = numberOfJoints
-        self.ikCtrlFloor = ikCtrlFloor
+        self.ikCtrlToFloor = ikCtrlToFloor
         self.foot = foot
         self.nameSet = nameSet
 
@@ -209,23 +209,25 @@ class Limb(motionBase.MotionModuleBase):
         cmds.parent(baseJoints[0], self.moduleUtilities)
 
     def buildSkeleton(self):
+        omit = ["Ball", "Toe", "Pivot", "Heel", "InBank", "OutBank", "Global"]
         baseJoints = []
         IKJoints = []
         FKJoints = []
         for key, val in self.proxies.items():
-            jnt = cmds.createNode(
-                "joint", n=f"{self.side}_{self.label}_{val.name}")
-            cmds.setAttr(f"{jnt}.drawStyle", 2)
-            cmds.xform(jnt, ws=True, t=val.position)
-            baseJoints.append(jnt)
-            self.sockets[key] = jnt
-            # if len(baseJoints) == 1:
-            #     self.bindJoints[jnt] = None
-            # else:
-            #     if key != self.nameSet["End"]:
-            #         self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
-            if key == self.nameSet["Root"]:
-                self.bindJoints[jnt] = None
+            if key not in omit:
+                jnt = cmds.createNode(
+                    "joint", n=f"{self.side}_{self.label}_{val.name}")
+                cmds.setAttr(f"{jnt}.drawStyle", 2)
+                cmds.xform(jnt, ws=True, t=val.position)
+                baseJoints.append(jnt)
+                self.sockets[key] = jnt
+                # if len(baseJoints) == 1:
+                #     self.bindJoints[jnt] = None
+                # else:
+                #     if key != self.nameSet["End"]:
+                #         self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
+                if key == self.nameSet["Root"]:
+                    self.bindJoints[jnt] = None
 
         if self.poleVector is None:
             poleVector = cmds.createNode(
@@ -309,9 +311,13 @@ class Limb(motionBase.MotionModuleBase):
         # IK Control
         ikGrp = cmds.createNode('transform', n=f"{IKJoints[2]}_grp")
         ikCtrl = cmds.createNode('transform', n=f"{IKJoints[2]}_CTRL", p=ikGrp)
-        cmds.xform(ikGrp, ws=True, t=cmds.xform(
-            IKJoints[2], q=True, ws=True, t=True
-        ))
+        if self.ikCtrlToFloor:
+            t = cmds.xform(IKJoints[2], q=True, ws=True, t=True)
+            cmds.xform(ikGrp, ws=True, t=[t[0], 0, t[2]])
+        else:
+            cmds.xform(ikGrp, ws=True, t=cmds.xform(
+                IKJoints[2], q=True, ws=True, t=True
+            ))
         ikCtrlObject = ctrlCrv.Ctrl(
             node=ikCtrl,
             shape="sphere",
@@ -345,7 +351,8 @@ class Limb(motionBase.MotionModuleBase):
         ik = cmds.ikHandle(n=f"{self.side}_{self.label}_IK",
                            sj=IKJoints[0], ee=IKJoints[2], sol="ikRPsolver", p=1)
         eff = cmds.rename(ik[1], f"{self.side}_{self.label}_EFF")
-        ik = ik[0]
+        ik=ik[0]
+        self.ik = ik
         cmds.parent(ik, ikCtrl)
         cmds.setAttr(f"{ik}.visibility", 0, l=True, k=False)
         oc = cmds.orientConstraint(
@@ -802,6 +809,9 @@ class Limb(motionBase.MotionModuleBase):
         fk = []
         index = 0
         for i in ["", "_IK", "_FK"]:
+            print("READ")
+            print(i)
+
             ball = cmds.createNode("joint", n=f"{label}_{self.proxies['Ball'].name}{i}")
             toe = cmds.createNode("joint", n=f"{label}_{self.proxies['Toe'].name}{i}", p=ball)
             cmds.setAttr(f"{ball}.drawStyle", 2)
@@ -940,12 +950,13 @@ class Limb(motionBase.MotionModuleBase):
             ptc = cmds.parentConstraint(ctrl, jnt, n=f"{jnt}_ptc", mo=0)
 
         # Parent inverse and IKs
+        cmds.parent(f"{self.ik}", f"{iJnts[-1]}")
         cmds.parent(f"{iJnts[0]}", f"{IKControls[0]}")
         cmds.parent(f"{ballIK}", f"{iJnts[-2]}")
         cmds.parent(f"{toeIK}", f"{iJnts[-3]}")
         cmds.parent(globalGrp, IKControls[0])
 
-        pc = cmds.pointConstraint(iJnts[-1], cmds.listRelatives(IKControls[1], p=True)[0])
+        # pc = cmds.pointConstraint(iJnts[-1], cmds.listRelatives(IKControls[1], p=True)[0])
 
         for index in range(2):
             bc = cmds.createNode("blendColors", n=f"{base[index]}_bc")

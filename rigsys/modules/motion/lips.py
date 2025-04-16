@@ -534,7 +534,7 @@ class Lips(motionBase.MotionModuleBase):
         # Side Inversion
         lGroup = cmds.createNode("transform", n=f"L_{self.label}_controls")
         rGroup = cmds.createNode("transform", n=f"R_{self.label}_controls")
-        zipperGroup = cmds.createNode("transform", n=f"M_{self.label}_zippers")
+
         cmds.parent(upParents[:int(lipRange):], lGroup)
         cmds.parent(loParents[:int(lipRange):], lGroup)
         cmds.parent(cornerParents[0], lGroup)
@@ -1134,13 +1134,17 @@ class Lips(motionBase.MotionModuleBase):
 
         # Cleanup
         # Parent joints
-        for i in [upLipJoints, loLipJoints, cornerJoints]:
-            jointGroup = cmds.createNode("transform", n=f"{self.side}_{self.label}_jointGroup")
+        jointGroup = cmds.createNode("transform", n=f"{self.side}_{self.label}_jointGroup")
+        for i in [upLipJoints, loLipJoints, cornerJoints]:            
             cmds.parent(i, jointGroup)
+
         cmds.parent(jointGroup, self.moduleUtilities)
         cmds.parent(lGroup, self.plugParent)
         cmds.parent(rGroup, self.plugParent)
-        
+        cmds.parent([mouthPar, upMouthPar, loMouthPar], self.plugParent)
+        cmds.parent([upMiddlePar, loMiddlePar], self.plugParent)
+        rangeIndex = (len(upParents) - 1) / 2
+        cmds.parent([upParents[int(rangeIndex)], loParents[int(rangeIndex)]], self.plugParent)        
 
         self.addSocketMetaData()
 

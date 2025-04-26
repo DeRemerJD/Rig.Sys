@@ -809,9 +809,7 @@ class Limb(motionBase.MotionModuleBase):
         fk = []
         index = 0
         for i in ["", "_IK", "_FK"]:
-            print("READ")
-            print(i)
-
+            
             ball = cmds.createNode("joint", n=f"{label}_{self.proxies['Ball'].name}{i}")
             toe = cmds.createNode("joint", n=f"{label}_{self.proxies['Toe'].name}{i}", p=ball)
             cmds.setAttr(f"{ball}.drawStyle", 2)

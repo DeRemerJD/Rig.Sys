@@ -128,7 +128,7 @@ class Root(motionBase.MotionModuleBase):
                 for i in self.targets:
                     nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
                     cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, q=True, ws=True, m=True
+                        i, q=True, ws=True, m=True
                     ))
                     iPar = cmds.listRelatives(i, p=True)[0]
                     cmds.parent(nPar, iPar)
@@ -139,7 +139,7 @@ class Root(motionBase.MotionModuleBase):
                 for i in self.targets:
                     nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
                     cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, q=True, ws=True, m=True
+                        i, q=True, ws=True, m=True
                     ))
                     iPar = cmds.listRelatives(i, p=True)[0]
                     cmds.parent(nPar, iPar)
@@ -149,7 +149,7 @@ class Root(motionBase.MotionModuleBase):
                 for i in self.targets:
                     nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
                     cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, q=True, ws=True, m=True
+                        i, q=True, ws=True, m=True
                     ))
                     iPar = cmds.listRelatives(i, p=True)[0]
                     cmds.parent(nPar, iPar)
@@ -160,7 +160,7 @@ class Root(motionBase.MotionModuleBase):
                 for i in self.targets:
                     nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
                     cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, q=True, ws=True, m=True
+                        i, q=True, ws=True, m=True
                     ))
                     iPar = cmds.listRelatives(i, p=True)[0]
                     cmds.parent(nPar, iPar)
@@ -173,7 +173,7 @@ class Root(motionBase.MotionModuleBase):
                 for i in self.targets:
                     nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
                     cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, q=True, ws=True, m=True
+                        i, q=True, ws=True, m=True
                     ))
                     iPar = cmds.listRelatives(i, p=True)[0]
                     cmds.parent(nPar, iPar)

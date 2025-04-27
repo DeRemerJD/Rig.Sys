@@ -381,7 +381,25 @@ class Lips(motionBase.MotionModuleBase):
                 loLipJoints.append(loJnt)
                 cInfoNodes.append(upcinfo)
                 cInfoNodes.append(locinfo)
+                uMidJnt = upJnt
+                lMidJnt = loJnt
             uPos += infl
+
+        # Make bind joints and add sockets
+        for u, l in zip(upLipJoints, loLipJoints):
+            if u == uMidJnt:
+                self.bindJoints[uMidJnt] = None
+                self.bindJoints[lMidJnt] = uMidJnt
+            else:
+                self.bindJoints[u] = uMidJnt
+                self.bindJoints[l] = lMidJnt
+            self.sockets[u] = u
+            self.sockets[l] = l
+        for c in cornerJoints:
+            self.bindJoints[c] = uMidJnt
+            self.sockets[c] = c
+        
+
 
         # Make position dict
         jPos = {}

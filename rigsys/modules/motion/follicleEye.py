@@ -261,6 +261,19 @@ class FollicleEye(motionBase.MotionModuleBase):
         cmds.xform(eyejoint, ws=True, t=cmds.xform(
                 f"{self.side}_{self.label}_{self.proxies['Eyeball'].name}_proxy", q=True, ws=True, t=True
             ))
+        
+        for u, l in zip(upLidJoints, loLidJoints):
+            self.bindJoints[u] = eyejoint
+            self.bindJoints[l] = eyejoint
+            self.sockets[u] = u
+            self.sockets[l] = l
+        self.bindJoints[iJnt] = eyejoint
+        self.bindJoints[oJnt] = eyejoint
+        self.bindJoints[eyejoint] = None
+        self.sockets[iJnt] = iJnt
+        self.sockets[oJnt] = oJnt
+        self.sockets[eyejoint] = None
+
         '''
         # Next steps are to make controls and offsets
         # We want the Main Controls to move the local control offsets at a cubic curve

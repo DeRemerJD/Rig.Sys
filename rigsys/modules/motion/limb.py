@@ -198,12 +198,11 @@ class Limb(motionBase.MotionModuleBase):
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
         IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(
             baseJoints, IKJoints, FKJoints, upConnector)
-        
-        if self.foot:
-            self.buildFoot(baseJoints, IKJoints, FKJoints, IKControls, FKControls)
 
-        self.buildRibbon(baseJoints, upRollJoints,
+        follicleJoints = self.buildRibbon(baseJoints, upRollJoints,
                          loRollJoints, midCtrl, endCtrl)
+        if self.foot:
+            self.buildFoot(baseJoints, IKJoints, FKJoints, IKControls, FKControls, follicleJoints)
 
         # Cleanup
         cmds.parent(baseJoints[0], self.moduleUtilities)
@@ -677,8 +676,7 @@ class Limb(motionBase.MotionModuleBase):
                 self.bindJoints[jnt] = baseJoints[0]#self.bindJoints[baseJoints[1]]
             else:
                 self.bindJoints[jnt] = follicleJoints[len(follicleJoints) - 1]
-        # print(self.bindJoints)
-        # cmds.error("##")
+
         jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
                                aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.makeIdentity(follicleJoints, a=True)
@@ -798,8 +796,9 @@ class Limb(motionBase.MotionModuleBase):
         cmds.parent(folGrp, self.moduleUtilities)
         cmds.parent(bendyCtrlGrp, self.plugParent)
         self.addSocketMetaData()
+        return follicleJoints
 
-    def buildFoot(self, baseJoints, IKJoints, FKJoints, IKControls, FKControls):
+    def buildFoot(self, baseJoints, IKJoints, FKJoints, IKControls, FKControls, follicleJoints):
         # for key, val in self.proxies.items():
         #     if key in omit:
         #         jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
@@ -835,8 +834,9 @@ class Limb(motionBase.MotionModuleBase):
             jointTools.aimSequence(fk, upObj=self.poleVector,
                                aimAxis=self.aimAxis, upAxis=self.upAxis)
             index += 1
-            cmds.makeIdentity([ball, toe], a=True)   
-            self.bindJoints[base[0]] = baseJoints[-1]
+            cmds.makeIdentity([ball, toe], a=True)
+            #cmds.error(f"{base[0]} {baseJoints[-1]} {base[1]}")
+            self.bindJoints[base[0]] = follicleJoints[len(follicleJoints)-1]
             self.bindJoints[base[1]] = base[0]
 
         inverse = ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
@@ -852,11 +852,11 @@ class Limb(motionBase.MotionModuleBase):
             cmds.xform(jnt, ws=True, t=self.proxies[i].position)
             iJnts.append(jnt)
             index += 1
-            self.sockets[i] = jnt
-            if len(iJnts) == 1:
-                self.bindJoints[jnt] = baseJoints[-3]
-            else:
-                self.bindJoints[jnt] = iJnts[len(iJnts) - 2]
+            # self.sockets[i] = jnt
+            # if len(iJnts) == 1:
+            #     self.bindJoints[jnt] = baseJoints[-3]
+            # else:
+            #     self.bindJoints[jnt] = iJnts[len(iJnts) - 2]
 
         
         ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")

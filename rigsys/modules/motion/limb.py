@@ -676,10 +676,9 @@ class Limb(motionBase.MotionModuleBase):
                 self.bindJoints[jnt] = baseJoints[0]#self.bindJoints[baseJoints[1]]
             else:
                 self.bindJoints[jnt] = follicleJoints[len(follicleJoints) - 1]
-
-        jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
-                               aimAxis=self.aimAxis, upAxis=self.upAxis)
-        cmds.makeIdentity(follicleJoints, a=True)
+        # jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
+        #                        aimAxis=self.aimAxis, upAxis=self.upAxis)
+        # cmds.makeIdentity(follicleJoints, a=True)
         setRange = 0
         rangeDist = (1 / 6) * 10
         tempUpSpace = cmds.createNode('transform', n='TempUpSpace')
@@ -796,6 +795,9 @@ class Limb(motionBase.MotionModuleBase):
         cmds.parent(folGrp, self.moduleUtilities)
         cmds.parent(bendyCtrlGrp, self.plugParent)
         self.addSocketMetaData()
+        jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+        cmds.makeIdentity(follicleJoints, a=True)
         return follicleJoints
 
     def buildFoot(self, baseJoints, IKJoints, FKJoints, IKControls, FKControls, follicleJoints):

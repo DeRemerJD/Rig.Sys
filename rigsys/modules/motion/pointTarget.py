@@ -9,14 +9,14 @@ import rigsys.lib.joint as jointTools
 import maya.cmds as cmds
 
 
-class Root(motionBase.MotionModuleBase):
+class PointTarget(motionBase.MotionModuleBase):
     """Root Motion Module."""
 
     def __init__(self, rig, side="", label="", ctrlShapes="sphere", ctrlScale=None,
                  buildOrder: int = 2000, isMuted: bool = False, parent: str = None, mirror: bool = False,
                  bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  nameSet: dict = {"Point": "Point"}, targets: list = None, constrainType: str = None,
-                 effectTargets: bool = False, maintainOffset: bool = True, 
+                 effectTargets: bool = False, maintainOffset: bool = True, targetsInfluence: list = None,
                  aimAxis: str = "+x", upAxis: str = "-z") -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted, 
@@ -33,6 +33,7 @@ class Root(motionBase.MotionModuleBase):
         self.constrainType = constrainType
         self.effectTargets = effectTargets
         self.maintainOffset = maintainOffset
+        self.targetsInfluence = targetsInfluence
 
         self.proxies = {
             "Point": proxy.Proxy(
@@ -60,8 +61,8 @@ class Root(motionBase.MotionModuleBase):
         """Run the module."""
 
         # Get Proxy pos / rot values
-        proxyPosition = self.proxies["Root"].position
-        proxyRotation = self.proxies["Root"].rotation
+        proxyPosition = self.proxies["Point"].position
+        proxyRotation = self.proxies["Point"].rotation
 
         # MAKE MODULE NODES
         self.moduleHierarchy()
@@ -119,81 +120,150 @@ class Root(motionBase.MotionModuleBase):
             else:
                 cmds.error(f"Targets: {self.targets}, not str or list.")
 
-        allowedConstraints = ["parent", "point", "orient", "aim", "scale"]
-        if self.constrainType not in allowedConstraints:
-            cmds.error(f"constraint Type: '{self.constrainType}' not permitted, try {allowedConstraints}")
-        
-        if self.effectTargets:
-            if self.constrainType == "parent":
+            if self.side == "L":
+                index = 0
                 for i in self.targets:
-                    nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
-                    cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, ws=True, m=True
-                    ))
-                    iPar = cmds.listRelatives(i, p=True)[0]
-                    cmds.parent(nPar, iPar)
-                    cmds.parent(i, nPar)
-                    ptc = cmds.parentConstraint(rootCtrl, nPar, n=f"{nPar}_PTC", mo=self.maintainOffset)[0]
+                    if i.startswith("R_"):
+                        oldName = i.split("_")
+                        oldName[0] = "L"
+                        newName = "_".join(oldName)
+                        self.targets[index] = newName
+                    index+=1
+
+            elif self.side == "R":
+                index = 0
+                for i in self.targets:
+                    if i.startswith("L_"):
+                        oldName = i.split("_")
+                        oldName[0] = "R"
+                        newName = "_".join(oldName)
+                        self.targets[index] = newName
+                    index+=1
+
+            allowedConstraints = ["parent", "point", "orient", "aim", "scale"]
+            if self.constrainType not in allowedConstraints:
+                cmds.error(f"constraint Type: '{self.constrainType}' not permitted, try {allowedConstraints}")
+            
+            if self.effectTargets:
+                if self.constrainType == "parent":
+                    for i in self.targets:
+                        nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
+                        cmds.xform(nPar, ws=True, m=cmds.xform(
+                            i, q=True, ws=True, m=True
+                        ))
+                        iPar = cmds.listRelatives(i, p=True)[0]
+                        cmds.parent(nPar, iPar)
+                        cmds.parent(i, nPar)
+                        ptc = cmds.parentConstraint(rootCtrl, nPar, n=f"{nPar}_PTC", mo=self.maintainOffset)[0]
+                        cmds.setAttr(f"{ptc}.interpType", 2)
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{ptc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                elif self.constrainType == "point":
+                    for i in self.targets:
+                        nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
+                        cmds.xform(nPar, ws=True, m=cmds.xform(
+                            i, q=True, ws=True, m=True
+                        ))
+                        iPar = cmds.listRelatives(i, p=True)[0]
+                        cmds.parent(nPar, iPar)
+                        cmds.parent(i, nPar)
+                        pc = cmds.pointConstraint(rootCtrl, nPar, n=f"{rootPar}_PC", mo=self.maintainOffset)[0]
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{pc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                elif self.constrainType == "orient":
+                    for i in self.targets:
+                        nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
+                        cmds.xform(nPar, ws=True, m=cmds.xform(
+                            i, q=True, ws=True, m=True
+                        ))
+                        iPar = cmds.listRelatives(i, p=True)[0]
+                        cmds.parent(nPar, iPar)
+                        cmds.parent(i, nPar)
+                        oc = cmds.parentConstraint(rootCtrl, nPar, n=f"{rootPar}_OC", mo=self.maintainOffset)
+                        cmds.setAttr(f"{oc}.interpType", 2)
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{oc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                elif self.constrainType == "aim":
+                    for i in self.targets:
+                        nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
+                        cmds.xform(nPar, ws=True, m=cmds.xform(
+                            i, q=True, ws=True, m=True
+                        ))
+                        iPar = cmds.listRelatives(i, p=True)[0]
+                        cmds.parent(nPar, iPar)
+                        cmds.parent(i, nPar)
+                        aim = jointTools.axisToVector(self.aimAxis)
+                        up = jointTools.axisToVector(self.upAxis)
+                        aim = cmds.aimConstraint(rootCtrl, nPar, n=f"{rootPar}_AC", mo=self.maintainOffset,
+                                                aim=aim, up=up, wut="objectrotation", wuo=rootCtrl)
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{aim}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                else:
+                    for i in self.targets:
+                        nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
+                        cmds.xform(nPar, ws=True, m=cmds.xform(
+                            i, q=True, ws=True, m=True
+                        ))
+                        iPar = cmds.listRelatives(i, p=True)[0]
+                        cmds.parent(nPar, iPar)
+                        cmds.parent(i, nPar)
+                        sc = cmds.scaleConstraint(rootCtrl, nPar, n=f"{rootPar}_SC", mo=self.maintainOffset)[0]
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{sc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+            else:
+                if self.constrainType == "parent":
+                    ptc = cmds.parentConstraint(self.targets, rootPar, n=f"{rootPar}_PTC", mo=self.maintainOffset)[0]
                     cmds.setAttr(f"{ptc}.interpType", 2)
-            elif self.constrainType == "point":
-                for i in self.targets:
-                    nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
-                    cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, ws=True, m=True
-                    ))
-                    iPar = cmds.listRelatives(i, p=True)[0]
-                    cmds.parent(nPar, iPar)
-                    cmds.parent(i, nPar)
-                    cmds.pointConstraint(rootCtrl, nPar, n=f"{rootPar}_PC", mo=self.maintainOffset)
-            elif self.constrainType == "orient":
-                for i in self.targets:
-                    nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
-                    cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, ws=True, m=True
-                    ))
-                    iPar = cmds.listRelatives(i, p=True)[0]
-                    cmds.parent(nPar, iPar)
-                    cmds.parent(i, nPar)
-                    oc = cmds.parentConstraint(rootCtrl, nPar, n=f"{rootPar}_OC", mo=self.maintainOffset)
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{ptc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                elif self.constrainType == "point":
+                    pc = cmds.pointConstraint(self.targets, rootPar, n=f"{rootPar}_PC", mo=self.maintainOffset)[0]
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{pc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                elif self.constrainType == "orient":
+                    oc = cmds.parentConstraint(self.targets, rootPar, n=f"{rootPar}_OC", mo=self.maintainOffset)[0]
                     cmds.setAttr(f"{oc}.interpType", 2)
-            elif self.constrainType == "aim":
-                for i in self.targets:
-                    nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
-                    cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, ws=True, m=True
-                    ))
-                    iPar = cmds.listRelatives(i, p=True)[0]
-                    cmds.parent(nPar, iPar)
-                    cmds.parent(i, nPar)
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{oc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                elif self.constrainType == "aim":
                     aim = jointTools.axisToVector(self.aimAxis)
                     up = jointTools.axisToVector(self.upAxis)
-                    aim = cmds.aimConstraint(rootCtrl, nPar, n=f"{rootPar}_AC", mo=self.maintainOffset,
-                                            aim=aim, up=up, wut="objectrotation", wuo=rootCtrl)
-            else:
-                for i in self.targets:
-                    nPar = cmds.createNode("transform", n=f"{i}_{self.label}Offset")
-                    cmds.xform(nPar, ws=True, m=cmds.xform(
-                        i, q=True, ws=True, m=True
-                    ))
-                    iPar = cmds.listRelatives(i, p=True)[0]
-                    cmds.parent(nPar, iPar)
-                    cmds.parent(i, nPar)
-                    cmds.scaleConstraint(rootCtrl, nPar, n=f"{rootPar}_SC", mo=self.maintainOffset)
-        else:
-            if self.constrainType == "parent":
-                ptc = cmds.parentConstraint(self.targets, rootPar, n=f"{rootPar}_PTC", mo=self.maintainOffset)[0]
-                cmds.setAttr(f"{ptc}.interpType", 2)
-            elif self.constrainType == "point":
-                cmds.pointConstraint(self.targets, rootPar, n=f"{rootPar}_PC", mo=self.maintainOffset)
-            elif self.constrainType == "orient":
-                oc = cmds.parentConstraint(self.targets, rootPar, n=f"{rootPar}_OC", mo=self.maintainOffset)
-                cmds.setAttr(f"{oc}.interpType", 2)
-            elif self.constrainType == "aim":
-                aim = jointTools.axisToVector(self.aimAxis)
-                up = jointTools.axisToVector(self.upAxis)
-                aim = cmds.aimConstraint(self.targets, rootPar, n=f"{rootPar}_AC", mo=self.maintainOffset,
-                                         aim=aim, up=up, wut="objectrotation", wuo=rootCtrl)
-            else:
-                cmds.scaleConstraint(self.targets, rootPar, n=f"{rootPar}_SC", mo=self.maintainOffset)
-
+                    aim = cmds.aimConstraint(self.targets, rootPar, n=f"{rootPar}_AC", mo=self.maintainOffset,
+                                            aim=aim, up=up, wut="objectrotation", wuo=rootCtrl)[0]
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{aim}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
+                else:
+                    sc = cmds.scaleConstraint(self.targets, rootPar, n=f"{rootPar}_SC", mo=self.maintainOffset)[0]
+                    if len(self.targetsInfluence) == len(self.targets):
+                        index = 0
+                        for i in self.targets:
+                            cmds.setAttr(f"{sc}.{i}W{index}", self.targetsInfluence[index])
+                            index+=1
         self.addSocketMetaData()

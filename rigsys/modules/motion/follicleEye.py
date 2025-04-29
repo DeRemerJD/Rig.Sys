@@ -383,6 +383,53 @@ class FollicleEye(motionBase.MotionModuleBase):
         if buildFollicles:
             folGroup = cmds.createNode("transform", n=f"{self.side}_{self.label}_follicles", p=self.moduleUtilities)
             index = 0
+            if useMesh:
+                ifol = cmds.createNode("transform", n=f"{cornerJoints[0]}_fol", p=folGroup)
+                ifolShape = cmds.createNode("follicle", n=f"{cornerJoints[0]}_folShape", p=ifol)
+                ofol = cmds.createNode("transform", n=f"{cornerJoints[1]}_fol", p=folGroup)
+                ofolShape = cmds.createNode("follicle", n=f"{cornerJoints[1]}_folShape", p=ofol)
+                cmds.setAttr(f"{ifolShape}.visibility", 0, l=True, k=False)
+                cmds.setAttr(f"{ofolShape}.visibility", 0, l=True, k=False)
+            # IN
+                icpom = cmds.createNode("closestPointOnMesh", n=f"{cornerFolOffsets[0]}_CPOM")
+                cmds.connectAttr(
+                    f"{self.follicleMesh}.worldMatrix[0]", f"{ifolShape}.inputWorldMatrix", f=True)
+                cmds.connectAttr(f"{self.follicleMesh}.outMesh",
+                                f"{ifolShape}.inputMesh", f=True)
+                # ucpom connections
+                iDM = cmds.createNode("decomposeMatrix", n=f"{cornerGroups[0]}_DM")
+                cmds.connectAttr(f"{cornerGroups[0]}.worldMatrix[0]", f"{iDM}.inputMatrix")
+                cmds.connectAttr(f"{iDM}.outputTranslate", f"{icpom}.inPosition")
+                cmds.connectAttr(f"{icpom}.parameterU", f"{ifolShape}.parameterU")
+                cmds.connectAttr(f"{icpom}.parameterV", f"{ifolShape}.parameterV")
+                cmds.connectAttr(f"{ifolShape}.outTranslate", f"{ifol}.translate")
+                cmds.connectAttr(f"{ifolShape}.outRotate", f"{ifol}.rotate")
+                # cmds.connectAttr(f"{ufol}.translate", f"{uf}.translate")
+                
+                cmds.connectAttr(f"{self.follicleMesh}.outMesh", f"{icpom}.inMesh")
+                cmds.connectAttr(f"{self.follicleMesh}.worldMatrix[0]", f"{icpom}.inputMatrix")
+                pc = cmds.pointConstraint(ifol, cornerFolOffsets[0], mo=1)
+                
+                # LO
+                ocpom = cmds.createNode("closestPointOnMesh", n=f"{cornerFolOffsets[1]}_CPOM")
+                cmds.connectAttr(
+                    f"{self.follicleMesh}.worldMatrix[0]", f"{ofolShape}.inputWorldMatrix", f=True)
+                cmds.connectAttr(f"{self.follicleMesh}.outMesh",
+                                f"{ofolShape}.inputMesh", f=True)
+                # ucpom connections
+                oDM = cmds.createNode("decomposeMatrix", n=f"{cornerGroups[1]}_DM")
+                cmds.connectAttr(f"{cornerGroups[1]}.worldMatrix[0]", f"{oDM}.inputMatrix")
+                cmds.connectAttr(f"{oDM}.outputTranslate", f"{ocpom}.inPosition")
+                cmds.connectAttr(f"{ocpom}.parameterU", f"{ofolShape}.parameterU")
+                cmds.connectAttr(f"{ocpom}.parameterV", f"{ofolShape}.parameterV")
+                cmds.connectAttr(f"{ofolShape}.outTranslate", f"{ofol}.translate")
+                cmds.connectAttr(f"{ofolShape}.outRotate", f"{ofol}.rotate")
+                # cmds.connectAttr(f"{ufol}.translate", f"{uf}.translate")
+                
+                cmds.connectAttr(f"{self.follicleMesh}.outMesh", f"{ocpom}.inMesh")
+                cmds.connectAttr(f"{self.follicleMesh}.worldMatrix[0]", f"{ocpom}.inputMatrix")
+                pc = cmds.pointConstraint(ofol, cornerFolOffsets[1], mo=1)
+
             for uf, lf in zip(upFolOffsets, loFolOffsets):
                 ufol = cmds.createNode("transform", n=f"{upLidJoints[index]}_fol", p=folGroup)
                 ufolShape = cmds.createNode("follicle", n=f"{upLidJoints[index]}_folShape", p=ufol)

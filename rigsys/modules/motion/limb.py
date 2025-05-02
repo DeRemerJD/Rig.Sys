@@ -16,6 +16,7 @@ class Limb(motionBase.MotionModuleBase):
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True, 
                  clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
+                 ikCtrlToFloor: bool = False, foot: bool = False,
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
@@ -32,6 +33,8 @@ class Limb(motionBase.MotionModuleBase):
         # Module Specific Exposed Variables
         self.pvMultiplier = pvMultiplier
         self.numberOfJoints = numberOfJoints
+        self.ikCtrlToFloor = ikCtrlToFloor
+        self.foot = foot
         self.nameSet = nameSet
 
         self.proxies = {
@@ -69,6 +72,65 @@ class Limb(motionBase.MotionModuleBase):
                 parent=self.nameSet["Mid"]
             )
         }
+        # Add foot pivots if declared
+        if self.foot:
+                self.proxies["Pivot"] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="Pivot",
+                    parent=self.nameSet["End"])
+                
+                self.proxies["Heel"] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="Heel",
+                    parent=self.nameSet["End"])
+                
+                self.proxies["OutBank"] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="OutBank",
+                    parent=self.nameSet["End"])
+                
+                self.proxies["InBank"] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="InBank",
+                    parent=self.nameSet["End"])
+                
+                self.proxies['Ball'] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="Ball",
+                    parent="Pivot")
+                
+                self.proxies["Toe"] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="Toe",
+                    parent="Ball")
+                
+                self.proxies["Global"] = proxy.Proxy(
+                    position=[5, 1, 0],
+                    rotation=[0, 0, 0],
+                    side=self.side,
+                    label=self.label,
+                    name="Global",
+                    parent=self.nameSet["End"])
+
+
         if not self.clavicle:
             pass
 
@@ -136,28 +198,35 @@ class Limb(motionBase.MotionModuleBase):
         baseJoints, FKJoints, IKJoints, upConnector = self.buildSkeleton()
         IKControls, FKControls, midCtrl, endCtrl, upRollJoints, loRollJoints, upIK, loIK = self.buildBaseControls(
             baseJoints, IKJoints, FKJoints, upConnector)
-        self.buildRibbon(baseJoints, upRollJoints,
+
+        follicleJoints = self.buildRibbon(baseJoints, upRollJoints,
                          loRollJoints, midCtrl, endCtrl)
+        if self.foot:
+            self.buildFoot(baseJoints, IKJoints, FKJoints, IKControls, FKControls, follicleJoints)
 
         # Cleanup
         cmds.parent(baseJoints[0], self.moduleUtilities)
 
     def buildSkeleton(self):
+        omit = ["Ball", "Toe", "Pivot", "Heel", "InBank", "OutBank", "Global"]
         baseJoints = []
         IKJoints = []
         FKJoints = []
         for key, val in self.proxies.items():
-            jnt = cmds.createNode(
-                "joint", n=f"{self.side}_{self.label}_{val.name}")
-            cmds.setAttr(f"{jnt}.drawStyle", 2)
-            cmds.xform(jnt, ws=True, t=val.position)
-            baseJoints.append(jnt)
-            self.sockets[key] = jnt
-            if len(baseJoints) == 1:
-                self.bindJoints[jnt] = None
-            else:
-                if key != self.nameSet["End"]:
-                    self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
+            if key not in omit:
+                jnt = cmds.createNode(
+                    "joint", n=f"{self.side}_{self.label}_{val.name}")
+                cmds.setAttr(f"{jnt}.drawStyle", 2)
+                cmds.xform(jnt, ws=True, t=val.position)
+                baseJoints.append(jnt)
+                self.sockets[key] = jnt
+                # if len(baseJoints) == 1:
+                #     self.bindJoints[jnt] = None
+                # else:
+                #     if key != self.nameSet["End"]:
+                #         self.bindJoints[jnt] = baseJoints[len(baseJoints) - 2]
+                if key == self.nameSet["Root"]:
+                    self.bindJoints[jnt] = None
 
         if self.poleVector is None:
             poleVector = cmds.createNode(
@@ -241,9 +310,13 @@ class Limb(motionBase.MotionModuleBase):
         # IK Control
         ikGrp = cmds.createNode('transform', n=f"{IKJoints[2]}_grp")
         ikCtrl = cmds.createNode('transform', n=f"{IKJoints[2]}_CTRL", p=ikGrp)
-        cmds.xform(ikGrp, ws=True, t=cmds.xform(
-            IKJoints[2], q=True, ws=True, t=True
-        ))
+        if self.ikCtrlToFloor:
+            t = cmds.xform(IKJoints[2], q=True, ws=True, t=True)
+            cmds.xform(ikGrp, ws=True, t=[t[0], 0, t[2]])
+        else:
+            cmds.xform(ikGrp, ws=True, t=cmds.xform(
+                IKJoints[2], q=True, ws=True, t=True
+            ))
         ikCtrlObject = ctrlCrv.Ctrl(
             node=ikCtrl,
             shape="sphere",
@@ -277,7 +350,8 @@ class Limb(motionBase.MotionModuleBase):
         ik = cmds.ikHandle(n=f"{self.side}_{self.label}_IK",
                            sj=IKJoints[0], ee=IKJoints[2], sol="ikRPsolver", p=1)
         eff = cmds.rename(ik[1], f"{self.side}_{self.label}_EFF")
-        ik = ik[0]
+        ik=ik[0]
+        self.ik = ik
         cmds.parent(ik, ikCtrl)
         cmds.setAttr(f"{ik}.visibility", 0, l=True, k=False)
         oc = cmds.orientConstraint(
@@ -413,7 +487,7 @@ class Limb(motionBase.MotionModuleBase):
         endJnt = cmds.createNode("joint", n=f"{baseJoints[3]}End")
         cmds.setAttr(f"{endJnt}.drawStyle", 2)
         self.sockets[self.nameSet["End"]] = endJnt
-        self.bindJoints[endJnt] = baseJoints[2]
+        # self.bindJoints[endJnt] = baseJoints[2]
         cmds.xform(endJnt, ws=True, m=cmds.xform(
             baseJoints[3], q=True, ws=True, m=True
         ))
@@ -599,13 +673,12 @@ class Limb(motionBase.MotionModuleBase):
             cmds.setAttr(f"{jnt}.drawStyle", 2)
             self.sockets[f"Follicle_{i}"] = jnt
             if len(follicleJoints) == 1:
-                self.bindJoints[jnt] = self.bindJoints[baseJoints[1]]
+                self.bindJoints[jnt] = baseJoints[0]#self.bindJoints[baseJoints[1]]
             else:
                 self.bindJoints[jnt] = follicleJoints[len(follicleJoints) - 1]
-
-        jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
-                               aimAxis=self.aimAxis, upAxis=self.upAxis)
-        cmds.makeIdentity(follicleJoints, a=True)
+        # jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
+        #                        aimAxis=self.aimAxis, upAxis=self.upAxis)
+        # cmds.makeIdentity(follicleJoints, a=True)
         setRange = 0
         rangeDist = (1 / 6) * 10
         tempUpSpace = cmds.createNode('transform', n='TempUpSpace')
@@ -722,3 +795,175 @@ class Limb(motionBase.MotionModuleBase):
         cmds.parent(folGrp, self.moduleUtilities)
         cmds.parent(bendyCtrlGrp, self.plugParent)
         self.addSocketMetaData()
+        jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+        cmds.makeIdentity(follicleJoints, a=True)
+        return follicleJoints
+
+    def buildFoot(self, baseJoints, IKJoints, FKJoints, IKControls, FKControls, follicleJoints):
+        # for key, val in self.proxies.items():
+        #     if key in omit:
+        #         jnt = cmds.createNode("joint", n=f"{self.side}_{self.label}_{val.name}")
+        label = f"{self.side}_{self.label}"
+        base = []
+        ik = []
+        fk = []
+        index = 0
+        for i in ["", "_IK", "_FK"]:
+            
+            ball = cmds.createNode("joint", n=f"{label}_{self.proxies['Ball'].name}{i}")
+            toe = cmds.createNode("joint", n=f"{label}_{self.proxies['Toe'].name}{i}", p=ball)
+            cmds.setAttr(f"{ball}.drawStyle", 2)
+            cmds.setAttr(f"{toe}.drawStyle", 2)
+            cmds.xform(ball, ws=True, t=self.proxies["Ball"].position)
+            cmds.xform(toe, ws=True, t=self.proxies["Toe"].position)
+            if index == 0:
+                cmds.parent(ball, baseJoints[-1])
+                base.append(ball)
+                base.append(toe)
+            if index == 1:
+                cmds.parent(ball, IKJoints[-1])
+                ik.append(ball)
+                ik.append(toe)
+            if index == 2:
+                cmds.parent(ball, FKJoints[-1])
+                fk.append(ball)
+                fk.append(toe)
+            jointTools.aimSequence(base, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            jointTools.aimSequence(ik, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            jointTools.aimSequence(fk, upObj=self.poleVector,
+                               aimAxis=self.aimAxis, upAxis=self.upAxis)
+            index += 1
+            cmds.makeIdentity([ball, toe], a=True)
+            #cmds.error(f"{base[0]} {baseJoints[-1]} {base[1]}")
+            self.bindJoints[base[0]] = follicleJoints[len(follicleJoints)-1]
+            self.bindJoints[base[1]] = base[0]
+
+        inverse = ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
+        iJnts = []
+        index = 0
+        for i in inverse:
+            jnt = cmds.createNode("joint", n=f"{label}_{i}_INV")
+            cmds.setAttr(f"{jnt}.drawStyle", 2)
+
+            if len(iJnts) > 0:
+                cmds.parent(jnt, iJnts[index-1])
+
+            cmds.xform(jnt, ws=True, t=self.proxies[i].position)
+            iJnts.append(jnt)
+            index += 1
+            # self.sockets[i] = jnt
+            # if len(iJnts) == 1:
+            #     self.bindJoints[jnt] = baseJoints[-3]
+            # else:
+            #     self.bindJoints[jnt] = iJnts[len(iJnts) - 2]
+
+        
+        ballIK = cmds.ikHandle(sj=IKJoints[-1], ee=ik[0], n=f"{ik[0]}_IK", sol="ikSCsolver")
+        ballEFF = ballIK[1]
+        ballIK = ballIK[0]
+        toeIK = cmds.ikHandle(sj=ik[0], ee=ik[1], n=f"{ik[1]}_IK", sol="ikSCsolver")
+        toeEFF = toeIK[1]
+        toeIK = toeIK[0]
+        cmds.setAttr(f"{ballIK}.visibility", 0, l=True, k=False)
+        cmds.setAttr(f"{toeIK}.visibility", 0, l=True, k=False)
+
+        globalGrp = cmds.createNode("transform", n=f"{label}_{self.proxies['Global'].name}_grp")
+        globalCtrl = cmds.createNode("transform", n=f"{label}_{self.proxies['Global'].name}_CTRL", p=globalGrp)
+        cmds.setAttr(f"{globalCtrl}.visibility", l=True, k=False)
+
+        globalCtrlObject = ctrlCrv.Ctrl(
+            node=globalCtrl,
+            shape="sphere",
+            scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+            offset=[0, 0, 0]
+        )
+        globalCtrlObject.giveCtrlShape()
+
+        cmds.xform(globalGrp, ws=True, t=cmds.xform(
+            f"{label}_{self.proxies['Global'].name}_proxy", q=True, ws=True, t=True
+        ))
+
+        rollMD = cmds.createNode("multiplyDivide", n=f"{label}_InvToe_md")
+        raiseCD = cmds.createNode("condition", n=f"{label}_InvRaise_cd")
+        bankCD = cmds.createNode("condition", n=f"{label}_InvBank_cd")
+
+        for i in [raiseCD, bankCD]:
+            cmds.setAttr(f"{i}.colorIfFalseR", 0)
+            cmds.setAttr(f"{i}.colorIfFalseG", 0)
+            cmds.setAttr(f"{i}.colorIfFalseB", 0)
+        
+        for i in ["X", "Y", "Z"]:
+            if i != "X":
+                cmds.setAttr(f"{rollMD}.input2{i}", -1)
+            else:
+                cmds.setAttr(f"{rollMD}.input2{i}", 1)
+        if self.side == "L":
+            cmds.setAttr(f"{bankCD}.operation", 2)
+        else:
+            cmds.setAttr(f"{bankCD}.operation", 4)
+        cmds.setAttr(f"{raiseCD}.operation", 4)
+
+        cmds.connectAttr(f"{globalCtrl}.translateZ", f"{rollMD}.input1X")
+        cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{bankCD}.colorIfTrueR")
+        cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{bankCD}.colorIfFalseG")
+        cmds.connectAttr(f"{globalCtrl}.rotateZ", f"{bankCD}.firstTerm")
+        cmds.connectAttr(f"{globalCtrl}.rotateX", f"{raiseCD}.colorIfTrueR") 
+        cmds.connectAttr(f"{globalCtrl}.rotateX", f"{raiseCD}.colorIfFalseG")
+        cmds.connectAttr(f"{globalCtrl}.rotateX", f"{raiseCD}.firstTerm")
+# ["InBank", "OutBank", "Heel", "Pivot", "Toe", "Ball", self.nameSet["End"]]
+        cmds.connectAttr(f"{bankCD}.outColorR", f"{iJnts[0]}.rotateZ")
+        cmds.connectAttr(f"{bankCD}.outColorG", f"{iJnts[1]}.rotateZ")
+        cmds.connectAttr(f"{raiseCD}.outColorR", f"{iJnts[2]}.rotateX")
+        cmds.connectAttr(f"{raiseCD}.outColorG", f"{iJnts[5]}.rotateX")
+        cmds.connectAttr(f'{rollMD}.outputX', f"{iJnts[4]}.rotateX")
+        cmds.connectAttr(f"{globalCtrl}.rotateY", f"{iJnts[3]}.rotateY")
+
+        cmds.addAttr(globalCtrl, ln="heelPivot", at="float", dv=0, k=True)
+        cmds.connectAttr(f"{globalCtrl}.heelPivot", f"{iJnts[2]}.rotateY")
+        fkGrps = []
+        fkCtrls = []
+        # FK Jazz
+        for jnt in fk:
+            if jnt == fk[0]:
+                grp = cmds.createNode("transform", n=f"{jnt}_FK_grp", p=FKControls[-1])
+                ctrl = cmds.createNode("transform", n=f"{jnt}_FK_CTRL", p=grp)
+            else:
+                grp = cmds.createNode("transform", n=f"{jnt}_FK_grp", p=FKControls[-1])
+                ctrl = cmds.createNode("transform", n=f"{jnt}_FK_CTRL", p=fkGrps[0])
+            cmds.xform(grp, ws=True, m=cmds.xform(
+                jnt, q=True, ws=True, m=True
+            ))
+            fkGrps.append(grp)
+            fkCtrls.append(ctrl)
+            cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
+            fkCtrlObject = ctrlCrv.Ctrl(
+                node=ctrl,
+                shape="square",
+                scale=[self.ctrlScale[0], self.ctrlScale[1], self.ctrlScale[2]],
+                offset=[0, 0, 0],
+                orient=[0, 0, 90]
+            )
+            fkCtrlObject.giveCtrlShape()
+            ptc = cmds.parentConstraint(ctrl, jnt, n=f"{jnt}_ptc", mo=0)
+
+        # Parent inverse and IKs
+        cmds.parent(f"{self.ik}", f"{iJnts[-1]}")
+        cmds.parent(f"{iJnts[0]}", f"{IKControls[0]}")
+        cmds.parent(f"{ballIK}", f"{iJnts[-2]}")
+        cmds.parent(f"{toeIK}", f"{iJnts[-3]}")
+        cmds.parent(globalGrp, IKControls[0])
+
+        # pc = cmds.pointConstraint(iJnts[-1], cmds.listRelatives(IKControls[1], p=True)[0])
+
+        for index in range(2):
+            bc = cmds.createNode("blendColors", n=f"{base[index]}_bc")
+            cmds.connectAttr(f"{IKControls[0]}.IK_FK_Switch", f"{bc}.blender")
+            cmds.connectAttr(f"{fk[index]}.rotate", f"{bc}.color1")
+            cmds.connectAttr(f"{ik[index]}.rotate", f"{bc}.color2")
+            cmds.connectAttr(f"{bc}.output", f"{base[index]}.rotate")
+
+        cmds.setAttr(f"{iJnts[0]}.visibility", False)
+

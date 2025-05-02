@@ -491,7 +491,7 @@ class Limb(motionBase.MotionModuleBase):
 
         cmds.setAttr(f"{endJnt}.drawStyle", 2)
         self.sockets[self.nameSet["End"]] = endJnt
-        self.bindJoints[endJnt] = baseJoints[2]
+        #self.bindJoints[endJnt] = baseJoints[2]
 
         cmds.xform(endJnt, ws=True, m=cmds.xform(
             baseJoints[3], q=True, ws=True, m=True

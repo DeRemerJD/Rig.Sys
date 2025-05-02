@@ -469,7 +469,7 @@ class Lips(motionBase.MotionModuleBase):
             upCtrl = cmds.createNode("transform", n=f"{upJnt}_CTRL", p=upZip)
             upLocZip = cmds.createNode("transform", n=f"{upJnt}_locator", p=upPar)
             upMouthZipper = cmds.createNode("transform", n=f"{upJnt}_mouthTarget", p=upPar)
-            cmds.xform(upPar, ws=True, m=cmds.xform(upJnt, q=True, ws=True, m=True))
+            cmds.xform(upPar, ws=True, t=cmds.xform(upJnt, q=True, ws=True, t=True))
             loPar = cmds.createNode("transform", n=f"{loJnt}_grp")
             loOffset = cmds.createNode("transform", n=f"{loJnt}_offset", p=loPar)
             loCorrective = cmds.createNode("transform", n=f"{loJnt}_corrective", p=loPar)
@@ -477,7 +477,7 @@ class Lips(motionBase.MotionModuleBase):
             loCtrl = cmds.createNode("transform", n=f"{loJnt}_CTRL", p=loZip)
             loLocZip = cmds.createNode("transform", n=f"{loJnt}_locator", p=loPar)
             loMouthZipper = cmds.createNode("transform", n=f"{loJnt}_mouthTarget", p=loPar)
-            cmds.xform(loPar, ws=True, m=cmds.xform(loJnt, q=True, ws=True, m=True))
+            cmds.xform(loPar, ws=True, t=cmds.xform(loJnt, q=True, ws=True, t=True))
 
             ptc_u = cmds.parentConstraint(upCtrl, upJnt, mo=0, n=f"{upJnt}_ptc")[0]
             cmds.setAttr(f"{ptc_u}.interpType", 2)
@@ -525,7 +525,7 @@ class Lips(motionBase.MotionModuleBase):
             ctrl = cmds.createNode("transform", n=f"{corner}_CTRL", p=offset)
             cLocZip = cmds.createNode("transform", n=f"{corner}_locator", p=par)
             cMouthZipper = cmds.createNode("transform", n=f"{corner}_mouthTarget", p=par)
-            cmds.xform(par, ws=True, m=cmds.xform(corner, q=True, ws=True, m=True))
+            cmds.xform(par, ws=True, t=cmds.xform(corner, q=True, ws=True, t=True))
             ptc = cmds.parentConstraint(ctrl, corner, mo=0, n=f"{corner}_ptc")[0]
             cmds.setAttr(f"{ptc}.interpType", 2)
             ptcs.append(ptc)
@@ -624,16 +624,16 @@ class Lips(motionBase.MotionModuleBase):
         loROffsets.insert(0, loOffsets[int(lipRange)])
         acs = []
         for i in range(len(upLOffsets)-1):
-            ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=0, 
+            ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=1, 
                                     n=f"{upLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object")[0]
-            ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=0, 
+            ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=1, 
                                     n=f"{loLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object")[0]
-            ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=0, 
+            ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=1, 
                                     n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upROffsets[i], wut="object")[0]
-            ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=0 , 
+            ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=1, 
                                     n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object")[0]
             acs.extend([ac_ul, ac_ll, ac_ur, ac_lr])
@@ -651,19 +651,19 @@ class Lips(motionBase.MotionModuleBase):
         for i in range(2):
             ptc = cmds.parentConstraint(cornerCtrls[i], cornerJoints[i], n=f"{cornerJoints[i]}_ptc", mo=0)
         for i in range(len(upLOffsets)-1):
-            ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=0, 
+            ac_ul = cmds.aimConstraint(upLOffsets[i], upLOffsets[i+1], mo=1, 
                                     n=f"{upLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(self.upAxis), wuo=upLOffsets[i], wut="object",
                                     sk="x")[0]
-            ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=0, 
+            ac_ll = cmds.aimConstraint(loLOffsets[i], loLOffsets[i+1], mo=1, 
                                     n=f"{loLOffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(self.upAxis), wuo=loLOffsets[i], wut="object",
                                     sk="x")[0]
-            ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=0, 
+            ac_ur = cmds.aimConstraint(upROffsets[i], upROffsets[i+1], mo=1, 
                                     n=f"{upROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=upROffsets[i], wut="object",
                                     sk="x")[0]
-            ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=0 , 
+            ac_lr = cmds.aimConstraint(loROffsets[i], loROffsets[i+1], mo=1, 
                                     n=f"{loROffsets[i+1]}_ac", aim=jointTools.axisToVector(jointTools.axisFlip(self.aimAxis)),
                                     u=jointTools.axisToVector(jointTools.axisFlip(self.upAxis)), wuo=loROffsets[i], wut="object",
                                     sk="x")[0]
@@ -721,34 +721,34 @@ class Lips(motionBase.MotionModuleBase):
             # sineIn = self.easeInSine(input=inflCalc)
             cubicIn = self.easeInSine(input=inflCalc)
             circIn = self.easeInCirc(input=inflCalc)
-            circIn = inflCalc
+            linear = inflCalc
 
             # Up Left
-            cmds.setAttr(f"{mlUpMd}.input2.input2X", 1.0-circIn)
+            cmds.setAttr(f"{mlUpMd}.input2.input2X", 1.0-linear)
             cmds.setAttr(f"{mlUpMd}.input2.input2Y", (1.0-circIn))
             cmds.setAttr(f"{mlUpMd}.input2.input2Z", (1.0-circIn))
-            cmds.setAttr(f"{lUpMd}.input2.input2X", circIn)
+            cmds.setAttr(f"{lUpMd}.input2.input2X", linear)
             cmds.setAttr(f"{lUpMd}.input2.input2Y", (circIn))
             cmds.setAttr(f"{lUpMd}.input2.input2Z", (circIn))
             # Lo Left
-            cmds.setAttr(f"{mlLoMd}.input2.input2X", 1.0-circIn)
+            cmds.setAttr(f"{mlLoMd}.input2.input2X", 1.0-linear)
             cmds.setAttr(f"{mlLoMd}.input2.input2Y", (1.0-circIn))
             cmds.setAttr(f"{mlLoMd}.input2.input2Z", (1.0-circIn))
-            cmds.setAttr(f"{lLoMd}.input2.input2X", circIn)
+            cmds.setAttr(f"{lLoMd}.input2.input2X", linear)
             cmds.setAttr(f"{lLoMd}.input2.input2Y", (circIn))
             cmds.setAttr(f"{lLoMd}.input2.input2Z", (circIn))
             # Up Right
-            cmds.setAttr(f"{mrUpMd}.input2.input2X", (1.0-circIn)*-1)
+            cmds.setAttr(f"{mrUpMd}.input2.input2X", (1.0-linear)*-1)
             cmds.setAttr(f"{mrUpMd}.input2.input2Y", (1.0-circIn))
             cmds.setAttr(f"{mrUpMd}.input2.input2Z", 1.0-circIn)
-            cmds.setAttr(f"{rUpMd}.input2.input2X", (circIn))
+            cmds.setAttr(f"{rUpMd}.input2.input2X", (linear))
             cmds.setAttr(f"{rUpMd}.input2.input2Y", (circIn))
             cmds.setAttr(f"{rUpMd}.input2.input2Z", circIn)
             # Lo Right
-            cmds.setAttr(f"{mrLoMd}.input2.input2X", (1.0-circIn)*-1)
+            cmds.setAttr(f"{mrLoMd}.input2.input2X", (1.0-linear)*-1)
             cmds.setAttr(f"{mrLoMd}.input2.input2Y", (1.0-circIn))
             cmds.setAttr(f"{mrLoMd}.input2.input2Z", 1.0-circIn)
-            cmds.setAttr(f"{rLoMd}.input2.input2X", (circIn))
+            cmds.setAttr(f"{rLoMd}.input2.input2X", (linear))
             cmds.setAttr(f"{rLoMd}.input2.input2Y", (circIn))
             cmds.setAttr(f"{rLoMd}.input2.input2Z", circIn)
         

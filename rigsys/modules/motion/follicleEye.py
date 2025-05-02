@@ -496,8 +496,7 @@ class FollicleEye(motionBase.MotionModuleBase):
             cmds.parent(loGroups, self.plugParent)
             cmds.parent(cornerGroups, self.plugParent)
 
-        upMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Up'].name}Main_grp", 
-                                    p=self.plugParent)
+        upMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Up'].name}Main_grp")
         upMainCtrl = cmds.createNode("transform", 
                                      n=f"{self.side}_{self.label}_{self.proxies['Up'].name}Main_CTRL", p=upMainPar)
         upMainCtrlShape = ctrlCrv.Ctrl(
@@ -507,8 +506,9 @@ class FollicleEye(motionBase.MotionModuleBase):
                 offset=[0, 0, 0]
             )
         upMainCtrlShape.giveCtrlShape()
-        loMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Lo'].name}Main_grp", 
-                                    p=self.plugParent)
+        cmds.parent(upMainPar, self.plugParent)
+
+        loMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Lo'].name}Main_grp")
         loMainCtrl = cmds.createNode("transform", 
                                      n=f"{self.side}_{self.label}_{self.proxies['Lo'].name}Main_CTRL", p=loMainPar)
         loMainCtrlShape = ctrlCrv.Ctrl(
@@ -518,8 +518,8 @@ class FollicleEye(motionBase.MotionModuleBase):
                 offset=[0, 0, 0]
             )
         loMainCtrlShape.giveCtrlShape()
-        inMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['In'].name}Main_grp", 
-                                    p=self.plugParent)
+        cmds.parent(loMainPar, self.plugParent)
+        inMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['In'].name}Main_grp")
         inMainCtrl = cmds.createNode("transform", 
                                      n=f"{self.side}_{self.label}_{self.proxies['In'].name}Main_CTRL", p=inMainPar)
         inMainCtrlShape = ctrlCrv.Ctrl(
@@ -529,8 +529,8 @@ class FollicleEye(motionBase.MotionModuleBase):
                 offset=[0, 0, 0]
             )
         inMainCtrlShape.giveCtrlShape()
-        outMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Out'].name}Main_grp", 
-                                     p=self.plugParent)
+        cmds.parent(inMainPar, self.plugParent)
+        outMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Out'].name}Main_grp")
         outMainCtrl = cmds.createNode("transform", 
                                      n=f"{self.side}_{self.label}_{self.proxies['Out'].name}Main_CTRL", p=outMainPar)
         outMainCtrlShape = ctrlCrv.Ctrl(
@@ -540,6 +540,7 @@ class FollicleEye(motionBase.MotionModuleBase):
                 offset=[0, 0, 0]
             )
         outMainCtrlShape.giveCtrlShape()
+        cmds.parent(outMainPar, self.plugParent)
 
         if not self.follicleMesh or self.follicleSurface:
             upTrack = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Up'].name}Main_track", p=upMainPar)
@@ -554,14 +555,14 @@ class FollicleEye(motionBase.MotionModuleBase):
         cmds.xform(upMainPar, ws=True, t=cmds.xform(
             f"{self.side}_{self.label}_{self.proxies['Up'].name}_proxy", q=True, ws=True, t=True
         ))
-        cmds.xform(loMainPar, ws=True, m=cmds.xform(
-            f"{self.side}_{self.label}_{self.proxies['Lo'].name}_proxy", q=True, ws=True, m=True
+        cmds.xform(loMainPar, ws=True, t=cmds.xform(
+            f"{self.side}_{self.label}_{self.proxies['Lo'].name}_proxy", q=True, ws=True, t=True
         ))
-        cmds.xform(inMainPar, ws=True, m=cmds.xform(
-            f"{self.side}_{self.label}_{self.proxies['In'].name}_proxy", q=True, ws=True, m=True
+        cmds.xform(inMainPar, ws=True, t=cmds.xform(
+            f"{self.side}_{self.label}_{self.proxies['In'].name}_proxy", q=True, ws=True, t=True
         ))
-        cmds.xform(outMainPar, ws=True, m=cmds.xform(
-            f"{self.side}_{self.label}_{self.proxies['Out'].name}_proxy", q=True, ws=True, m=True
+        cmds.xform(outMainPar, ws=True, t=cmds.xform(
+            f"{self.side}_{self.label}_{self.proxies['Out'].name}_proxy", q=True, ws=True, t=True
         ))
 
         if not self.follicleMesh or self.follicleSurface:
@@ -745,6 +746,13 @@ class FollicleEye(motionBase.MotionModuleBase):
                          proxy=f"{upMainCtrl}.blink", at="float", min=0.0, max=1.0, dv=0, k=True)
             cmds.addAttr(i, ln="blinkLine",
                          proxy=f"{upMainCtrl}.blinkLine", at="float", min=0.0, max=1.0, dv=0.5, k=True)
+        
+        if not self.follicleMesh or self.follicleSurface:
+            lidEyeOffset = cmds.createNode("transform", n=f"{self.side}_{self.label}_eyeOffset", p=self.plugParent)
+            cmds.xform(lidEyeOffset, ws=True, t=cmds.xform(
+                eyejoint, q=True, ws=True, t=True
+            ))
+
         index = 0
         for uPar, lPar in zip(upGroups, loGroups):
             # do PMA blend for each lid.
@@ -756,8 +764,13 @@ class FollicleEye(motionBase.MotionModuleBase):
             cmds.connectAttr(f"{upMainCtrl}.blink", f"{lBC}.blender")
             cmds.connectAttr(f"{upMainCtrl}.blinkLine", f"{lineBC}.blender")
 
-            uT = cmds.xform(uPar, q=True, ws=True, t=True)
-            lT = cmds.xform(lPar, q=True, ws=True, t=True)
+            if self.follicleMesh or self.follicleSurface:
+                uT = cmds.xform(uPar, q=True, ws=True, t=True)
+                lT = cmds.xform(lPar, q=True, ws=True, t=True)
+            else:
+                cmds.parent([uPar, lPar], lidEyeOffset)
+                uT = cmds.xform(uPar, q=True, os=True, t=True)
+                lT = cmds.xform(lPar, q=True, os=True, t=True)
             xformIndex = 0
             for rgb in ["R", "G", "B"]:
                 cmds.setAttr(f"{lineBC}.color1{rgb}", uT[xformIndex])

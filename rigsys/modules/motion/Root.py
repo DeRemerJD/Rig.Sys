@@ -111,8 +111,10 @@ class Root(motionBase.MotionModuleBase):
             offsetCtrlObj.giveCtrlShape()
             self.sockets["Offset"] = offsetJnt
             self.bindJoints[offsetJnt] = rootJnt
+
             cmds.setAttr(f"{offsetJnt}.drawStyle", 2)
             cmds.setAttr(f"{offsetCtrl}.visibility", l=True, k=False)
+
 
         cmds.xform(rootPar, ws=True, t=proxyPosition)
         cmds.xform(rootPar, ws=True, ro=proxyRotation)

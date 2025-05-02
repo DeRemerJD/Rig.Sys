@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rigsys"
+version = "0.1.0"
+authors = [{name = "Jacob Deremer", email = "jderemerartist@gmail.com"}, {name = "Gabe Reed", email = "gabrieljreed@gmail.com"}]
+description = "Modular rigging system for Autodesk Maya."
+keywords = ["autodesk", "maya", "modular", "rig", "rigging", "system", "autorig"]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=2.7.0"
+
+[project.urls]
+"Homepage" = "https://github.com/DeRemerJD/Rig.Sys"
+"Bug Tracker" = "https://github.com/DeRemerJD/Rig.Sys/issues"

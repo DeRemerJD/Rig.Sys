@@ -170,7 +170,9 @@ class FK(motionBase.MotionModuleBase):
                 )
                 ctrlObject.giveCtrlShape()
 
+
                 cmds.setAttr(f"{oCtrl}.visibility", l=True, k=False)
+
                 oGrps.append(oGrp)
                 oCtrls.append(oCtrl)
                 cmds.parent(oCtrl, oGrp)

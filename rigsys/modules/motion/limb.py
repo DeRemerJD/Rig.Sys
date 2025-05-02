@@ -16,7 +16,9 @@ class Limb(motionBase.MotionModuleBase):
                  mirror: bool = False, bypassProxiesOnly: bool = True, selectedPlug: str = "", selectedSocket: str = "",
                  aimAxis: str = "+x", upAxis: str = "-z", ctrlShapes="circle", ctrlScale=None, addOffset=True, 
                  clavicle=True, pvMultiplier: float = 1.0, numberOfJoints: int = 11, 
+
                  ikCtrlToFloor: bool = False, foot: bool = False,
+
                  nameSet: dict = {"Root": "Root", "Start": "Start", "Mid": "Mid", "End": "End"}) -> None:
         """Initialize the module."""
         super().__init__(rig, side, label, buildOrder, isMuted,
@@ -213,6 +215,7 @@ class Limb(motionBase.MotionModuleBase):
         IKJoints = []
         FKJoints = []
         for key, val in self.proxies.items():
+
             if key not in omit:
                 jnt = cmds.createNode(
                     "joint", n=f"{self.side}_{self.label}_{val.name}")
@@ -485,9 +488,11 @@ class Limb(motionBase.MotionModuleBase):
             "transform", n=f"{baseJoints[3]}_CTRL", p=endGrp)
         cmds.setAttr(f"{endCtrl}.visibility", l=True, k=False)
         endJnt = cmds.createNode("joint", n=f"{baseJoints[3]}End")
+
         cmds.setAttr(f"{endJnt}.drawStyle", 2)
         self.sockets[self.nameSet["End"]] = endJnt
-        # self.bindJoints[endJnt] = baseJoints[2]
+        self.bindJoints[endJnt] = baseJoints[2]
+
         cmds.xform(endJnt, ws=True, m=cmds.xform(
             baseJoints[3], q=True, ws=True, m=True
         ))
@@ -670,6 +675,7 @@ class Limb(motionBase.MotionModuleBase):
             ))
             cmds.parent(jnt, fol)
             follicleJoints.append(jnt)
+
             cmds.setAttr(f"{jnt}.drawStyle", 2)
             self.sockets[f"Follicle_{i}"] = jnt
             if len(follicleJoints) == 1:
@@ -679,6 +685,7 @@ class Limb(motionBase.MotionModuleBase):
         # jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
         #                        aimAxis=self.aimAxis, upAxis=self.upAxis)
         # cmds.makeIdentity(follicleJoints, a=True)
+
         setRange = 0
         rangeDist = (1 / 6) * 10
         tempUpSpace = cmds.createNode('transform', n='TempUpSpace')
@@ -700,8 +707,10 @@ class Limb(motionBase.MotionModuleBase):
             ribbonOffsets.append(offset)
             ribbonControls.append(ctrl)
             ribbonJoints.append(jnt)
+
             cmds.setAttr(f"{jnt}.drawStyle", 2)
             cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
+
             self.sockets[f"Ribbon_{i}"] = jnt 
             ctrlObject = ctrlCrv.Ctrl(
                 node=ctrl,
@@ -795,6 +804,7 @@ class Limb(motionBase.MotionModuleBase):
         cmds.parent(folGrp, self.moduleUtilities)
         cmds.parent(bendyCtrlGrp, self.plugParent)
         self.addSocketMetaData()
+
         jointTools.aimSequence(follicleJoints, upObj=self.poleVector,
                                aimAxis=self.aimAxis, upAxis=self.upAxis)
         cmds.makeIdentity(follicleJoints, a=True)

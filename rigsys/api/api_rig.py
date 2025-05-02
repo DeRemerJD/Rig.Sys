@@ -119,6 +119,11 @@ class Rig:
         # Create a group node for the rig
         if not cmds.objExists(self.name):
             self.rigNode = cmds.createNode("transform", n=self.name)
+            for xyz in ["X", "Y", "Z"]:
+                cmds.setAttr(f"{self.rigNode}.translate{xyz}", l=True, k=False)
+                cmds.setAttr(f"{self.rigNode}.rotate{xyz}", l=True, k=False)
+                cmds.setAttr(f"{self.rigNode}.scale{xyz}", l=True, k=False)
+            cmds.setAttr(f"{self.rigNode}.visibility", l=True, k=False)
             self.buildRigHierarchy()
         else:
             self.rigNode = self.name
@@ -173,6 +178,18 @@ class Rig:
         self.deformerNodes = cmds.createNode("transform", n="deformers")
         self.utilityNodes = cmds.createNode("transform", n="utilities")
         self.proxyNodes = cmds.createNode("transform", n="proxies")
+
+        cmds.setAttr(f"{self.geometryNodes}.overrideEnabled", 1)
+        cmds.addAttr(self.rigNode, ln="meshType", at="enum", en="Normal:Template:Reference", k=True)
+        cmds.addAttr(self.rigNode, ln="mesh", at="float", dv=1, min=0, max=1, k=True)
+        cmds.addAttr(self.rigNode, ln="controls", at="float", dv=1, min=0, max=1, k=True)
+        cmds.addAttr(self.rigNode, ln="skeleton", at="float", dv=0, min=0, max=1, k=True)
+        cmds.addAttr(self.rigNode, ln="proxies", at="float", dv=0, min=0, max=1, k=True)
+        cmds.connectAttr(f"{self.rigNode}.meshType", f"{self.geometryNodes}.overrideDisplayType")
+        cmds.connectAttr(f"{self.rigNode}.mesh", f"{self.geometryNodes}.visibility")
+        cmds.connectAttr(f"{self.rigNode}.controls", f"{self.motionNodes}.visibility")
+        cmds.connectAttr(f"{self.rigNode}.skeleton", f"{self.skeletonNodes}.visibility")
+        cmds.connectAttr(f"{self.rigNode}.proxies", f"{self.proxyNodes}.visibility")
 
         coreNodes = [self.motionNodes, self.geometryNodes,
                      self.skeletonNodes, self.deformerNodes,

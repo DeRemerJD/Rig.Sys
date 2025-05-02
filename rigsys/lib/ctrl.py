@@ -114,3 +114,50 @@ class Ctrl:
             cmds.makeIdentity(crvNode, a=True)
 
         return shapes, originalCurveNodes
+    
+def readWriteShapeOverride(path: str = "", controlTargets: list = [], write: bool = True, read: bool = False):
+    """Run the module."""
+    import os as os
+    import json as json
+    missing = []
+    if len(controlTargets) == 0:
+        controlTargets = cmds.ls(sl=1)
+        if len(controlTargets) == 0:
+            cmds.error("No controls provided or selected.")
+    for obj in controlTargets:
+        if not cmds.objExists(obj):
+            missing.append(obj)
+
+    if len(missing) > 0:
+        cmds.error(f"The following controls are missing {missing}")
+    
+    if write:
+        controlVertexPosition = {}
+        for obj in controlTargets:
+            shapeCheck = cmds.listRelatives(obj, s=True)
+            if len(shapeCheck) > 1:
+                for shape in shapeCheck:
+                    cvEnum =  cmds.getAttr(f"{shape}.cv[*]")
+                    for i in range(len(cvEnum)):
+                        controlVertexPosition[f"{shape}.cv[{i}]"] = cmds.pointPosition(f"{shape}.cv[{i}]", w=True)
+            else:
+                cvEnum = cmds.getAttr(f"{obj}.cv[*]")
+                for i in range(len(cvEnum)):
+                    controlVertexPosition[f"{obj}.cv[{i}]"] = cmds.pointPosition(f"{obj}.cv[{i}]", w=True)
+        if path == "":
+            raise Exception("No proxy data file specified.")
+        elif not os.path.exists(path):
+            raise Exception(f"Proxy data file {path} does not exist.")
+        else:
+            with open(path, "w") as file:
+                json.dump(controlVertexPosition, file, indent=4)
+    if read:
+        if path == "":
+            raise Exception("No proxy data file specified.")
+        elif not os.path.exists(path):
+            raise Exception(f"Proxy data file {path} does not exist.")
+        else:
+            with open(path, "r") as file:
+                controlVertexPosition = json.load(file)
+            for vert, pos in controlVertexPosition.items():
+                cmds.xform(vert, ws=True, t=pos)

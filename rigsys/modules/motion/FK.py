@@ -121,6 +121,7 @@ class FK(motionBase.MotionModuleBase):
 
         index = 0
         for fJnt in FKJoints:
+            cmds.setAttr(f"{fJnt}.drawStyle", 2)
             if fJnt != FKJoints[-1]:
                 cmds.parent(FKJoints[index + 1], fJnt)
             index += 1
@@ -143,7 +144,7 @@ class FK(motionBase.MotionModuleBase):
             cmds.xform(grp, ws=True, ro=cmds.xform(
                 fJnt, q=True, ws=True, ro=True
             ))
-
+            cmds.setAttr(f"{ctrl}.visibility", l=True, k=False)
             FKGrps.append(grp)
             FKCtrls.append(ctrl)
             ctrlObject = ctrlCrv.Ctrl(
@@ -168,6 +169,9 @@ class FK(motionBase.MotionModuleBase):
                     orient=[0, 90, 0]
                 )
                 ctrlObject.giveCtrlShape()
+
+
+                cmds.setAttr(f"{oCtrl}.visibility", l=True, k=False)
 
                 oGrps.append(oGrp)
                 oCtrls.append(oCtrl)

@@ -491,6 +491,10 @@ class FollicleEye(motionBase.MotionModuleBase):
                     cmds.connectAttr(f"{ucpos}.parameterU", f"{ufolShape}.parameterU")
                     cmds.connectAttr(f"{ucpos}.parameterV", f"{ufolShape}.par")
                 index+=1
+        else:
+            cmds.parent(upGroups, self.plugParent)
+            cmds.parent(loGroups, self.plugParent)
+            cmds.parent(cornerGroups, self.plugParent)
 
         upMainPar = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Up'].name}Main_grp", 
                                     p=self.plugParent)
@@ -536,6 +540,17 @@ class FollicleEye(motionBase.MotionModuleBase):
                 offset=[0, 0, 0]
             )
         outMainCtrlShape.giveCtrlShape()
+
+        if not self.follicleMesh or self.follicleSurface:
+            upTrack = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Up'].name}Main_track", p=upMainPar)
+            cmds.parent(upMainCtrl, upTrack)
+            loTrack = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Lo'].name}Main_track", p=loMainPar)
+            cmds.parent(loMainCtrl, loTrack)
+            inTrack = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['In'].name}Main_track", p=inMainPar)
+            cmds.parent(inMainCtrl, inTrack)
+            outTrack = cmds.createNode("transform", n=f"{self.side}_{self.label}_{self.proxies['Out'].name}Main_track", p=outMainPar)
+            cmds.parent(outMainCtrl, outTrack)           
+
         cmds.xform(upMainPar, ws=True, t=cmds.xform(
             f"{self.side}_{self.label}_{self.proxies['Up'].name}_proxy", q=True, ws=True, t=True
         ))
@@ -548,6 +563,94 @@ class FollicleEye(motionBase.MotionModuleBase):
         cmds.xform(outMainPar, ws=True, m=cmds.xform(
             f"{self.side}_{self.label}_{self.proxies['Out'].name}_proxy", q=True, ws=True, m=True
         ))
+
+        if not self.follicleMesh or self.follicleSurface:
+            rangeLen = len(fullRangeUpLabels)
+            if rangeLen % 2 == 0:
+                pass
+            else:
+                rangeLen-=1
+            halfLen = rangeLen / 2
+            inflRate = 1 / (halfLen-1)
+            inflVal = 0.0
+
+            for up, lo in zip(fullRangeUpLabels, fullRangeLoLabels):
+                upTarget = f"{self.side}_{self.label}_{up}_folOffset"
+                loTarget = f"{self.side}_{self.label}_{lo}_folOffset"
+                if inflVal >= 1.0:
+                    inflVal = 1.0 # Catch for middle point and prevents overvalue
+                
+                if up == fullRangeUpLabels[0]:
+                    # Do In Corner hookup
+                    cmds.connectAttr(f"{inMainCtrl}.translate", f"{upTarget}.translate")
+                    inflVal+=inflRate
+                    pass
+                elif up == fullRangeUpLabels[-1]:
+                    # Do Out Corner hookup
+                    cmds.connectAttr(f"{outMainCtrl}.translate", f"{upTarget}.translate")
+                    inflVal-=inflRate
+                    pass
+                else:
+                    if up in fullRangeUpLabels[int(halfLen)::]:
+                        # Do outer half
+                        uMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}Fol_MD")
+                        lMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{lo}Fol_MD")
+                        cMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}Fol_In_MD")
+                        uPMA = cmds.createNode("plusMinusAverage", n=f"{self.side}_{self.label}_{up}Fol_PMA")
+                        lPMA = cmds.createNode("plusMinusAverage", n=f"{self.side}_{self.label}_{lo}Fol_PMA")
+                        # Up Connections
+                        cmds.connectAttr(f"{upTrack}.translate", f"{uMD}.input1")
+                        cmds.connectAttr(f"{outTrack}.translate", f"{cMD}.input1")
+                        cmds.connectAttr(f"{uMD}.output", f"{uPMA}.input3D[0]")
+                        cmds.connectAttr(f"{cMD}.output", f"{uPMA}.input3D[1]")
+                        cmds.connectAttr(f"{uPMA}.output3D", f"{upTarget}.translate")
+                        # Up set
+                        cmds.setAttr(f"{uMD}.input2X", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{uMD}.input2Y", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{uMD}.input2Z", self.easeInSine(inflVal))
+                        cmds.setAttr(f"{cMD}.input2X", (1-self.easeInCubic(inflVal)))
+                        cmds.setAttr(f"{cMD}.input2Y", (1-self.easeInCubic(inflVal)))
+                        cmds.setAttr(f"{cMD}.input2Z", (1-self.easeInSine(inflVal)))
+                        # Lo Connections
+                        cmds.connectAttr(f"{loTrack}.translate", f"{lMD}.input1")
+                        cmds.connectAttr(f"{lMD}.output", f"{lPMA}.input3D[0]")
+                        cmds.connectAttr(f"{cMD}.output", f"{lPMA}.input3D[1]")
+                        cmds.connectAttr(f"{lPMA}.output3D", f"{loTarget}.translate")
+                        # Lo set
+                        cmds.setAttr(f"{lMD}.input2X", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{lMD}.input2Y", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{lMD}.input2Z", self.easeInSine(inflVal))
+                        cmds.setAttr(f"{cMD}.input2X", (1-self.easeInCubic(inflVal)))
+                        cmds.setAttr(f"{cMD}.input2Y", (1-self.easeInCubic(inflVal)))
+                        cmds.setAttr(f"{cMD}.input2Z", (1-self.easeInSine(inflVal)))
+                        inflVal-=inflRate
+                    else:
+                        # Do inner half
+                        uMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}_MD")
+                        lMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{lo}_MD")
+                        cMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}_In_MD")
+                        uPMA = cmds.createNode("plusMinusAverage", n=f"{self.side}_{self.label}_{up}_PMA")
+                        lPMA = cmds.createNode("plusMinusAverage", n=f"{self.side}_{self.label}_{lo}_PMA")
+                        # Up Connections
+                        cmds.connectAttr(f"{upTrack}.translate", f"{uMD}.input1")
+                        cmds.connectAttr(f"{inTrack}.translate", f"{cMD}.input1")
+                        cmds.connectAttr(f"{uMD}.output", f"{uPMA}.input3D[0]")
+                        cmds.connectAttr(f"{cMD}.output", f"{uPMA}.input3D[1]")
+                        cmds.connectAttr(f"{uPMA}.output3D", f"{upTarget}.translate")
+                        # Up set
+                        cmds.setAttr(f"{uMD}.input2X", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{uMD}.input2Y", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{uMD}.input2Z", self.easeInSine(inflVal))
+                        # Lo Connections
+                        cmds.connectAttr(f"{loTrack}.translate", f"{lMD}.input1")
+                        cmds.connectAttr(f"{lMD}.output", f"{lPMA}.input3D[0]")
+                        cmds.connectAttr(f"{cMD}.output", f"{lPMA}.input3D[1]")
+                        cmds.connectAttr(f"{lPMA}.output3D", f"{loTarget}.translate")
+                        # Lo set
+                        cmds.setAttr(f"{lMD}.input2X", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{lMD}.input2Y", self.easeInCubic(inflVal))
+                        cmds.setAttr(f"{lMD}.input2Z", self.easeInSine(inflVal))
+                        inflVal+=inflRate
 
         rangeLen = len(fullRangeUpLabels)
         if rangeLen % 2 == 0:
@@ -678,6 +781,13 @@ class FollicleEye(motionBase.MotionModuleBase):
                 offset=[0, 0, 0]
             )
         eyeCtrlShape.giveCtrlShape()
+        if not self.follicleMesh or self.follicleSurface:
+            ptc = cmds.parentConstraint([eyeCtrl, upMainPar], upTrack, n=f"{upTrack}_PTC", mo=1)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{upMainPar}W1", 4)
+            ptc = cmds.parentConstraint([eyeCtrl, loMainPar], loTrack, n=f"{loTrack}_PTC", mo=1)[0]
+            cmds.setAttr(f"{ptc}.interpType", 2)
+            cmds.setAttr(f"{ptc}.{loMainPar}W1", 4)
 
     def easeInCubic(self, input = 1.0):
         return input * input * input

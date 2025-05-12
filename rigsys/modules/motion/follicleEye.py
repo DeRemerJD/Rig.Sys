@@ -651,6 +651,9 @@ class FollicleEye(motionBase.MotionModuleBase):
                         cmds.setAttr(f"{lMD}.input2X", self.easeInCubic(inflVal))
                         cmds.setAttr(f"{lMD}.input2Y", self.easeInCubic(inflVal))
                         cmds.setAttr(f"{lMD}.input2Z", self.easeInSine(inflVal))
+                        cmds.setAttr(f"{cMD}.input2X", (1-self.easeInCubic(inflVal)))
+                        cmds.setAttr(f"{cMD}.input2Y", (1-self.easeInCubic(inflVal)))
+                        cmds.setAttr(f"{cMD}.input2Z", (1-self.easeInSine(inflVal)))
                         inflVal+=inflRate
 
         rangeLen = len(fullRangeUpLabels)
@@ -683,7 +686,7 @@ class FollicleEye(motionBase.MotionModuleBase):
                     # Do outer half
                     uMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}_MD")
                     lMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{lo}_MD")
-                    cMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}_In_MD")
+                    cMD = cmds.createNode("multiplyDivide", n=f"{self.side}_{self.label}_{up}_Out_MD")
                     uPMA = cmds.createNode("plusMinusAverage", n=f"{self.side}_{self.label}_{up}_PMA")
                     lPMA = cmds.createNode("plusMinusAverage", n=f"{self.side}_{self.label}_{lo}_PMA")
                     # Up Connections
@@ -738,6 +741,9 @@ class FollicleEye(motionBase.MotionModuleBase):
                     cmds.setAttr(f"{lMD}.input2X", self.easeInCubic(inflVal))
                     cmds.setAttr(f"{lMD}.input2Y", self.easeInCubic(inflVal))
                     cmds.setAttr(f"{lMD}.input2Z", self.easeInSine(inflVal))
+                    cmds.setAttr(f"{cMD}.input2X", (1-self.easeInCubic(inflVal)))
+                    cmds.setAttr(f"{cMD}.input2Y", (1-self.easeInCubic(inflVal)))
+                    cmds.setAttr(f"{cMD}.input2Z", (1-self.easeInSine(inflVal)))
                     inflVal+=inflRate
         cmds.addAttr(upMainCtrl, ln="blink", at="float", min=0.0, max=1.0, dv=0, k=True)
         cmds.addAttr(upMainCtrl, ln="blinkLine", at="float", min=0.0, max=1.0, dv=0.25, k=True)
@@ -748,10 +754,11 @@ class FollicleEye(motionBase.MotionModuleBase):
                          proxy=f"{upMainCtrl}.blinkLine", at="float", min=0.0, max=1.0, dv=0.5, k=True)
         
         if not self.follicleMesh or self.follicleSurface:
-            lidEyeOffset = cmds.createNode("transform", n=f"{self.side}_{self.label}_eyeOffset", p=self.plugParent)
+            lidEyeOffset = cmds.createNode("transform", n=f"{self.side}_{self.label}_eyeOffset")
             cmds.xform(lidEyeOffset, ws=True, t=cmds.xform(
                 eyejoint, q=True, ws=True, t=True
             ))
+            cmds.parent(lidEyeOffset, self.plugParent)
 
         index = 0
         for uPar, lPar in zip(upGroups, loGroups):
@@ -769,8 +776,9 @@ class FollicleEye(motionBase.MotionModuleBase):
                 lT = cmds.xform(lPar, q=True, ws=True, t=True)
             else:
                 cmds.parent([uPar, lPar], lidEyeOffset)
-                uT = cmds.xform(uPar, q=True, os=True, t=True)
-                lT = cmds.xform(lPar, q=True, os=True, t=True)
+                uT = cmds.xform(uPar, q=True, os=True, t=True, r=True, a=False)
+                lT = cmds.xform(lPar, q=True, os=True, t=True, r=True, a=False)
+                
             xformIndex = 0
             for rgb in ["R", "G", "B"]:
                 cmds.setAttr(f"{lineBC}.color1{rgb}", uT[xformIndex])
@@ -784,15 +792,20 @@ class FollicleEye(motionBase.MotionModuleBase):
             cmds.connectAttr(f"{lBC}.output", f"{lPar}.translate")
             index+=1
 
-        eyePar = cmds.createNode("transform", n=f"{eyejoint}_grp", p=self.plugParent)
+        eyePar = cmds.createNode("transform", n=f"{eyejoint}_grp")
         eyeCtrl = cmds.createNode('transform', n=f"{eyejoint}_CTRL", p=eyePar)
-        ptc = cmds.parentConstraint(eyeCtrl, eyejoint, n=f"{eyejoint}_PTC", mo=0)
+        cmds.xform(eyePar, ws=True, t=cmds.xform(
+            eyejoint, q=True, ws=True, t=True
+        ))
+        cmds.parent(eyePar, self.plugParent)
+        ptc = cmds.parentConstraint(eyeCtrl, eyejoint, n=f"{eyejoint}_PTC", mo=1)
         eyeCtrlShape = ctrlCrv.Ctrl(
                 node=eyeCtrl,
                 shape="sphere",
                 scale=[self.ctrlScale[0] * 5, self.ctrlScale[1] * 5, self.ctrlScale[2] * 5],
                 offset=[0, 0, 0]
             )
+
         eyeCtrlShape.giveCtrlShape()
         if not self.follicleMesh or self.follicleSurface:
             ptc = cmds.parentConstraint([eyeCtrl, upMainPar], upTrack, n=f"{upTrack}_PTC", mo=1)[0]

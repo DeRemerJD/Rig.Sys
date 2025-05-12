@@ -825,7 +825,7 @@ class Lips(motionBase.MotionModuleBase):
             q=True, t=True
         ))
 
-        cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=2.0, dv=1.0, k=True)
+        cmds.addAttr(mouthCtrl, ln="zipper", at="float", min=0.0, max=1.0, dv=1.0, k=True)
 
         # Ok some fucking madness here I'll document later.... fuck me
         inflCalc = 0.0
@@ -964,6 +964,20 @@ class Lips(motionBase.MotionModuleBase):
         # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
         # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
 
+        # Create middle zipper remap nodes.
+        positiveRemap = cmds.createNode("remapValue", 
+                                        n=f"{self.side}_{self.label}_positiveMiddle_RV")
+        negativeRemap = cmds.createNode("remapValue", 
+                                        n=f"{self.side}_{self.label}_negativeMiddle_RV")
+        cmds.setAttr(f"{positiveRemap}.inputMin", 0.0)
+        cmds.setAttr(f"{positiveRemap}.inputMax", 1.0)
+        cmds.setAttr(f"{positiveRemap}.outputMin", 0.5)
+        cmds.setAttr(f"{positiveRemap}.outputMax", 0.0)
+        cmds.setAttr(f"{negativeRemap}.inputMin", 1.0)
+        cmds.setAttr(f"{negativeRemap}.inputMax", 0.0)
+        cmds.setAttr(f"{negativeRemap}.outputMin", 1.0)
+        cmds.setAttr(f"{negativeRemap}.outputMax", 0.5)
+
         cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
         cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
         cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{upMouthZippers[int(lipRange)]}W2")
@@ -973,8 +987,10 @@ class Lips(motionBase.MotionModuleBase):
     
         cmds.setAttr(f"{ptc}.interpType", 2)
 
-        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
-        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
+        # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 1)
+        # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 0)
+        cmds.connectAttr(f"{negativeRemap}.outValue", f"{ptc}.{upMouthCtrl}W0")
+        cmds.connectAttr(f"{positiveRemap}.outValue", f"{ptc}.{loMouthCtrl}W1")
 
         ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, loMouthZippers[int(lipRange)]], loParents[int(lipRange)],
                                         n=f"{loParents[int(lipRange)]}_ptc", mo=1)[0]
@@ -995,17 +1011,24 @@ class Lips(motionBase.MotionModuleBase):
         # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
         # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
 
+        
+
+        cmds.connectAttr(f"{mouthCtrl}.zipper", f"{positiveRemap}.inputValue")
+        cmds.connectAttr(f"{mouthCtrl}.zipper", f"{negativeRemap}.inputValue")
+
         cmds.connectAttr(f"{bc}.outputR", f"{ptc}.{upMouthCtrl}W0")
         cmds.connectAttr(f"{bc}.outputG", f"{ptc}.{loMouthCtrl}W1")
         cmds.connectAttr(f"{bc}.outputB", f"{ptc}.{loMouthZippers[int(lipRange)]}W2")
 
         ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl], loMiddlePar,
-                                        n=f"{upMiddlePar}_ptc", mo=1)[0]
+                                        n=f"{loMiddlePar}_ptc", mo=1)[0]
         
         cmds.setAttr(f"{ptc}.interpType", 2)
 
-        cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
-        cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+        # cmds.setAttr(f"{ptc}.{upMouthCtrl}W0", 0)
+        # cmds.setAttr(f"{ptc}.{loMouthCtrl}W1", 1)
+        cmds.connectAttr(f"{positiveRemap}.outValue", f"{ptc}.{upMouthCtrl}W0")
+        cmds.connectAttr(f"{negativeRemap}.outValue", f"{ptc}.{loMouthCtrl}W1")
         index = 0
         for i in [lCornerPar, rCornerPar]:
             ptc = cmds.parentConstraint([upMouthCtrl, loMouthCtrl, cornerMouthZippers[index]], i,

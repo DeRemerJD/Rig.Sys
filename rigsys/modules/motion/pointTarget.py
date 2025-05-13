@@ -204,11 +204,11 @@ class PointTarget(motionBase.MotionModuleBase):
                         aim = jointTools.axisToVector(self.aimAxis)
                         up = jointTools.axisToVector(self.upAxis)
                         aim = cmds.aimConstraint(rootCtrl, nPar, n=f"{rootPar}_AC", mo=self.maintainOffset,
-                                                aim=aim, up=up, wut="objectrotation", wuo=rootCtrl)
+                                                aim=aim, u=up, wut="objectrotation", wuo=rootCtrl)[0]
                     if len(self.targetsInfluence) == len(self.targets):
                         index = 0
                         for i in self.targets:
-                            cmds.setAttr(f"{aim}.{i}W{index}", self.targetsInfluence[index])
+                            cmds.setAttr(f"{aim}.{rootCtrl}W{index}", self.targetsInfluence[index])
                             index+=1
                 else:
                     for i in self.targets:
